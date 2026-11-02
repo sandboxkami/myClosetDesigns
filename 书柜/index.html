@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>书柜 · 三维预览 | 柜子定制</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body class="viewer-page">
+  <div class="app">
+    <aside class="panel">
+      <header class="panel-header">
+        <a class="back-link" href="../index.html">← 返回总入口</a>
+        <p class="eyebrow">书柜 · 柜子定制</p>
+        <h1>书柜</h1>
+        <p class="subtitle">5 列 7 层 · 左侧开放格 · 右侧 2 扇平开门 · L 形猫梯结构</p>
+        <div class="chips">
+          <span class="chip chip-accent">v1.0</span>
+          <span class="chip">3 列开放 + 2 扇门</span>
+          <span class="chip">猫梯可活动</span>
+          <span class="chip">设计暂告一段落</span>
+        </div>
+      </header>
+
+      <section class="controls" aria-labelledby="dimensions-title">
+        <div class="section-heading">
+          <h2 id="dimensions-title">关键尺寸</h2>
+          <span class="section-note">单位 mm</span>
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-W">总宽</label>
+            <span class="control-number">
+              <input id="number-W" data-number="W" type="number" min="2000" max="3000" step="1" value="2403" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-W" data-range="W" type="range" min="2000" max="3000" step="1" value="2403">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-H">总高</label>
+            <span class="control-number">
+              <input id="number-H" data-number="H" type="number" min="1900" max="2400" step="10" value="2120" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-H" data-range="H" type="range" min="1900" max="2400" step="10" value="2120">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-D">主体深度</label>
+            <span class="control-number">
+              <input id="number-D" data-number="D" type="number" min="250" max="400" step="10" value="300" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-D" data-range="D" type="range" min="250" max="400" step="10" value="300">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-catExt">猫梯伸出</label>
+            <span class="control-number">
+              <input id="number-catExt" data-number="catExt" type="number" min="100" max="300" step="10" value="200" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-catExt" data-range="catExt" type="range" min="100" max="300" step="10" value="200">
+        </div>
+
+        <details class="more-settings">
+          <summary>更多尺寸</summary>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-t">板厚</label>
+              <span class="control-number">
+                <input id="number-t" data-number="t" type="number" min="16" max="25" step="1" value="18" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
+          </div>
+          <p class="micro-hint">5 列均分；左侧 3 列开放，右侧 2 列门柜。7 层按手绘 220 / 300×4 / 400×2 比例随总高等比压缩。</p>
+        </details>
+
+        <div class="computed">
+          <div><span>单列宽</span><strong id="col-width">459.0 mm</strong></div>
+          <div><span>顶层层高</span><strong id="row-top">196 mm</strong></div>
+          <div><span>标准层高</span><strong id="row-std">267 mm</strong></div>
+          <div><span>大层高</span><strong id="row-large">356 mm</strong></div>
+          <div><span>单扇门宽</span><strong id="door-width">463.5 mm</strong></div>
+          <div><span>猫梯深</span><strong id="cat-depth">500 mm</strong></div>
+        </div>
+        <div id="height-warning" class="warning" hidden></div>
+      </section>
+
+      <section class="actions" aria-label="预览操作">
+        <div class="action-grid">
+          <button id="open-all" class="button button-primary" type="button">全部打开</button>
+          <button id="close-all" class="button" type="button">全部关闭</button>
+          <button id="reset-view" class="button" type="button">重置视角</button>
+          <button id="reset-dimensions" class="button button-ghost" type="button">恢复默认尺寸</button>
+        </div>
+        <div class="toggles">
+          <label><input id="show-dims" type="checkbox" checked> 显示尺寸</label>
+          <label><input id="show-props" type="checkbox" checked> 显示示例物品</label>
+          <label><input id="show-cat" type="checkbox" checked> 显示猫梯</label>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-title">
+        <div class="section-heading">
+          <h2 id="notes-title">设计要点</h2>
+        </div>
+        <ul>
+          <li><strong>柜体</strong> 5 列 × 7 层，宽 2403 × 高 2120 × 深 300；白门 + 木色内胆。</li>
+          <li><strong>左侧 3 列</strong> 规则开放格，可放书和展示物。</li>
+          <li><strong>右侧 2 列</strong> 2 扇通高平开门，左/右对开。</li>
+          <li><strong>猫梯</strong> 5 个 500 深 L 形台阶结构，满格宽/满格高卡入；伸出 200；不同层高对应不同结构高度。</li>
+          <li><strong>层高</strong> 原图 220 / 300×4 / 400×2，按 2120 总高等比压缩为约 196 / 267×4 / 356×2。</li>
+        </ul>
+        <p class="hint">v1.0 按手绘图和现场高度 2120 建模；层板位置、猫梯位置和门型可在 <a href="../assets/md-viewer.html?file=../书柜/设计说明.md">设计说明.md</a> 中继续修改。</p>
+      </section>
+
+      <footer class="panel-footer">
+        <span>HTML / CSS / JS + three.js</span>
+        <span>尺寸单位 mm</span>
+      </footer>
+    </aside>
+
+    <main class="stage" id="stage">
+      <div id="canvas-container" class="canvas-container"></div>
+      <div class="stage-topbar">
+        <span class="stage-title">书柜 v1.0 · 三维预览</span>
+        <span class="stage-meta" id="size-readout">2403 × 2120 × 300 mm</span>
+      </div>
+      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击右侧门开合</div>
+      <div class="loading" id="loading">正在加载三维场景…</div>
+      <div class="tooltip" id="tooltip"></div>
+      <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
+    </main>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../assets/vendor/three/three.module.js",
+        "three/addons/": "../assets/vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>

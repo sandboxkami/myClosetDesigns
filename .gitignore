@@ -1,0 +1,25 @@
+# macOS / Windows
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python local server
+__pycache__/
+*.py[cod]
+*.pyo
+*.log
+
+# Editors / local environment
+.idea/
+.vscode/
+.env
+.env.*
+*.local
+
+# Not part of the web preview repository
+旧备份/
+.obsidian/
+node_modules/
+dist/
+build/
+.cache/

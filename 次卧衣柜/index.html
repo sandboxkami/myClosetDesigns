@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>次卧衣柜 · 三维预览 | 柜子定制</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.1.0">
+</head>
+<body class="viewer-page">
+  <div class="app">
+    <aside class="panel">
+      <header class="panel-header">
+        <a class="back-link" href="../index.html">← 返回总入口</a>
+        <p class="eyebrow">次卧 · 柜子定制</p>
+        <h1>次卧衣柜</h1>
+        <p class="subtitle">两图结合：白色平板门 × 长衣双杆 / 树屋梯形门 / 灵活收纳</p>
+        <div class="chips">
+          <span class="chip chip-accent">v1.1</span>
+          <span class="chip">长衣双门对开</span>
+          <span class="chip">树屋梯形门</span>
+          <span class="chip">活动挂衣架</span>
+        </div>
+      </header>
+
+      <section class="controls" aria-labelledby="dimensions-title">
+        <div class="section-heading">
+          <h2 id="dimensions-title">关键尺寸</h2>
+          <span class="section-note">单位 mm</span>
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-W">总宽</label>
+            <span class="control-number">
+              <input id="number-W" data-number="W" type="number" min="1800" max="3200" step="10" value="2400" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-W" data-range="W" type="range" min="1800" max="3200" step="10" value="2400">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-H">总高</label>
+            <span class="control-number">
+              <input id="number-H" data-number="H" type="number" min="2000" max="2800" step="10" value="2400" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-H" data-range="H" type="range" min="2000" max="2800" step="10" value="2400">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-D">总深</label>
+            <span class="control-number">
+              <input id="number-D" data-number="D" type="number" min="500" max="700" step="10" value="600" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-D" data-range="D" type="range" min="500" max="700" step="10" value="600">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-topH">顶柜高</label>
+            <span class="control-number">
+              <input id="number-topH" data-number="topH" type="number" min="300" max="650" step="10" value="450" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-topH" data-range="topH" type="range" min="300" max="650" step="10" value="450">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-bottomH">底抽高</label>
+            <span class="control-number">
+              <input id="number-bottomH" data-number="bottomH" type="number" min="300" max="650" step="10" value="450" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-bottomH" data-range="bottomH" type="range" min="300" max="650" step="10" value="450">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-leftW">左侧展示格宽</label>
+            <span class="control-number">
+              <input id="number-leftW" data-number="leftW" type="number" min="250" max="650" step="10" value="400" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-leftW" data-range="leftW" type="range" min="250" max="650" step="10" value="400">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-centerW">中区长衣区宽</label>
+            <span class="control-number">
+              <input id="number-centerW" data-number="centerW" type="number" min="500" max="1400" step="10" value="950" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-centerW" data-range="centerW" type="range" min="500" max="1400" step="10" value="950">
+        </div>
+
+        <details class="more-settings">
+          <summary>更多尺寸</summary>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-rod2H">活动挂衣架高</label>
+              <span class="control-number">
+                <input id="number-rod2H" data-number="rod2H" type="number" min="600" max="1600" step="50" value="1200" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-rod2H" data-range="rod2H" type="range" min="600" max="1600" step="50" value="1200">
+          </div>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-t">板厚</label>
+              <span class="control-number">
+                <input id="number-t" data-number="t" type="number" min="16" max="25" step="1" value="18" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
+          </div>
+          <p class="micro-hint">背板默认 9 mm；门板与柜体板同厚。右侧短衣区宽 = 总宽 − 两侧板 − 左侧展示格 − 中区。</p>
+        </details>
+
+        <div class="computed">
+          <div><span>右侧短衣区宽</span><strong id="right-width">978 mm</strong></div>
+          <div><span>长衣净高</span><strong id="long-clear">1420 mm</strong></div>
+          <div class="computed-wide"><span>分区宽度</span><strong id="partition-info">左 400 / 中 950 / 右 978 mm</strong></div>
+          <div><span>活动挂衣架高</span><strong id="rod2-height">1200 mm</strong></div>
+        </div>
+        <div id="height-warning" class="warning" hidden></div>
+      </section>
+
+      <section class="actions" aria-label="预览操作">
+        <div class="action-grid">
+          <button id="open-all" class="button button-primary" type="button">全部打开</button>
+          <button id="close-all" class="button" type="button">全部关闭</button>
+          <button id="reset-view" class="button" type="button">重置视角</button>
+          <button id="reset-dimensions" class="button button-ghost" type="button">恢复默认尺寸</button>
+        </div>
+        <button id="toggle-rod2" class="button button-ghost shelf-button" type="button">改为收纳盒</button>
+        <div class="toggles">
+          <label><input id="show-dims" type="checkbox" checked> 显示尺寸</label>
+          <label><input id="show-props" type="checkbox" checked> 显示示例物品</label>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-title">
+        <div class="section-heading">
+          <h2 id="notes-title">设计要点</h2>
+        </div>
+        <ul>
+          <li><strong>外观</strong> 白色平板门 + 木色内胆 + 小圆木拉手。</li>
+          <li><strong>左侧</strong> 乐高 / 模型 / 故事书展示格；一扇通高白色平板门，取消玻璃门和拱形开口。</li>
+          <li><strong>中区</strong> 长衣挂区两扇门从中间对开；固定上杆 + 高度可调的活动下杆（侧板滑槽），也可改为收纳盒；下方 2 个叠放抽屉。</li>
+          <li><strong>右区</strong> 短衣挂区 + 水平层板 + 树屋开口；两扇梯形门斜边形成树屋洞，门下沿不到底；孩子物品抽屉在下方。</li>
+          <li><strong>顶柜</strong> 5 门：1 扇与展示格同宽；2/3、4/5 分别从中间向两边开。</li>
+        </ul>
+        <p class="hint">v1.1 按参考图比例估算；现场复尺后请编辑 <a href="../assets/md-viewer.html?file=../次卧衣柜/设计说明.md">设计说明.md</a>，再据此调整预览。</p>
+      </section>
+
+      <footer class="panel-footer">
+        <span>HTML / CSS / JS + three.js</span>
+        <span>尺寸单位 mm</span>
+      </footer>
+    </aside>
+
+    <main class="stage" id="stage">
+      <div id="canvas-container" class="canvas-container"></div>
+      <div class="stage-topbar">
+        <span class="stage-title">次卧衣柜 v1.1 · 三维预览</span>
+        <span class="stage-meta" id="size-readout">2400 × 2400 × 600 mm</span>
+      </div>
+      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门 / 抽屉开合</div>
+      <div class="loading" id="loading">正在加载三维场景…</div>
+      <div class="tooltip" id="tooltip"></div>
+      <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
+    </main>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../assets/vendor/three/three.module.js",
+        "three/addons/": "../assets/vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="./viewer.js?v=1.1.0"></script>
+</body>
+</html>
