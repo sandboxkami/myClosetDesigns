@@ -10,6 +10,9 @@ import {
   createBasket,
   createHangingGarment,
   createDimensions,
+  createDimensionLabel,
+  createDimensionAnnotation,
+  createLeaderAnnotation,
   disposeGroup,
   fitCamera,
   damp,
@@ -80,6 +83,64 @@ let drawerPropGroups = [];
 let propsGroup = null;
 let dimensionGroup = null;
 let firstBuild = true;
+let layout = null;
+let focusGroup = null;
+
+const focusFillMat = new THREE.MeshBasicMaterial({
+  color: 0xff9a4d,
+  transparent: true,
+  opacity: 0.13,
+  depthTest: false,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+const focusEdgeMat = new THREE.LineBasicMaterial({
+  color: 0xffc27d,
+  transparent: true,
+  opacity: 0.9,
+  depthTest: false,
+});
+const focusLineMat = new THREE.LineBasicMaterial({
+  color: 0xffc27d,
+  transparent: true,
+  opacity: 0.8,
+  depthTest: false,
+});
+const focusDimMat = new THREE.LineBasicMaterial({
+  color: 0xffb347,
+  transparent: true,
+  opacity: 0.95,
+  depthTest: false,
+});
+
+const tourOverlay = document.getElementById('focus-tour');
+const tourProgress = document.getElementById('tour-progress');
+const tourTitle = document.getElementById('tour-title');
+const tourDesc = document.getElementById('tour-desc');
+const tourPart = document.getElementById('tour-part');
+const tourValue = document.getElementById('tour-value');
+const tourBar = document.getElementById('tour-bar');
+const tourPrev = document.getElementById('tour-prev');
+const tourNext = document.getElementById('tour-next');
+const tourEnd = document.getElementById('tour-end');
+const startTourButton = document.getElementById('start-tour');
+const startTourLabel = startTourButton ? startTourButton.innerHTML : '';
+
+const tour = {
+  active: false,
+  index: 0,
+  elapsed: 0,
+  phase: 'idle',
+  moveDuration: 0.65,
+  stops: [],
+  fromPos: new THREE.Vector3(),
+  fromTarget: new THREE.Vector3(),
+  toPos: new THREE.Vector3(),
+  toTarget: new THREE.Vector3(),
+  returnPos: new THREE.Vector3(),
+  returnTarget: new THREE.Vector3(),
+  openLabels: [],
+};
 
 function normalizeState() {
   // Overall size is fixed; only the internal layout stays adjustable.
@@ -134,6 +195,22 @@ function syncInputs() {
 
 function updateReadouts() {
   document.getElementById('size-readout').textContent = `${Math.round(state.W)} × ${Math.round(state.H)} × ${Math.round(state.D)} mm`;
+
+  // Decision board, block 2: unfixed key dimensions.
+  document.getElementById('decision-topRowH').textContent = `${format(state.topRowH, 0)} mm`;
+  document.getElementById('decision-leftTopH').textContent = `${format(state.leftTopH, 0)} mm`;
+  document.getElementById('decision-leftPantsH').textContent = `${format(state.leftPantsH, 0)} mm`;
+  document.getElementById('decision-shortH').textContent = `${format(state.shortH, 0)} mm`;
+  document.getElementById('decision-drawerH').textContent = `${format(state.drawerH, 0)} mm`;
+  document.getElementById('decision-narrowW').textContent = `${format(state.narrowW, 1)} mm`;
+  document.getElementById('decision-t').textContent = `${format(state.t, 0)} mm`;
+  document.getElementById('decision-largeW').textContent = `${format(state.largeW, 1)} mm`;
+  document.getElementById('decision-leftBottomH').textContent = `${format(state.leftBottomH, 0)} mm`;
+  document.getElementById('decision-longH2').textContent = `${format(state.longH2, 0)} mm`;
+  document.getElementById('decision-longH3').textContent = `${format(state.longH3, 0)} mm`;
+  document.getElementById('decision-shelfH4').textContent = `${format(state.shelfH4, 1)} / ${format(state.shelfH4Upper, 1)} mm`;
+  document.getElementById('decision-doorW').textContent = `${format(state.doorW, 1)} mm`;
+
   document.getElementById('door-width').textContent = `${format(state.doorW, 1)} mm`;
   document.getElementById('left-bottom').textContent = `${format(state.leftBottomH, 0)} mm`;
   document.getElementById('long-2').textContent = `${format(state.longH2, 0)} mm`;
@@ -432,6 +509,11 @@ function buildCabinet() {
   const shelfH4 = state.shelfH4 / 1000;
   const shelfH4Upper = state.shelfH4Upper / 1000;
   const narrowHangH = state.narrowHangH / 1000;
+  const drawerBodyD = Math.min(D - doorT - 0.06, 0.5);
+  const drawerTravel = Math.min(0.4, drawerBodyD * 0.8);
+  const doorPanels = [];
+  const bay2Drawers = [];
+  const bay3Drawers = [];
 
   const bay1L = -W / 2 + t;
   const bay1R = bay1L + largeW;
@@ -536,6 +618,15 @@ function buildCabinet() {
       label: `第 2 格抽屉 ${i + 1}`,
       dividers: i === 1 ? 2 : 0,
     });
+    bay2Drawers.push({
+      index: i,
+      xCenter: bay2C,
+      width: largeW - 2 * GAP,
+      yBottom,
+      yTop: yBottom + drawerH,
+      label: `第 2 格抽屉 ${i + 1}`,
+      dividers: i === 1 ? 2 : 0,
+    });
   }
 
   // Bay 3: top row + long hanging + 3 drawers
@@ -553,6 +644,15 @@ function buildCabinet() {
   for (let i = 0; i < 3; i += 1) {
     const yBottom = t + i * (drawerH + t);
     addDrawer({
+      xCenter: bay3C,
+      width: largeW - 2 * GAP,
+      yBottom,
+      yTop: yBottom + drawerH,
+      label: `第 3 格抽屉 ${i + 1}`,
+      dividers: i === 2 ? 2 : 0,
+    });
+    bay3Drawers.push({
+      index: i,
       xCenter: bay3C,
       width: largeW - 2 * GAP,
       yBottom,
@@ -629,6 +729,13 @@ function buildCabinet() {
       label: `${bay.name}左门`,
       knobY: 1.1,
     });
+    doorPanels.push({
+      label: `${bay.name}左门`,
+      x1: bay.left + GAP,
+      x2: center - GAP / 2,
+      y1: bay.yBottom,
+      y2: H - GAP,
+    });
     addDoor({
       xLeft: center + GAP / 2,
       xRight: bay.right - GAP,
@@ -637,6 +744,13 @@ function buildCabinet() {
       hinge: 'right',
       label: `${bay.name}右门`,
       knobY: 1.1,
+    });
+    doorPanels.push({
+      label: `${bay.name}右门`,
+      x1: center + GAP / 2,
+      x2: bay.right - GAP,
+      y1: bay.yBottom,
+      y2: H - GAP,
     });
   });
 
@@ -649,6 +763,13 @@ function buildCabinet() {
     hinge: 'right',
     label: '最右顶格门',
     knobY: H - t - topRowH + 0.12,
+  });
+  doorPanels.push({
+    label: '最右顶格门',
+    x1: bay5L + GAP,
+    x2: bay5R - GAP,
+    y1: H - t - topRowH + GAP,
+    y2: H - GAP,
   });
 
   // Props
@@ -732,6 +853,88 @@ function buildCabinet() {
   dimensionGroup = createDimensions({ width: W, height: H, depth: D }, materials);
   cabinetGroup.add(dimensionGroup);
 
+  layout = {
+    W,
+    H,
+    D,
+    t,
+    backT,
+    doorT,
+    carcassD,
+    interiorD,
+    carcassZ,
+    interiorZ,
+    frontZ,
+    doorZ,
+    drawerFrontZ,
+    largeW,
+    narrowW,
+    topRowH,
+    drawerH,
+    leftTopH,
+    leftPantsH,
+    leftBottomH,
+    longH2,
+    longH3,
+    shortH,
+    shelfH4,
+    shelfH4Upper,
+    narrowHangH,
+    doorW: state.doorW / 1000,
+    bay1L,
+    bay1R,
+    bay2L,
+    bay2R,
+    bay3L,
+    bay3R,
+    bay4L,
+    bay4R,
+    bay5L,
+    bay5R,
+    bay1C,
+    bay2C,
+    bay3C,
+    bay4C,
+    bay5C,
+    p1,
+    p2,
+    p3,
+    p4,
+    leftShelf1C,
+    leftShelf2C,
+    leftMiddleBottom,
+    leftMiddleTop,
+    pantsRodY,
+    leftBottomRodY,
+    leftTopRodY,
+    bay2TopShelfC,
+    bay2DrawerZoneTop,
+    bay2DrawerShelfC,
+    bay2LongRodY,
+    bay3TopShelfC,
+    bay3DrawerZoneTop,
+    bay3DrawerShelfC,
+    bay3LongRodY,
+    bay4ShortShelfC,
+    bay4Shelf1C,
+    bay4Shelf2C,
+    bay4Shelf3C,
+    bay4ShortRodY,
+    bay5TopShelfC,
+    bay5LongRodY,
+    bay5ShelfC,
+    pantsZOffsets,
+    doorPanels,
+    bay2Drawers,
+    bay3Drawers,
+    drawerBodyD,
+    drawerTravel,
+    drawerInnerW: largeW - 2 * GAP - 0.054,
+    dividerT: 0.012,
+    dividerH: drawerH - 0.042,
+    dividerD: drawerBodyD - 0.05,
+  };
+
   applyVisibility();
   updateRoom(room, { width: W, height: H, depth: D });
 }
@@ -753,6 +956,738 @@ function applyVisibility() {
   });
 }
 
+function focusNum(value) {
+  return Math.round(value * 1000);
+}
+
+function focusNum1(value) {
+  return (Math.round(value * 10000) / 10).toFixed(1);
+}
+
+function focusMm(value) {
+  return `${focusNum(value)} mm`;
+}
+
+function focusBox(x1, x2, y1, y2, z1, z2, fill = true) {
+  return { x1, x2, y1, y2, z1, z2, fill };
+}
+
+function focusLabel(text, x, y, z, type = 'dim') {
+  return { text, x, y, z, type };
+}
+
+function buildFocusStops() {
+  if (!layout) return [];
+  const L = layout;
+  const front = L.frontZ;
+  const door = L.doorZ;
+  const drawerFront = L.drawerFrontZ + L.drawerTravel;
+  const drawerBack = drawerFront - L.drawerBodyD;
+  const drawerMid = (L.bay2L + L.bay3R) / 2;
+  const bayList = [
+    { x1: L.bay1L, x2: L.bay1R, label: focusNum1(L.largeW) },
+    { x1: L.bay2L, x2: L.bay2R, label: focusNum1(L.largeW) },
+    { x1: L.bay3L, x2: L.bay3R, label: focusNum1(L.largeW) },
+    { x1: L.bay4L, x2: L.bay4R, label: focusNum1(L.largeW) },
+    { x1: L.bay5L, x2: L.bay5R, label: focusNum1(L.narrowW) },
+  ];
+  const bay2Drawer2 = L.bay2Drawers.find((item) => item.index === 1);
+  const bay3Drawer3 = L.bay3Drawers.find((item) => item.index === 2);
+  const dividerBoxes = [bay2Drawer2, bay3Drawer3].flatMap((drawer) => {
+    const centerY = (drawer.yBottom + drawer.yTop) / 2;
+    const zCenter = L.drawerTravel + (L.drawerFrontZ - L.doorT / 2 - L.drawerBodyD / 2) + 0.006;
+    const z1 = zCenter - L.dividerD / 2;
+    const z2 = zCenter + L.dividerD / 2;
+    return [-1, 1].map((sign) => {
+      const x = drawer.xCenter + sign * L.drawerInnerW / 6;
+      return focusBox(
+        x - L.dividerT / 2, x + L.dividerT / 2,
+        centerY - L.dividerH / 2, centerY + L.dividerH / 2,
+        z1, z2,
+      );
+    });
+  });
+  const bay2DoorBottom = L.bay2DrawerZoneTop + GAP;
+  const bay3DoorBottom = L.bay3DrawerZoneTop + GAP;
+  const topDoorBottom = L.H - L.t - L.topRowH + GAP;
+
+  return [
+    {
+      id: 'overall',
+      part: '整体外形',
+      title: '整体外形',
+      value: `${focusMm(L.W)} × ${focusMm(L.H)} × ${focusMm(L.D)}`,
+      desc: `外形固定 ${focusNum(L.W)}×${focusNum(L.H)}×${focusNum(L.D)}；5 个分区、9 扇门，内部尺寸可调。`,
+      boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, -L.D / 2, L.D / 2, false)],
+      dims: [
+        {
+          start: [-L.W / 2, L.H, front],
+          end: [L.W / 2, L.H, front],
+          offset: [0, 0.18, 0],
+          label: `总宽 ${focusNum(L.W)}`,
+          tick: 0.045,
+        },
+        {
+          start: [-L.W / 2, 0, front],
+          end: [-L.W / 2, L.H, front],
+          offset: [-0.2, 0, 0],
+          label: `总高 ${focusNum(L.H)}`,
+          tick: 0.045,
+        },
+        {
+          start: [L.W / 2, L.H * 0.35, -L.D / 2],
+          end: [L.W / 2, L.H * 0.35, L.D / 2],
+          offset: [0.2, 0, 0],
+          label: `总深 ${focusNum(L.D)}`,
+          tick: 0.04,
+        },
+      ],
+      labels: [
+        focusLabel('整体外形', 0, L.H * 0.56, front + 0.04, 'part'),
+      ],
+      dir: [0.02, 0.12, 1],
+      margin: 1.35,
+    },
+    {
+      id: 'five-bays',
+      part: '5 分区 / 竖板',
+      title: '5 分区：4 大格 + 最右窄格',
+      value: `4 × ${focusNum1(L.largeW)} + ${focusNum1(L.narrowW)}`,
+      desc: `总宽 ${focusNum(L.W)}，4 个大格各约 ${focusNum1(L.largeW)}，最右窄格 ${focusNum1(L.narrowW)}；6 块 ${focusNum(L.t)}mm 竖板。`,
+      boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, front - 0.01, front + 0.01, false)],
+      dims: bayList.map((bay) => ({
+        start: [bay.x1, L.H, front],
+        end: [bay.x2, L.H, front],
+        offset: [0, 0.14, 0],
+        label: bay.label,
+        tick: 0.03,
+      })),
+      labels: [
+        focusLabel(`6 块 ${focusNum(L.t)}mm 竖板`, 0, L.H * 0.62, front + 0.05, 'part'),
+      ],
+      dir: [0.02, 0.12, 1],
+      margin: 1.3,
+    },
+    {
+      id: 'bay1-pants',
+      part: '第 1 格 / 双层裤架',
+      title: '第 1 格：上挂 832 / 裤架 664 / 下挂 832',
+      value: `832 / 664 / 832`,
+      desc: '第 1 格分三区；中段为内外双层裤架，前后两根挂杆同高；上层靠顶为活动层板，两侧有支撑钉。',
+      boxes: [
+        focusBox(L.bay1L, L.bay1R, 0, L.H, -L.D / 2, L.D / 2, false),
+        focusBox(L.bay1L, L.bay1R, L.leftMiddleBottom, L.leftMiddleTop,
+          L.interiorZ - L.interiorD / 2, L.interiorZ + L.interiorD / 2, false),
+      ],
+      dims: [
+        {
+          start: [L.bay1L, L.t, door],
+          end: [L.bay1L, L.t + L.leftBottomH, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.leftBottomH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay1L, L.leftMiddleBottom, door],
+          end: [L.bay1L, L.leftMiddleTop, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.leftPantsH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay1L, L.leftShelf2C + L.t / 2, door],
+          end: [L.bay1L, L.H - L.t, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.leftTopH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay1C, L.pantsRodY, L.interiorZ - 0.13],
+          end: [L.bay1C, L.pantsRodY, L.interiorZ + 0.13],
+          offset: [0, 0.1, 0],
+          label: '前后 260',
+          tick: 0.02,
+        },
+      ],
+      leaders: [
+        {
+          point: [L.bay1C, L.leftShelf2C, L.interiorZ + L.interiorD / 2],
+          labelPoint: [L.bay1C + 0.35, L.leftShelf2C + 0.2, door + 0.08],
+          label: '上层活动层板',
+        },
+      ],
+      labels: [],
+      openParts: ['第 1 格左门', '第 1 格右门'],
+      dir: [-0.4, 0.12, 1],
+      margin: 1.5,
+      minDistance: 1.2,
+      targetY: 1.05,
+    },
+    {
+      id: 'bay2',
+      part: '第 2 格 / 长衣 + 2 抽屉',
+      title: '第 2 格：顶排 400 / 长衣 / 2 抽屉',
+      value: `400 / ${focusNum(L.longH2)} / 2×200`,
+      desc: `顶排 ${focusNum(L.topRowH)}，长衣区约 ${focusNum(L.longH2)}，底部 2 个 ${focusNum(L.drawerH)} 抽屉；门底停在抽屉上方（约 ${focusNum(bay2DoorBottom)}），抽屉外露。`,
+      boxes: [
+        focusBox(L.bay2L, L.bay2R, 0, L.H, -L.D / 2, L.D / 2, false),
+        focusBox(L.bay2L, L.bay2R, L.t, L.t + 2 * L.drawerH + L.t,
+          L.drawerFrontZ - 0.01, L.drawerFrontZ + 0.01),
+      ],
+      dims: [
+        {
+          start: [L.bay2L, L.H - L.t - L.topRowH, door],
+          end: [L.bay2L, L.H - L.t, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.topRowH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay2L, L.bay2DrawerShelfC + L.t / 2, door],
+          end: [L.bay2L, L.bay2TopShelfC - L.t / 2, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.longH2)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay2L, L.t, L.drawerFrontZ],
+          end: [L.bay2L, L.t + L.drawerH, L.drawerFrontZ],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.drawerH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay2L, L.t + L.drawerH + L.t, L.drawerFrontZ],
+          end: [L.bay2L, L.t + 2 * L.drawerH + L.t, L.drawerFrontZ],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.drawerH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+      ],
+      leaders: [
+        {
+          point: [L.bay2R - 0.03, bay2DoorBottom, door],
+          labelPoint: [L.bay2R + 0.2, bay2DoorBottom + 0.12, door + 0.08],
+          label: `门底 ${focusNum(bay2DoorBottom)}`,
+        },
+      ],
+      labels: [
+        focusLabel('抽屉外露 / 与门板齐平', L.bay2C, 0.56, front + 0.05, 'part'),
+      ],
+      openParts: ['第 2 格左门', '第 2 格右门'],
+      dir: [0.05, 0.12, 1],
+      margin: 1.5,
+      targetY: 0.8,
+    },
+    {
+      id: 'bay3',
+      part: '第 3 格 / 长衣 + 3 抽屉',
+      title: '第 3 格：顶排 400 / 长衣 / 3 抽屉',
+      value: `400 / ${focusNum(L.longH3)} / 3×200`,
+      desc: `顶排 ${focusNum(L.topRowH)}，长衣区约 ${focusNum(L.longH3)}，底部 3 个 ${focusNum(L.drawerH)} 抽屉；门底停在抽屉上方（约 ${focusNum(bay3DoorBottom)}），抽屉外露。`,
+      boxes: [
+        focusBox(L.bay3L, L.bay3R, 0, L.H, -L.D / 2, L.D / 2, false),
+        focusBox(L.bay3L, L.bay3R, L.t, L.t + 3 * L.drawerH + 2 * L.t,
+          L.drawerFrontZ - 0.01, L.drawerFrontZ + 0.01),
+      ],
+      dims: [
+        {
+          start: [L.bay3L, L.H - L.t - L.topRowH, door],
+          end: [L.bay3L, L.H - L.t, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.topRowH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay3L, L.bay3DrawerShelfC + L.t / 2, door],
+          end: [L.bay3L, L.bay3TopShelfC - L.t / 2, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.longH3)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        ...[0, 1, 2].map((index) => ({
+          start: [L.bay3L, L.t + index * (L.drawerH + L.t), L.drawerFrontZ],
+          end: [L.bay3L, L.t + index * (L.drawerH + L.t) + L.drawerH, L.drawerFrontZ],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.drawerH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        })),
+      ],
+      leaders: [
+        {
+          point: [L.bay3R - 0.03, bay3DoorBottom, door],
+          labelPoint: [L.bay3R + 0.2, bay3DoorBottom + 0.12, door + 0.08],
+          label: `门底 ${focusNum(bay3DoorBottom)}`,
+        },
+      ],
+      labels: [
+        focusLabel('3 个抽屉 / 门底 657', L.bay3C, 0.75, front + 0.05, 'part'),
+      ],
+      openParts: ['第 3 格左门', '第 3 格右门'],
+      dir: [0.05, 0.12, 1],
+      margin: 1.5,
+      targetY: 0.8,
+    },
+    {
+      id: 'bay4',
+      part: '第 4 格 / 短衣 + 4 格',
+      title: '第 4 格：短衣 1000 + 4 个层板格',
+      value: `1000 / ${focusNum1(L.shelfH4)} + 3×${focusNum1(L.shelfH4Upper)}`,
+      desc: `短衣区 ${focusNum(L.shortH)}；下方 1 格约 ${focusNum1(L.shelfH4)}，上方 3 格各约 ${focusNum1(L.shelfH4Upper)}；最上方靠顶层板为活动层板。`,
+      boxes: [focusBox(L.bay4L, L.bay4R, 0, L.H, -L.D / 2, L.D / 2, false)],
+      dims: [
+        {
+          start: [L.bay4L, L.bay4ShortShelfC + L.t / 2, door],
+          end: [L.bay4L, L.H - L.t, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.shortH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay4L, L.t, door],
+          end: [L.bay4L, L.bay4Shelf1C - L.t / 2, door],
+          offset: [-0.14, 0, 0.02],
+          label: focusNum1(L.shelfH4),
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        ...[
+          [L.bay4Shelf1C + L.t / 2, L.bay4Shelf2C - L.t / 2],
+          [L.bay4Shelf2C + L.t / 2, L.bay4Shelf3C - L.t / 2],
+          [L.bay4Shelf3C + L.t / 2, L.bay4ShortShelfC - L.t / 2],
+        ].map(([bottom, top]) => ({
+          start: [L.bay4L, bottom, door],
+          end: [L.bay4L, top, door],
+          offset: [-0.14, 0, 0.02],
+          label: focusNum1(L.shelfH4Upper),
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        })),
+      ],
+      leaders: [
+        {
+          point: [L.bay4C, L.bay4Shelf3C, L.interiorZ + L.interiorD / 2],
+          labelPoint: [L.bay4C + 0.32, L.bay4Shelf3C + 0.2, door + 0.08],
+          label: '活动层板 / 支撑钉',
+        },
+      ],
+      labels: [
+        focusLabel('4 格：下 1 + 上 3', L.bay4C, L.H * 0.45, front + 0.05, 'part'),
+      ],
+      openParts: ['第 4 格左门', '第 4 格右门'],
+      dir: [0.05, 0.12, 1],
+      margin: 1.5,
+      targetY: 0.85,
+    },
+    {
+      id: 'bay5',
+      part: '最右窄格 / 顶格门',
+      title: '最右窄格 399.2 + 顶格门',
+      value: `399.2 / 400 / 1946`,
+      desc: `最右窄格宽 ${focusNum1(L.narrowW)}；顶部 400 格加 1 扇单门（右铰、拉手在左）；与第 4 格最下层板同高的层板前缩 150；下部通高挂衣约 ${focusNum(L.narrowHangH)}。`,
+      boxes: [
+        focusBox(L.bay5L, L.bay5R, 0, L.H, -L.D / 2, L.D / 2, false),
+        focusBox(L.bay5L, L.bay5R, L.H - L.t - L.topRowH, L.H - L.t,
+          -L.D / 2, L.D / 2, false),
+      ],
+      dims: [
+        {
+          start: [L.bay5L, L.H, front],
+          end: [L.bay5R, L.H, front],
+          offset: [0, 0.14, 0],
+          label: focusNum1(L.narrowW),
+          tick: 0.025,
+        },
+        {
+          start: [L.bay5R, L.H - L.t - L.topRowH, door],
+          end: [L.bay5R, L.H - L.t, door],
+          offset: [0.14, 0, 0],
+          label: `${focusNum(L.topRowH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay5R, L.t, door],
+          end: [L.bay5R, L.H - L.topRowH - 2 * L.t, door],
+          offset: [0.14, 0, 0],
+          label: `${focusNum(L.narrowHangH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay5C, L.bay5ShelfC, L.interiorZ + L.interiorD / 2 - 0.15],
+          end: [L.bay5C, L.bay5ShelfC, L.interiorZ + L.interiorD / 2],
+          offset: [0, 0.1, 0],
+          label: '前缩 150',
+          tick: 0.02,
+        },
+      ],
+      labels: [
+        focusLabel('顶格门 1 扇 / 右铰', L.bay5C, L.H - L.t - L.topRowH + 0.15, front + 0.05, 'part'),
+      ],
+      openParts: ['最右顶格门'],
+      dir: [0.35, 0.15, 1],
+      margin: 1.5,
+      targetY: 0.95,
+    },
+    {
+      id: 'drawer-dividers',
+      part: '抽屉活动隔板',
+      title: '第 2 格抽 2 / 第 3 格抽 3：各 2 块',
+      value: `2 块 / 厚 12 / 深 450`,
+      desc: '两格指定抽屉内各 2 块纵向活动隔板，垂直立放、平行于抽拉方向，随抽屉一起拉出；无固定件，靠衣物夹紧。',
+      boxes: [
+        focusBox(L.bay2L, L.bay2R, bay2Drawer2.yBottom, bay2Drawer2.yTop, drawerBack, drawerFront, false),
+        focusBox(L.bay2L, L.bay2R, bay2Drawer2.yBottom, bay2Drawer2.yTop, drawerFront - 0.01, drawerFront + 0.01),
+        focusBox(L.bay3L, L.bay3R, bay3Drawer3.yBottom, bay3Drawer3.yTop, drawerBack, drawerFront, false),
+        focusBox(L.bay3L, L.bay3R, bay3Drawer3.yBottom, bay3Drawer3.yTop, drawerFront - 0.01, drawerFront + 0.01),
+        ...dividerBoxes,
+      ],
+      dims: [
+        {
+          start: [L.bay3L, bay3Drawer3.yBottom, drawerFront],
+          end: [L.bay3L, bay3Drawer3.yTop, drawerFront],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(L.drawerH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay3L, bay3Drawer3.yTop, drawerFront],
+          end: [L.bay3R, bay3Drawer3.yTop, drawerFront],
+          offset: [0, 0.1, 0],
+          label: focusNum1(L.largeW),
+          tick: 0.02,
+        },
+      ],
+      leaders: [
+        {
+          point: [L.bay3C - L.drawerInnerW / 6, bay3Drawer3.yTop - 0.02, drawerFront - 0.1],
+          labelPoint: [L.bay3C + 0.42, bay3Drawer3.yTop + 0.18, drawerFront + 0.08],
+          label: '2 块 / 厚 12 / 深 450',
+        },
+      ],
+      labels: [
+        focusLabel('第 2 格抽 2 / 第 3 格抽 3', drawerMid, bay3Drawer3.yTop + 0.28, drawerFront + 0.06, 'part'),
+      ],
+      openParts: ['第 2 格抽屉 2', '第 3 格抽屉 3'],
+      dir: [0.15, 0.08, 1],
+      margin: 1.4,
+      targetY: 0.55,
+    },
+    {
+      id: 'nine-doors',
+      part: '9 扇门',
+      title: '9 扇门：4 组对开 + 右上顶格单门',
+      value: `9 扇 / 单扇 ${focusNum1(L.doorW)}`,
+      desc: `4 个大格各 2 扇对开（共 8 扇）+ 最右窄格顶部 1 扇单门；第 2/3 格门底分别停在 ${focusNum(bay2DoorBottom)} / ${focusNum(bay3DoorBottom)}，抽屉外露。`,
+      boxes: L.doorPanels.map((panel) => focusBox(
+        panel.x1, panel.x2, panel.y1, panel.y2, L.doorZ - 0.008, L.doorZ + 0.008, false,
+      )),
+      dims: [
+        {
+          start: [L.bay1L + GAP, L.H * 0.55, door],
+          end: [L.bay1L + GAP + L.doorW, L.H * 0.55, door],
+          offset: [0, 0.12, 0],
+          label: focusNum1(L.doorW),
+          tick: 0.025,
+        },
+        {
+          start: [L.bay2L, 0, door],
+          end: [L.bay2L, bay2DoorBottom, door],
+          offset: [-0.14, 0, 0.02],
+          label: `门底 ${focusNum(bay2DoorBottom)}`,
+          tick: 0.02,
+        },
+        {
+          start: [L.bay3L, 0, door],
+          end: [L.bay3L, bay3DoorBottom, door],
+          offset: [-0.14, 0, 0.02],
+          label: `门底 ${focusNum(bay3DoorBottom)}`,
+          tick: 0.02,
+        },
+      ],
+      labels: [
+        focusLabel('4 组对开 + 右上顶格单门', 0, L.H * 0.75, front + 0.05, 'part'),
+      ],
+      dir: [0.02, 0.12, 1],
+      margin: 1.35,
+    },
+  ];
+}
+
+function clearFocusGroup() {
+  if (focusGroup) {
+    disposeGroup(focusGroup);
+    viewer.scene.remove(focusGroup);
+    focusGroup = null;
+  }
+}
+
+function renderFocusStop(stop) {
+  clearFocusGroup();
+  focusGroup = new THREE.Group();
+  focusGroup.name = 'focus-highlight';
+  viewer.scene.add(focusGroup);
+
+  stop.boxes.forEach((spec) => {
+    const width = spec.x2 - spec.x1;
+    const height = spec.y2 - spec.y1;
+    const depth = spec.z2 - spec.z1;
+    const geometry = new THREE.BoxGeometry(width, height, depth);
+    const fill = new THREE.Mesh(geometry, focusFillMat);
+    fill.position.set((spec.x1 + spec.x2) / 2, (spec.y1 + spec.y2) / 2, (spec.z1 + spec.z2) / 2);
+    fill.renderOrder = 20;
+    fill.visible = spec.fill !== false;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), focusEdgeMat);
+    edges.position.copy(fill.position);
+    edges.renderOrder = 21;
+    focusGroup.add(fill, edges);
+  });
+
+  (stop.dims || []).forEach((spec) => {
+    focusGroup.add(createDimensionAnnotation({ material: focusDimMat, ...spec }));
+  });
+
+  (stop.leaders || []).forEach((spec) => {
+    focusGroup.add(createLeaderAnnotation({ material: focusDimMat, ...spec }));
+  });
+
+  stop.labels.forEach((spec) => {
+    const label = createDimensionLabel(spec.text);
+    label.position.set(spec.x, spec.y, spec.z);
+    label.element.classList.add(
+      spec.type === 'part' ? 'focus-part-label'
+        : spec.type === 'ratio' ? 'focus-ratio-label'
+          : 'focus-dim-label',
+    );
+    focusGroup.add(label);
+  });
+}
+
+function focusCameraPose(stop) {
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  let minZ = Infinity, maxZ = -Infinity;
+  stop.boxes.forEach((spec) => {
+    minX = Math.min(minX, spec.x1);
+    maxX = Math.max(maxX, spec.x2);
+    minY = Math.min(minY, spec.y1);
+    maxY = Math.max(maxY, spec.y2);
+    minZ = Math.min(minZ, spec.z1);
+    maxZ = Math.max(maxZ, spec.z2);
+  });
+  (stop.dims || []).forEach((dim) => {
+    const ox = dim.offset[0];
+    const oy = dim.offset[1];
+    const oz = dim.offset[2];
+    [[dim.start, 0], [dim.end, 0], [dim.start, 1], [dim.end, 1]].forEach(([point, offset]) => {
+      const x = point[0] + (offset ? ox : 0);
+      const y = point[1] + (offset ? oy : 0);
+      const z = point[2] + (offset ? oz : 0);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+      minZ = Math.min(minZ, z);
+      maxZ = Math.max(maxZ, z);
+    });
+  });
+  if (!Number.isFinite(minX)) {
+    minX = -0.2; maxX = 0.2; minY = 0; maxY = 0.5; minZ = -0.2; maxZ = 0.2;
+  }
+  const center = new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+  if (Number.isFinite(stop.targetY)) center.y = stop.targetY;
+  const size = new THREE.Vector3(maxX - minX, maxY - minY, maxZ - minZ);
+  const vFov = THREE.MathUtils.degToRad(viewer.camera.fov);
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * Math.max(viewer.camera.aspect, 0.45));
+  const margin = stop.margin ?? 1.6;
+  const distanceV = (size.y * 0.5 * margin) / Math.tan(vFov / 2);
+  const distanceH = (size.x * 0.5 * margin) / Math.tan(hFov / 2);
+  const distanceD = size.z * 0.5 + 0.8;
+  const distance = Math.max(distanceV, distanceH, distanceD, stop.minDistance ?? 0.85);
+  const direction = new THREE.Vector3(...stop.dir).normalize();
+  return {
+    position: center.clone().add(direction.multiplyScalar(distance)),
+    target: center,
+  };
+}
+
+function setDimensionLabelsVisible(visible) {
+  if (!dimensionGroup) return;
+  dimensionGroup.visible = visible;
+  dimensionGroup.traverse((object) => {
+    if (object.isCSS2DObject) object.visible = visible;
+  });
+}
+
+function computeDefaultPose() {
+  const camera = viewer.camera.clone();
+  const controls = { target: new THREE.Vector3(), update() {} };
+  fitCamera(camera, controls, {
+    width: state.W / 1000,
+    height: state.H / 1000,
+    depth: state.D / 1000,
+  }, {
+    direction: new THREE.Vector3(0.02, 0.12, 1),
+    margin: 1.42,
+  });
+  return { position: camera.position.clone(), target: controls.target.clone() };
+}
+
+function updateTourOverlay(stop, index) {
+  if (!tourOverlay) return;
+  tourOverlay.hidden = false;
+  tourProgress.textContent = `${index + 1} / ${tour.stops.length}`;
+  tourTitle.textContent = stop.title;
+  tourDesc.textContent = stop.desc;
+  tourPart.textContent = `部件：${stop.part}`;
+  tourValue.textContent = stop.value;
+  if (tourBar) tourBar.style.width = `${((index + 1) / tour.stops.length) * 100}%`;
+  if (tourPrev) tourPrev.disabled = index <= 0;
+  if (tourNext) tourNext.disabled = index >= tour.stops.length - 1;
+  if (tourEnd) tourEnd.disabled = false;
+}
+
+function setTourParts(labels) {
+  tour.openLabels.forEach((label) => {
+    const part = interactiveParts.find((item) => item.label === label);
+    if (part) part.target = 0;
+  });
+  tour.openLabels = labels ? [...labels] : [];
+  tour.openLabels.forEach((label) => {
+    const part = interactiveParts.find((item) => item.label === label);
+    if (part) part.target = 1;
+  });
+}
+
+function showFocusStop(index) {
+  if (!tour.active || tour.phase === 'returning') return;
+  if (index < 0 || index >= tour.stops.length) return;
+  const stop = tour.stops[index];
+  tour.index = index;
+  tour.phase = 'moving';
+  tour.elapsed = 0;
+  renderFocusStop(stop);
+  setTourParts(stop.openParts || []);
+  updateTourOverlay(stop, index);
+  const pose = focusCameraPose(stop);
+  tour.fromPos.copy(viewer.camera.position);
+  tour.fromTarget.copy(viewer.controls.target);
+  tour.toPos.copy(pose.position);
+  tour.toTarget.copy(pose.target);
+  viewer.controls.enabled = false;
+}
+
+function startTour() {
+  if (tour.active || !layout) return;
+  const stops = buildFocusStops();
+  if (!stops.length) return;
+  tour.stops = stops;
+  tour.active = true;
+  tour.index = 0;
+  tour.elapsed = 0;
+  tour.phase = 'moving';
+  const defaultPose = computeDefaultPose();
+  tour.returnPos.copy(defaultPose.position);
+  tour.returnTarget.copy(defaultPose.target);
+  setPartTargets(false);
+  if (startTourButton) {
+    startTourButton.disabled = true;
+    startTourButton.innerHTML = '<span class="tour-start-icon">◌</span><span class="tour-start-copy"><strong>关键约束浏览中…</strong><small>用下方按钮切换 / 结束</small></span>';
+  }
+  setDimensionLabelsVisible(false);
+  tooltip.classList.remove('is-visible');
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  showFocusStop(0);
+}
+
+function finishTour() {
+  tour.active = false;
+  tour.phase = 'idle';
+  tour.elapsed = 0;
+  clearFocusGroup();
+  tour.openLabels = [];
+  if (tourOverlay) tourOverlay.hidden = true;
+  viewer.camera.position.copy(tour.returnPos);
+  viewer.controls.target.copy(tour.returnTarget);
+  viewer.controls.enabled = true;
+  viewer.controls.update();
+  setPartTargets(false);
+  if (startTourButton) {
+    startTourButton.disabled = false;
+    startTourButton.innerHTML = startTourLabel;
+  }
+  setDimensionLabelsVisible(state.showDims);
+  applyVisibility();
+}
+
+function endTour() {
+  if (!tour.active || tour.phase === 'returning') return;
+  tour.phase = 'returning';
+  tour.elapsed = 0;
+  tour.fromPos.copy(viewer.camera.position);
+  tour.fromTarget.copy(viewer.controls.target);
+  clearFocusGroup();
+  tour.openLabels = [];
+  if (tourOverlay) tourOverlay.hidden = true;
+  setPartTargets(false);
+  viewer.controls.enabled = false;
+}
+
+function abortTourForRebuild() {
+  if (!tour.active) return;
+  tour.active = false;
+  tour.phase = 'idle';
+  tour.elapsed = 0;
+  clearFocusGroup();
+  tour.openLabels = [];
+  if (tourOverlay) tourOverlay.hidden = true;
+  viewer.controls.enabled = true;
+  if (startTourButton) {
+    startTourButton.disabled = false;
+    startTourButton.innerHTML = startTourLabel;
+  }
+  setDimensionLabelsVisible(state.showDims);
+}
+
+function updateTour(delta) {
+  if (!tour.active) return;
+  if (tour.phase !== 'moving' && tour.phase !== 'returning') return;
+  tour.elapsed += delta;
+  const k = Math.min(1, tour.elapsed / tour.moveDuration);
+  const eased = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  if (tour.phase === 'moving') {
+    viewer.camera.position.lerpVectors(tour.fromPos, tour.toPos, eased);
+    viewer.controls.target.lerpVectors(tour.fromTarget, tour.toTarget, eased);
+  } else {
+    viewer.camera.position.lerpVectors(tour.fromPos, tour.returnPos, eased);
+    viewer.controls.target.lerpVectors(tour.fromTarget, tour.returnTarget, eased);
+  }
+  viewer.controls.update();
+  if (k >= 1) {
+    if (tour.phase === 'moving') {
+      tour.phase = 'idle';
+      tour.elapsed = 0;
+      viewer.controls.enabled = true;
+      viewer.controls.update();
+    } else {
+      finishTour();
+    }
+  }
+}
+
 function applyPartTransform(part) {
   if (part.type === 'door') {
     part.group.rotation.y = part.hingeSign * part.open * part.angle;
@@ -762,6 +1697,7 @@ function applyPartTransform(part) {
 }
 
 function rebuild() {
+  if (tour.active) abortTourForRebuild();
   normalizeState();
   const direction = viewer.camera.position.clone().sub(viewer.controls.target);
   if (direction.lengthSq() < 1e-6) direction.set(0.02, 0.12, 1);
@@ -796,6 +1732,10 @@ function rebuild() {
 }
 
 function resetView() {
+  if (tour.active) {
+    showFocusStop(tour.index);
+    return;
+  }
   fitCamera(
     viewer.camera,
     viewer.controls,
@@ -888,6 +1828,41 @@ document.querySelectorAll('[data-number]').forEach((input) => {
   });
 });
 
+document.querySelectorAll('.decision-item[data-target]').forEach((item) => {
+  item.addEventListener('click', () => {
+    const target = document.getElementById(item.dataset.target);
+    if (!target) return;
+    const details = target.closest('details');
+    if (details) details.open = true;
+    requestAnimationFrame(() => {
+      target.focus({ preventScroll: true });
+      if (typeof target.select === 'function') target.select();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+});
+
+if (startTourButton) startTourButton.addEventListener('click', startTour);
+if (tourPrev) tourPrev.addEventListener('click', () => showFocusStop(tour.index - 1));
+if (tourNext) tourNext.addEventListener('click', () => showFocusStop(tour.index + 1));
+if (tourEnd) tourEnd.addEventListener('click', endTour);
+
+document.addEventListener('keydown', (event) => {
+  if (!tour.active) return;
+  const tag = event.target && event.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    showFocusStop(tour.index - 1);
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    showFocusStop(tour.index + 1);
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    endTour();
+  }
+});
+
 document.getElementById('reset-dimensions').addEventListener('click', () => {
   Object.assign(state, DEFAULTS);
   normalizeState();
@@ -913,7 +1888,7 @@ document.getElementById('reset-view').addEventListener('click', resetView);
 
 document.getElementById('show-dims').addEventListener('change', (event) => {
   state.showDims = event.target.checked;
-  applyVisibility();
+  setDimensionLabelsVisible(state.showDims);
 });
 
 document.getElementById('show-props').addEventListener('change', (event) => {
@@ -925,6 +1900,13 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
+  if (tour.active) updateTour(delta);
+  if (tour.active && focusGroup) {
+    const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 6.2);
+    focusFillMat.opacity = 0.07 + 0.13 * pulse;
+    focusEdgeMat.opacity = 0.5 + 0.45 * pulse;
+    focusLineMat.opacity = 0.45 + 0.4 * pulse;
+  }
   for (const part of interactiveParts) {
     if (Math.abs(part.open - part.target) > 0.0005) {
       part.open = damp(part.open, part.target, 8.5, delta);
