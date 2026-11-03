@@ -53,7 +53,7 @@ const SCENE = {
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const DOOR_HANDLE_Y = 1.0;
-const TRAPEZOID_HANDLE_INSET = 0.2;
+const TRAPEZOID_HANDLE_INSET = 0.06;
 const round10 = (value) => Math.round(value / 10) * 10;
 const format = (value, digits = 0) => Number(value).toFixed(digits);
 
