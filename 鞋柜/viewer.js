@@ -43,6 +43,9 @@ const FRONT_BOTTOM = [200, 120, 130, 130, 170];
 const FRONT_UPPER = [100, 120, 168, 180, 230];
 const FRONT_DRAWER = 170;
 const FRONT_NICHE = 370;
+// Right 420 tower keeps its original 9-layer layout: the two bottom layers
+// are the through 200/120; the upper 7 are the original heights scaled to fit.
+const RIGHT_TOWER = [133, 180, 236, 164, 164, 472, 472];
 
 const state = {
   ...DEFAULTS,
@@ -177,6 +180,8 @@ function updateReadouts() {
   document.getElementById('front-drawer').textContent = `${FRONT_DRAWER} mm`;
   document.getElementById('front-niche').textContent = `${FRONT_NICHE} mm`;
   document.getElementById('front-upper').textContent = `${FRONT_UPPER.join(' / ')} mm`;
+  document.getElementById('right-heights').textContent =
+    '472 / 472 / 164 / 164 / 236 / 180 / 133 / 120 / 200 mm';
   document.getElementById('mid-door-width').textContent = `${format(state.midDoorW, 1)} mm`;
   document.getElementById('bench-size').textContent =
     `${format(state.benchW, 0)} × ${format(state.benchH, 0)} / ${format(state.benchPull, 0)}`;
@@ -564,8 +569,8 @@ function buildCabinet() {
 
   // Left cabinet is intentionally open: no doors on the 408-wide full-depth bay.
 
-  // Front bank: middle 800 + right 420 = 1220 net; the bottom two layers
-  // run through both; 170 drawer, 370 entry counter, upper 5.
+  // Front middle 800: bottom 5 (through 200/120), 170 drawer, 370 counter,
+  // upper 5. Right 420 keeps its 9-layer tower; only the bottom 2 are through.
   const frontX0 = midInner0;
   const frontX1 = narrowInner1;
   const frontW = frontX1 - frontX0;
@@ -576,11 +581,14 @@ function buildCabinet() {
     cabinetGroup.add(box(frontW, t, interiorD, materials.wood, {
       x: frontCenterX, y: y + t / 2, z: interiorZ,
     }));
-  const addSplitShelf = (y) =>
-    cabinetGroup.add(
-      box(midW, t, interiorD, materials.wood, { x: midCenter, y: y + t / 2, z: interiorZ }),
-      box(narrowW, t, interiorD, materials.wood, { x: narrowCenter, y: y + t / 2, z: interiorZ }),
-    );
+  const addMiddleShelf = (y) =>
+    cabinetGroup.add(box(midW, t, interiorD, materials.wood, {
+      x: midCenter, y: y + t / 2, z: interiorZ,
+    }));
+  const addRightShelf = (y) =>
+    cabinetGroup.add(box(narrowW, t, interiorD, materials.wood, {
+      x: narrowCenter, y: y + t / 2, z: interiorZ,
+    }));
 
   let fy = 0;
   const frontBottomCells = [];
@@ -590,12 +598,11 @@ function buildCabinet() {
     fy += height;
     if (index < FRONT_BOTTOM.length - 1) {
       if (index < 2) addFullShelf(fy);
-      else addSplitShelf(fy);
+      else addMiddleShelf(fy);
       fy += t;
     }
   });
-  // Shelf above the 170 layer is the drawer bottom, split at the middle/right.
-  addSplitShelf(fy);
+  addMiddleShelf(fy);
   fy += t;
   const drawerBottom = fy;
   const drawerTop = drawerBottom + FRONT_DRAWER / 1000;
@@ -607,11 +614,10 @@ function buildCabinet() {
     label: '前柜抽屉 170',
   });
 
-  // Entry counter: full-width surface above the drawer; 370 open niche above.
-  addFullShelf(drawerTop);
+  addMiddleShelf(drawerTop);
   const nicheBottom = drawerTop + t;
   const nicheTop = nicheBottom + FRONT_NICHE / 1000;
-  addFullShelf(nicheTop);
+  addMiddleShelf(nicheTop);
   const upperBottom = nicheTop + t;
 
   let uy = upperBottom;
@@ -621,16 +627,32 @@ function buildCabinet() {
     frontUpperCells.push({ bottom: uy, top: uy + height });
     uy += height;
     if (index < FRONT_UPPER.length - 1) {
-      addSplitShelf(uy);
+      addMiddleShelf(uy);
       uy += t;
     }
   });
-  const topPanelThickness = Math.max(0.012, H - uy);
-  cabinetGroup.add(box(frontW, topPanelThickness, interiorD, materials.wood, {
-    x: frontCenterX, y: uy + topPanelThickness / 2, z: interiorZ,
+  cabinetGroup.add(box(midW, Math.max(0.012, H - uy), interiorD, materials.wood, {
+    x: midCenter, y: uy + Math.max(0.012, H - uy) / 2, z: interiorZ,
   }));
 
-  // Middle upper 5 doors; right upper 5 open; no lower doors.
+  // Right 420 tower: the bottom two 200/120 are already the through shelves;
+  // the upper 7 keep the original tower order, scaled to fit.
+  let ry = 0.356;
+  const rightTowerCells = [];
+  RIGHT_TOWER.forEach((heightMm, index) => {
+    const height = heightMm / 1000;
+    rightTowerCells.push({ bottom: ry, top: ry + height });
+    ry += height;
+    if (index < RIGHT_TOWER.length - 1) {
+      addRightShelf(ry);
+      ry += t;
+    }
+  });
+  cabinetGroup.add(box(narrowW, Math.max(0.012, H - ry), interiorD, materials.wood, {
+    x: narrowCenter, y: ry + Math.max(0.012, H - ry) / 2, z: interiorZ,
+  }));
+
+  // Middle upper 5 doors; right tower open; no lower doors.
   addDoor({
     xLeft: midInner0 + GAP,
     xRight: midMeetingX - GAP / 2,
@@ -648,16 +670,10 @@ function buildCabinet() {
     label: '前柜上门（右）',
   });
 
-  // Divider 2 only above the through bottom two layers and above the niche:
-  // 356-1010 for the upper-3 + drawer, 1416-2303 for the upper 5.
-  cabinetGroup.add(
-    box(t, 1.010 - 0.356, carcassD, materials.whiteCarcass, {
-      x: divider2X, y: (0.356 + 1.010) / 2, z: carcassZ,
-    }),
-    box(t, H - 1.416, carcassD, materials.whiteCarcass, {
-      x: divider2X, y: (1.416 + H) / 2, z: carcassZ,
-    }),
-  );
+  // Divider 2 runs from the top of the through 120 layer to the top.
+  cabinetGroup.add(box(t, H - 0.356, carcassD, materials.whiteCarcass, {
+    x: divider2X, y: (0.356 + H) / 2, z: carcassZ,
+  }));
 
   // Pull-out bench: 300 wide, right-aligned against the middle divider.
   const benchCenterX = leftInner1 - benchW / 2;
@@ -825,10 +841,30 @@ function buildCabinet() {
     });
   });
 
-  // Right under-counter 170 slot: a basket.
-  const counterBasket = createBasket(0.28, 0.14, 0.3, materials);
-  counterBasket.position.set(narrowCenter, drawerBottom + 0.002, interiorZ + 0.02);
-  propsGroup.add(counterBasket);
+  // Right 420 tower upper 7 layers: open shoes/boxes.
+  rightTowerCells.forEach((cell, index) => {
+    if (index >= 5) {
+      addShoeBoxRow(propsGroup, {
+        xCenter: narrowCenter,
+        y: cell.bottom + 0.002,
+        z: interiorZ + 0.035,
+        count: 2,
+        spacing: 0.2,
+        scale: 0.8,
+      });
+    } else {
+      addShoeRow(propsGroup, {
+        xCenter: narrowCenter,
+        y: cell.bottom + 0.002,
+        z: interiorZ + 0.03,
+        count: 2,
+        type: index % 2 === 0 ? 'sneaker' : 'boot',
+        colorOffset: index + 2,
+        spacing: 0.2,
+        scale: 0.8,
+      });
+    }
+  });
 
   // Back layer: 1220 wide, exactly the front middle+right width, behind the
   // front 400 and against the flat wall. It slides out to the right.
