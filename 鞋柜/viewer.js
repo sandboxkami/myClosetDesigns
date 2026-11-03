@@ -7,7 +7,6 @@ import {
   updateRoom,
   box,
   cylinder,
-  createBasket,
   createHangingGarment,
   createDimensions,
   disposeGroup,
@@ -755,7 +754,7 @@ function buildCabinet() {
     propsGroup.add(garment);
   }
 
-  // Bottom five layers: bottom two run through the full 1220; upper three split.
+  // Middle 800 bottom five: bottom two run through the full 1220; upper three are middle only. Right 420 has its own tower props.
   frontBottomCells.forEach((cell, index) => {
     if (index < 2) {
       addShoeRow(propsGroup, {
@@ -777,49 +776,13 @@ function buildCabinet() {
         colorOffset: index * 2,
         spacing: 0.2,
       });
-      addShoeRow(propsGroup, {
-        xCenter: narrowCenter,
-        y: cell.bottom + 0.002,
-        z: interiorZ + 0.03,
-        count: 2,
-        type: index === 4 ? 'boot' : 'heel',
-        colorOffset: index + 1,
-        spacing: 0.2,
-      });
     }
   });
 
-  // 370 entry niche: bag, tray, keys.
+  // 370 entry niche: only the bag; no extra tray/keys props.
   const nicheBag = createBag();
-  nicheBag.position.set(frontCenterX - 0.32, nicheBottom, interiorZ + 0.02);
+  nicheBag.position.set(midCenter - 0.18, nicheBottom, interiorZ + 0.02);
   propsGroup.add(nicheBag);
-
-  const tray = box(0.42, 0.018, 0.24, materials.woodDark, {
-    x: frontCenterX + 0.24,
-    y: nicheBottom + 0.02,
-    z: interiorZ + 0.06,
-  });
-  const trayRimA = box(0.42, 0.035, 0.018, materials.woodDark, {
-    x: frontCenterX + 0.24,
-    y: nicheBottom + 0.035,
-    z: interiorZ + 0.06 - 0.111,
-  });
-  const trayRimB = box(0.42, 0.035, 0.018, materials.woodDark, {
-    x: frontCenterX + 0.24,
-    y: nicheBottom + 0.035,
-    z: interiorZ + 0.06 + 0.111,
-  });
-  const keyA = box(0.08, 0.012, 0.025, materials.metal, {
-    x: frontCenterX + 0.12,
-    y: nicheBottom + 0.045,
-    z: interiorZ + 0.06,
-  });
-  const keyB = box(0.07, 0.012, 0.025, materials.metal, {
-    x: frontCenterX + 0.33,
-    y: nicheBottom + 0.045,
-    z: interiorZ + 0.06,
-  });
-  propsGroup.add(tray, trayRimA, trayRimB, keyA, keyB);
 
   // Upper 5: middle behind doors, right open; shoe boxes.
   frontUpperCells.forEach((cell) => {
@@ -829,14 +792,6 @@ function buildCabinet() {
       z: interiorZ + 0.035,
       count: 3,
       spacing: 0.24,
-      scale: 0.8,
-    });
-    addShoeBoxRow(propsGroup, {
-      xCenter: narrowCenter,
-      y: cell.bottom + 0.002,
-      z: interiorZ + 0.035,
-      count: 1,
-      spacing: 0,
       scale: 0.8,
     });
   });
