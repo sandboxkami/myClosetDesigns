@@ -295,6 +295,17 @@ input[type="checkbox"] {
   line-height: 1.65;
 }
 
+.fixed-size-note {
+  margin: 2px 0 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
 .computed {
   display: grid;
   grid-template-columns: 1fr 1fr;

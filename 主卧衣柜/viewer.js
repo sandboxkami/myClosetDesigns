@@ -15,10 +15,12 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
+const FIXED = Object.freeze({ W: 3700, H: 2400, D: 600 });
+
 const DEFAULTS = {
-  W: 3700,
-  H: 2400,
-  D: 600,
+  W: FIXED.W,
+  H: FIXED.H,
+  D: FIXED.D,
   topRowH: 400,
   drawerH: 200,
   leftTopH: 832,
@@ -80,9 +82,10 @@ let dimensionGroup = null;
 let firstBuild = true;
 
 function normalizeState() {
-  state.W = clamp(state.W, 3000, 4500);
-  state.H = clamp(state.H, 2200, 2800);
-  state.D = clamp(state.D, 500, 700);
+  // Overall size is fixed; only the internal layout stays adjustable.
+  state.W = FIXED.W;
+  state.H = FIXED.H;
+  state.D = FIXED.D;
   state.topRowH = clamp(state.topRowH, 300, 500);
   state.drawerH = clamp(state.drawerH, 180, 250);
   state.leftTopH = clamp(state.leftTopH, 600, 1000);
