@@ -24,21 +24,29 @@ const DEFAULTS = {
   catHoleD: 220,
 };
 
-// 7 modules: 400 / 400 / 400 / 500 / 400 / 400 / 400 = 2900.
-const COL_RATIOS = [1, 1, 1, 1.25, 1, 1, 1];
-const COL_RATIO_SUM = COL_RATIOS.reduce((sum, value) => sum + value, 0);
+// The base is 7 columns: 400 x 6 + 500.  The main cabinet above is 4 zones:
+// 800 cat steps + 700 + 700 middle + 700 cat-hole column.
+const BASE_RATIOS = [400, 400, 400, 500, 400, 400, 400];
+const UPPER_RATIOS = [800, 700, 700, 700];
+const RATIO_TOTAL = 2900;
 const BACK_T = 9;
+// Hole centres as a fraction of the right-hand 700 column, bottom to top.
+// The values deliberately zig-zag so the holes are not in one straight line.
+const HOLE_FRACTIONS = [0.3, 0.7, 0.4, 0.66, 0.48];
 
 const state = {
   ...DEFAULTS,
   showDims: true,
   showProps: true,
-  unit: 0,
+  baseCols: [],
+  upperCols: [],
   leftZoneW: 0,
+  midColW: 0,
+  rightColW: 0,
   rowH: 0,
   stagger: 0,
   holeClear: 0,
-  cols: [],
+  holePositions: [],
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -72,6 +80,8 @@ const MAT = {
   leafLight: new THREE.MeshStandardMaterial({ color: 0x8c9a74, roughness: 0.88 }),
   toy: new THREE.MeshStandardMaterial({ color: 0xc27f6d, roughness: 0.76 }),
   toyAlt: new THREE.MeshStandardMaterial({ color: 0x7f8f9a, roughness: 0.76 }),
+  socket: new THREE.MeshStandardMaterial({ color: 0xdedad2, roughness: 0.7 }),
+  socketHole: new THREE.MeshStandardMaterial({ color: 0x4b4741, roughness: 0.8 }),
 };
 
 let propsGroup = null;
@@ -87,9 +97,12 @@ function normalizeState() {
   state.t = clamp(Math.round(state.t), 16, 25);
   state.catHoleD = clamp(state.catHoleD, 180, 260);
 
-  state.unit = state.W / COL_RATIO_SUM;
-  state.leftZoneW = 2 * state.unit;
-  state.cols = COL_RATIOS.map((ratio) => ratio * state.unit);
+  const scale = state.W / RATIO_TOTAL;
+  state.baseCols = BASE_RATIOS.map((value) => value * scale);
+  state.upperCols = UPPER_RATIOS.map((value) => value * scale);
+  state.leftZoneW = state.upperCols[0];
+  state.midColW = state.upperCols[1];
+  state.rightColW = state.upperCols[3];
   state.catStepW = Math.round(clamp(state.catStepW, 420, state.leftZoneW - 80));
 
   state.rowH = (state.H - state.bottomH) / 5;
@@ -97,8 +110,16 @@ function normalizeState() {
     state.bottomH = Math.round(state.H - 5 * 260);
     state.rowH = 260;
   }
+
   state.stagger = Math.max(60, state.leftZoneW - state.catStepW - state.t);
-  state.holeClear = (state.unit - state.t - state.catHoleD) / 2;
+  state.holePositions = HOLE_FRACTIONS.map((fraction) => fraction * state.rightColW);
+  const margin = Math.min(
+    ...state.holePositions.map((position) => Math.min(
+      position - state.t / 2,
+      state.rightColW - state.t - position,
+    )),
+  );
+  state.holeClear = margin - state.catHoleD / 2;
 }
 
 function syncInputs() {
@@ -111,19 +132,23 @@ function syncInputs() {
 function updateReadouts() {
   document.getElementById('size-readout').textContent =
     `${Math.round(state.W)} × ${Math.round(state.H)} × ${Math.round(state.D)} mm`;
-  document.getElementById('col-width').textContent =
-    `${format(state.unit, 0)} × 6 + ${format(state.unit * 1.25, 0)} mm`;
+  document.getElementById('base-cols').textContent =
+    `${format(state.baseCols[0], 0)} × 6 + ${format(state.baseCols[3], 0)} mm`;
+  document.getElementById('upper-cols').textContent =
+    `${format(state.leftZoneW, 0)} + ${format(state.midColW, 0)} × 2 + ${format(state.rightColW, 0)} mm`;
   document.getElementById('row-height').textContent = `${format(state.rowH, 0)} mm × 5`;
   document.getElementById('bottom-open').textContent = `${format(state.bottomH, 0)} mm`;
   document.getElementById('left-zone').textContent = `${format(state.leftZoneW, 0)} mm`;
   document.getElementById('step-stagger').textContent = `${format(state.stagger, 0)} mm`;
-  document.getElementById('cat-hole').textContent = `⌀${format(state.catHoleD, 0)} mm`;
+  document.getElementById('cat-hole').textContent = `⌀${format(state.catHoleD, 0)} / 错落`;
   document.getElementById('hole-clear').textContent = `${format(state.holeClear, 0)} mm`;
+  document.getElementById('base-middle').textContent =
+    `${format(state.baseCols[3], 0)} / 两侧 ⌀60`;
 
   const warnings = [];
   if (state.rowH < 300) warnings.push(`层高 ${format(state.rowH, 0)} mm < 300`);
   if (state.stagger < 90) warnings.push(`猫踏步错位 ${format(state.stagger, 0)} mm < 90`);
-  if (state.holeClear < 45) warnings.push(`猫洞净边 ${format(state.holeClear, 0)} mm < 45`);
+  if (state.holeClear < 50) warnings.push(`猫洞最小净边 ${format(state.holeClear, 0)} mm < 50`);
   if (state.D - BACK_T - 20 < 250) warnings.push(`净深 ${format(state.D - BACK_T - 20, 0)} mm < 250`);
 
   const warning = document.getElementById('height-warning');
@@ -158,7 +183,7 @@ function addFrontEdge(width, height, y, x) {
   );
 }
 
-// Horizontal shelf with a circular cat hole. The geometry is built in the
+// Horizontal shelf with a circular cat hole.  The geometry is built in the
 // shape's XY plane and rotated flat; after rotation it spans y = 0..thickness.
 function shelfWithHole(width, depth, thickness, holeDiameter, holeX, material) {
   const shape = new THREE.Shape();
@@ -186,7 +211,7 @@ function shelfWithHole(width, depth, thickness, holeDiameter, holeX, material) {
   return mesh;
 }
 
-// Vertical divider with a circular wire hole. The shape is built in ZY and
+// Vertical divider with a circular wire hole.  The shape is built in ZY and
 // extruded through the panel thickness; the hole centre stays at z = 0.
 function dividerWithHole(depth, height, thickness, holeY, holeDiameter, material) {
   const shape = new THREE.Shape();
@@ -343,14 +368,15 @@ function buildCabinet() {
   const x0 = -W / 2;
   const x1 = W / 2;
   const zBack = -D / 2;
-  const zFront = D / 2;
   const shelfD = D - backT;
   const shelfZ = backT / 2;
-  const backZ = zBack + backT / 2;
 
-  const cols = state.cols.map((value) => value / 1000);
-  const bounds = [x0];
-  cols.forEach((value) => bounds.push(bounds[bounds.length - 1] + value));
+  const baseCols = state.baseCols.map((value) => value / 1000);
+  const upperCols = state.upperCols.map((value) => value / 1000);
+  const baseBounds = [x0];
+  baseCols.forEach((value) => baseBounds.push(baseBounds[baseBounds.length - 1] + value));
+  const upperBounds = [x0];
+  upperCols.forEach((value) => upperBounds.push(upperBounds[upperBounds.length - 1] + value));
 
   // Back panel, with the 50 mm pipe opening kept at the top right.
   const pipeX = x1 - 0.1;
@@ -370,108 +396,132 @@ function buildCabinet() {
     box(W - 2 * t, t, D, materials.whiteCarcass, { x: 0, y: t / 2, z: 0 }),
   );
 
-  // Bottom 600: seven open compartments for baskets.
-  bounds.slice(1, -1).forEach((x) => {
-    cabinetGroup.add(
-      box(t, bottom - 2 * t, shelfD, materials.wood, {
-        x,
-        y: bottom / 2,
-        z: shelfZ,
-      }),
-    );
-    addFrontEdge(t, bottom - 2 * t, bottom / 2, x);
-  });
-
-  // Upper dividers: 400 is removed above 600 so the left cat staircase is one
-  // continuous 800-wide zone; 1200 and 1700 get 60 mm wire holes.
-  bounds.slice(2, -1).forEach((x) => {
-    const height = H - bottom - t;
-    if (Math.abs(x - bounds[3]) < 1e-6 || Math.abs(x - bounds[4]) < 1e-6) {
-      const holeY = rowH * 0.55;
-      cabinetGroup.add(
-        (() => {
-          const panel = dividerWithHole(shelfD, height, t, holeY, 0.06, materials.wood);
-          panel.position.set(x, bottom, shelfZ);
-          return panel;
-        })(),
-      );
+  // Base: seven columns, 600 high.  The middle 500 column has a 60 mm wire
+  // hole in each of its two side panels.
+  const basePanelH = bottom - 2 * t;
+  const wireY = Math.max(0.08, bottom - 0.12 - t);
+  baseBounds.slice(1, -1).forEach((x, index) => {
+    if (index === 2 || index === 3) {
+      const panel = dividerWithHole(shelfD, basePanelH, t, wireY, 0.06, materials.wood);
+      panel.position.set(x, t, shelfZ);
+      cabinetGroup.add(panel);
       [-1, 1].forEach((sign) => {
         const rim = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.0025, 6, 20), MAT.wireRim);
-        rim.position.set(x + sign * (t / 2 + 0.001), bottom + holeY, shelfZ);
+        rim.position.set(x + sign * (t / 2 + 0.001), t + wireY, shelfZ);
         rim.rotation.y = Math.PI / 2;
         cabinetGroup.add(rim);
       });
     } else {
       cabinetGroup.add(
-        box(t, height, shelfD, materials.wood, {
+        box(t, basePanelH, shelfD, materials.wood, {
           x,
-          y: bottom + height / 2,
+          y: t + basePanelH / 2,
           z: shelfZ,
         }),
       );
     }
-    addFrontEdge(t, height, bottom + height / 2, x);
+    addFrontEdge(t, basePanelH, t + basePanelH / 2, x);
   });
 
-  // Five shelf levels. Main shelves occupy the five right-hand bays; the last
-  // bay gets a 220 mm cat hole. The left two-bay zone gets alternating 550 mm
-  // cat steps instead of full shelves.
+  // Main cabinet: four zones.  Dividers at 800 / 1500 / 2200.
+  const upperPanelH = H - bottom - t;
+  upperBounds.slice(1, -1).forEach((x) => {
+    cabinetGroup.add(
+      box(t, upperPanelH, shelfD, materials.wood, {
+        x,
+        y: bottom + upperPanelH / 2,
+        z: shelfZ,
+      }),
+    );
+    addFrontEdge(t, upperPanelH, bottom + upperPanelH / 2, x);
+  });
+
+  // Five levels.  Left zone: alternating 550 cat steps.  Middle two zones:
+  // full shelves.  Right zone: full shelves with zig-zag cat holes.
   const leftInner = x0 + t;
-  const leftZoneRight = bounds[2] - t / 2;
-  const holeCenterX = x1 - 0.2;
+  const leftZoneRight = upperBounds[1] - t / 2;
 
   for (let level = 0; level < 5; level += 1) {
     const yTopShelf = bottom + level * rowH;
 
-    for (let bay = 2; bay < 7; bay += 1) {
-      const left = bounds[bay] + t / 2;
-      const right = bay === 6 ? bounds[7] - t : bounds[bay + 1] - t / 2;
-      const width = right - left;
-      const centerX = (left + right) / 2;
-
-      if (bay === 6) {
-        const shelf = shelfWithHole(width, shelfD, t, catHoleD, holeCenterX - centerX, materials.wood);
-        shelf.position.set(centerX, yTopShelf - t / 2, shelfZ);
-        cabinetGroup.add(shelf);
-
-        const ring = new THREE.Mesh(
-          new THREE.RingGeometry(catHoleD / 2, catHoleD / 2 + 0.008, 32),
-          MAT.holeRim,
-        );
-        ring.rotation.x = -Math.PI / 2;
-        ring.position.set(holeCenterX, yTopShelf + 0.0008, 0);
-        cabinetGroup.add(ring);
-      } else {
-        cabinetGroup.add(
-          box(width, t, shelfD, materials.wood, {
-            x: centerX,
-            y: yTopShelf - t / 2,
-            z: shelfZ,
-          }),
-        );
-      }
-      addFrontEdge(width, t, yTopShelf - t / 2, centerX);
-    }
-
     const stepLeft = level % 2 === 0 ? leftInner : leftZoneRight - catStepW;
-    const stepCenter = stepLeft + catStepW / 2;
     cabinetGroup.add(
       box(catStepW, t, shelfD, materials.woodLight, {
-        x: stepCenter,
+        x: stepLeft + catStepW / 2,
         y: yTopShelf - t / 2,
         z: shelfZ,
       }),
     );
-    addFrontEdge(catStepW, t, yTopShelf - t / 2, stepCenter);
+    addFrontEdge(catStepW, t, yTopShelf - t / 2, stepLeft + catStepW / 2);
+
+    for (let bay = 1; bay <= 2; bay += 1) {
+      const left = upperBounds[bay] + t / 2;
+      const right = upperBounds[bay + 1] - t / 2;
+      const width = right - left;
+      const centerX = (left + right) / 2;
+      cabinetGroup.add(
+        box(width, t, shelfD, materials.wood, {
+          x: centerX,
+          y: yTopShelf - t / 2,
+          z: shelfZ,
+        }),
+      );
+      addFrontEdge(width, t, yTopShelf - t / 2, centerX);
+    }
+
+    const rightLeft = upperBounds[3] + t / 2;
+    const rightRight = x1 - t;
+    const rightWidth = rightRight - rightLeft;
+    const rightCenter = (rightLeft + rightRight) / 2;
+    const holeCenterX = upperBounds[3] + state.holePositions[level] / 1000;
+    const shelf = shelfWithHole(
+      rightWidth,
+      shelfD,
+      t,
+      catHoleD,
+      holeCenterX - rightCenter,
+      materials.wood,
+    );
+    shelf.position.set(rightCenter, yTopShelf - t / 2, shelfZ);
+    cabinetGroup.add(shelf);
+    addFrontEdge(rightWidth, t, yTopShelf - t / 2, rightCenter);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(catHoleD / 2, catHoleD / 2 + 0.008, 32),
+      MAT.holeRim,
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(holeCenterX, yTopShelf + 0.0008, 0);
+    cabinetGroup.add(ring);
   }
 
-  // Example items. All props live in one toggleable group.
+  // A small socket plate at the back of the base middle column.
+  const baseMiddleX = (baseBounds[3] + baseBounds[4]) / 2;
+  const socket = box(0.09, 0.09, 0.012, MAT.socket, {
+    x: baseMiddleX,
+    y: bottom * 0.68,
+    z: zBack + backT + 0.008,
+    cast: false,
+  });
+  cabinetGroup.add(socket);
+  [-0.022, 0.022].forEach((offset) => {
+    const hole = cylinder(0.012, 0.006, MAT.socketHole, {
+      x: baseMiddleX + offset,
+      y: bottom * 0.68,
+      z: zBack + backT + 0.015,
+      radialSegments: 12,
+    });
+    hole.rotation.x = Math.PI / 2;
+    cabinetGroup.add(hole);
+  });
+
+  // Example items.  All props live in one toggleable group.
   propsGroup = new THREE.Group();
   propsGroup.name = 'props';
   cabinetGroup.add(propsGroup);
 
   [0, 1, 4, 6].forEach((bay, index) => {
-    const center = (bounds[bay] + bounds[bay + 1]) / 2;
+    const center = (baseBounds[bay] + baseBounds[bay + 1]) / 2;
     const basket = createBasket(0.3, 0.24, 0.22, materials);
     basket.position.set(center, t + 0.004, 0.005);
     basket.rotation.y = index % 2 === 0 ? 0.03 : -0.03;
@@ -479,24 +529,24 @@ function buildCabinet() {
   });
 
   const bookLayout = [
-    { bay: 2, level: 1, count: 6, maxHeight: 0.24, offset: -0.01 },
-    { bay: 3, level: 1, count: 7, maxHeight: 0.26, offset: 0 },
-    { bay: 2, level: 2, count: 5, maxHeight: 0.22, offset: 0.01 },
-    { bay: 4, level: 2, count: 6, maxHeight: 0.25, offset: 0 },
-    { bay: 3, level: 3, count: 6, maxHeight: 0.24, offset: -0.01 },
-    { bay: 5, level: 3, count: 5, maxHeight: 0.23, offset: 0.01 },
-    { bay: 2, level: 4, count: 5, maxHeight: 0.21, offset: 0 },
-    { bay: 4, level: 4, count: 6, maxHeight: 0.24, offset: -0.01 },
+    { bay: 1, level: 1, count: 6, maxHeight: 0.24, offset: -0.01 },
+    { bay: 2, level: 1, count: 7, maxHeight: 0.26, offset: 0 },
+    { bay: 1, level: 2, count: 5, maxHeight: 0.22, offset: 0.01 },
+    { bay: 2, level: 2, count: 6, maxHeight: 0.25, offset: 0 },
+    { bay: 1, level: 3, count: 6, maxHeight: 0.24, offset: -0.01 },
+    { bay: 2, level: 3, count: 5, maxHeight: 0.23, offset: 0.01 },
+    { bay: 1, level: 4, count: 5, maxHeight: 0.21, offset: 0 },
+    { bay: 2, level: 4, count: 6, maxHeight: 0.24, offset: -0.01 },
   ];
   bookLayout.forEach(({ bay, level, count, maxHeight, offset }) => {
-    const center = (bounds[bay] + bounds[bay + 1]) / 2 + offset;
+    const center = (upperBounds[bay] + upperBounds[bay + 1]) / 2 + offset;
     const row = createBookRow(materials, count, maxHeight);
     row.position.set(center, bottom + level * rowH + 0.002, 0.01);
     propsGroup.add(row);
   });
 
   const plant = createPlant();
-  plant.position.set((bounds[5] + bounds[6]) / 2, bottom + 2 * rowH + 0.002, 0.005);
+  plant.position.set((upperBounds[2] + upperBounds[3]) / 2, bottom + 2 * rowH + 0.002, 0.005);
   plant.scale.setScalar(Math.min(1, Math.max(0.7, (rowH - 0.03) / 0.26)));
   propsGroup.add(plant);
 
@@ -506,16 +556,16 @@ function buildCabinet() {
   propsGroup.add(cat);
 
   const toyA = new THREE.Mesh(new THREE.SphereGeometry(0.028, 14, 12), MAT.toy);
-  toyA.position.set((bounds[3] + bounds[4]) / 2 - 0.08, bottom + rowH + 0.03, 0.06);
+  toyA.position.set((upperBounds[1] + upperBounds[2]) / 2 - 0.08, bottom + rowH + 0.03, 0.06);
   toyA.castShadow = true;
   propsGroup.add(toyA);
 
   const toyB = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 12), MAT.toyAlt);
-  toyB.position.set((bounds[6] + bounds[7]) / 2 + 0.06, bottom + 3 * rowH + 0.024, 0.06);
+  toyB.position.set((upperBounds[2] + upperBounds[3]) / 2 + 0.06, bottom + 3 * rowH + 0.024, 0.06);
   toyB.castShadow = true;
   propsGroup.add(toyB);
 
-  // Dimensions. The depth label sits far to the right and would clip in the
+  // Dimensions.  The depth label sits far to the right and would clip in the
   // wide 2900 view; the panel already shows the depth, so hide it in 3D.
   dimensionGroup = createDimensions({ width: W, height: H, depth: D }, materials);
   const depthLabel = dimensionGroup.children.find(
@@ -610,12 +660,11 @@ document.getElementById('show-props').addEventListener('change', (event) => {
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
-  const delta = Math.min(clock.getDelta(), 0.05);
+  clock.getDelta();
   if (catTail) catTail.rotation.z = Math.sin(clock.elapsedTime * 1.6) * 0.1;
   viewer.controls.update();
   viewer.renderer.render(viewer.scene, viewer.camera);
   viewer.labelRenderer.render(viewer.scene, viewer.camera);
-  void delta;
 }
 
 normalizeState();

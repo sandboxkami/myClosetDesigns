@@ -14,12 +14,12 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">电视机柜 · 柜子定制</p>
         <h1>电视机柜</h1>
-        <p class="subtitle">2900 宽 · 5 层 × 348 + 底 600 · 左猫踏步 550 · 右猫洞 ⌀220 · 电视已移走</p>
+        <p class="subtitle">底座 7 列 · 主柜 4 区 · 左猫踏步 550 · 右猫洞错落 ⌀220 · 电视已移走</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.0</span>
+          <span class="chip chip-accent">v1.1</span>
           <span class="chip">2900 × 2340 × 300</span>
-          <span class="chip">上柜全开放</span>
-          <span class="chip">左猫踏步 / 右猫洞</span>
+          <span class="chip">底座 7 列 / 主柜 4 区</span>
+          <span class="chip">右猫洞错落</span>
           <span class="chip">不为电视留位</span>
         </div>
       </header>
@@ -62,7 +62,7 @@
 
         <div class="control-row">
           <div class="control-head">
-            <label for="range-bottomH">底部开放层高</label>
+            <label for="range-bottomH">底座高度</label>
             <span class="control-number">
               <input id="number-bottomH" data-number="bottomH" type="number" min="500" max="700" step="10" value="600" inputmode="numeric"> mm
             </span>
@@ -101,17 +101,19 @@
             </div>
             <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
           </div>
-          <p class="micro-hint">7 列按 400 × 6 + 500 的比例：W 变化时列宽等比缩放；上部 5 层随总高等分；底部 600 固定。</p>
+          <p class="micro-hint">底座 7 列按 400 × 6 + 500 比例；主柜 4 区按 800 + 700 × 2 + 700 比例；W 变化时两组同时等比缩放，上部 5 层随总高等分。</p>
         </details>
 
         <div class="computed">
-          <div><span>7 列（单位 mm）</span><strong id="col-width">400 × 6 + 500 mm</strong></div>
+          <div><span>底座 7 列（单位 mm）</span><strong id="base-cols">400 × 6 + 500 mm</strong></div>
+          <div><span>主柜 4 区</span><strong id="upper-cols">800 + 700 × 2 + 700 mm</strong></div>
           <div><span>上部层高 × 5</span><strong id="row-height">348 mm × 5</strong></div>
           <div><span>左猫踏步区</span><strong id="left-zone">800 mm</strong></div>
           <div><span>踏步错位</span><strong id="step-stagger">232 mm</strong></div>
-          <div><span>猫洞</span><strong id="cat-hole">⌀220 mm</strong></div>
-          <div><span>猫洞净边</span><strong id="hole-clear">81 mm</strong></div>
-          <div><span>底部开放层</span><strong id="bottom-open">600 mm</strong></div>
+          <div><span>右猫洞</span><strong id="cat-hole">⌀220 / 错落</strong></div>
+          <div><span>猫洞最小净边</span><strong id="hole-clear">82 mm</strong></div>
+          <div><span>底座开放层</span><strong id="bottom-open">600 mm</strong></div>
+          <div><span>底座中间列</span><strong id="base-middle">500 / 两侧 ⌀60</strong></div>
         </div>
         <div id="height-warning" class="warning" hidden></div>
       </section>
@@ -132,15 +134,16 @@
           <h2 id="notes-title">设计要点</h2>
         </div>
         <ul>
-          <li><strong>外形</strong> 2900 × 2340 × 300；7 列：400 / 400 / 400 / 500 / 400 / 400 / 400；上部 5 层 × 348（含板厚），底部 600 开放放筐。</li>
-          <li><strong>电视不占位</strong> 电视已改用移动支架，中央 500 格不做电视龛，全部做开放层板。</li>
-          <li><strong>左侧猫踏步</strong> 左起两列约 800 宽；550 宽层板上下左右交错，错位约 232，猫可从底部逐级跳上。</li>
-          <li><strong>右侧猫洞</strong> 最右 400 列每层横板开 ⌀220 圆洞，洞心距右端 200；5 块层板贯通上下。</li>
-          <li><strong>管线</strong> 背板保留 ⌀50 管开口；中央 500 格两侧竖板各留 ⌀60 过线孔（位置待现场确认）。</li>
-          <li><strong>门型</strong> 上柜全开放，不做移门；手稿顶部“移门”不计入本柜。</li>
+          <li><strong>整体</strong> 2900 × 2340 × 300；分为底座 600 高 + 主柜 1740 高（5 层 × 348，含板厚）。</li>
+          <li><strong>底座 7 列</strong> 400 / 400 / 400 / <strong>500</strong> / 400 / 400 / 400；中间 500 列稍宽，两侧板各开 <strong>⌀60</strong> 过线孔，背面留插座位。</li>
+          <li><strong>主柜 4 区</strong> 左侧 <strong>800</strong> 猫踏步区 + 中间 <strong>700 + 700</strong> 两列 + 右侧 <strong>700</strong> 猫洞列；主柜不再按 7 列分。</li>
+          <li><strong>左猫踏步</strong> 550 宽层板上下左右交错，错位约 232；猫可从底座逐级跳上。</li>
+          <li><strong>右猫洞</strong> 5 个 ⌀220 洞按手稿错落布置，不排成一条直线；猫可上下穿行。</li>
+          <li><strong>电视不占位</strong> 电视已改用移动支架，上柜全开放，不做电视龛、不做移门。</li>
+          <li><strong>管线</strong> 背板保留 ⌀50 管开口；底座中间列两侧 ⌀60 过线孔；底部 600 放筐。</li>
           <li><strong>材质</strong> 白框 + 暖木色层板/竖板；猫踏步用浅木色区分；具体板材和颜色待确认。</li>
         </ul>
-        <p class="hint">v1.0 按手绘立面建模；猫通道按确认的“左猫踏步 550 + 右层板猫洞 ⌀220”实施，蓝色路线图和第二张猫爬架草图均不参考。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../电视机柜/设计说明.md">设计说明.md</a>。</p>
+        <p class="hint">v1.1 按重新确认的手稿：底座 7 列、主柜 4 区；左猫踏步 550、右猫洞错落 ⌀220。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../电视机柜/设计说明.md">设计说明.md</a>。</p>
       </section>
 
       <footer class="panel-footer">
@@ -152,10 +155,10 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">电视机柜 v1.0 · 三维预览</span>
+        <span class="stage-title">电视机柜 v1.1 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2900 × 2340 × 300 mm</span>
       </div>
-      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 左侧猫踏步 / 右侧猫洞</div>
+      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 左猫踏步 / 右猫洞错落</div>
       <div class="loading" id="loading">正在加载三维场景…</div>
       <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
     </main>
@@ -169,6 +172,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.0.0"></script>
+  <script type="module" src="./viewer.js?v=1.1.0"></script>
 </body>
 </html>
