@@ -545,7 +545,7 @@ function buildCabinet() {
   addDoor({
     xLeft: leftInner0 + GAP,
     xRight: leftInner1 - GAP,
-    yBottom: hangShelfY - GAP / 2,
+    yBottom: kneeTop - GAP / 2,
     yTop: leftDoorMeetingY - GAP / 2,
     hinge: 'left',
     label: '左柜下门（挂衣区）',
@@ -555,6 +555,10 @@ function buildCabinet() {
   const midBottomStart = toeKick + t;
   const midBottomTop = midBottomStart + state.midBottomH / 1000;
   const midBottomShelfY = midBottomTop + t / 2;
+
+  cabinetGroup.add(
+    box(midW, t, interiorD, materials.wood, { x: midCenter, y: midBottomShelfY, z: interiorZ }),
+  );
 
   let cursorY = midBottomTop + t;
   const shoeCells = [];
@@ -602,16 +606,16 @@ function buildCabinet() {
   addDoor({
     xLeft: midInner0 + GAP,
     xRight: midMeetingX - GAP / 2,
-    yBottom: midBottomShelfY + GAP / 2,
-    yTop: drawerShelfY - GAP / 2,
+    yBottom: midBottomTop - GAP / 2,
+    yTop: drawerBottom - GAP / 2,
     hinge: 'left',
     label: '中柜下门（左）',
   });
   addDoor({
     xLeft: midMeetingX + GAP / 2,
     xRight: midInner1 - GAP,
-    yBottom: midBottomShelfY + GAP / 2,
-    yTop: drawerShelfY - GAP / 2,
+    yBottom: midBottomTop - GAP / 2,
+    yTop: drawerBottom - GAP / 2,
     hinge: 'right',
     label: '中柜下门（右）',
   });
@@ -620,8 +624,8 @@ function buildCabinet() {
   addDrawer({
     xCenter: midCenter,
     width: midW - 0.006,
-    yBottom: drawerBottom + GAP,
-    yTop: drawerTop - GAP,
+    yBottom: drawerBottom + GAP / 2,
+    yTop: drawerTop - GAP / 2,
     label: '中部抽屉 120',
   });
 
@@ -629,7 +633,7 @@ function buildCabinet() {
   addDoor({
     xLeft: midInner0 + GAP,
     xRight: midMeetingX - GAP / 2,
-    yBottom: upperBottom - t / 2 + GAP / 2,
+    yBottom: drawerTop + GAP / 2,
     yTop: topPanelTop - GAP,
     hinge: 'left',
     label: '中柜上门（左）',
@@ -637,7 +641,7 @@ function buildCabinet() {
   addDoor({
     xLeft: midMeetingX + GAP / 2,
     xRight: midInner1 - GAP,
-    yBottom: upperBottom - t / 2 + GAP / 2,
+    yBottom: drawerTop + GAP / 2,
     yTop: topPanelTop - GAP,
     hinge: 'right',
     label: '中柜上门（右）',
