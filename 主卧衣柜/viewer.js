@@ -27,6 +27,7 @@ const DEFAULTS = {
   narrowW: 399.2,
   t: 18,
   shelfRemoved: false,
+  drawerDividersOn: true,
 };
 
 const state = {
@@ -72,6 +73,8 @@ viewer.scene.add(cabinetGroup);
 let interactiveParts = [];
 let movableShelfGroups = [];
 let movableShelfProps = [];
+let drawerDividerGroups = [];
+let drawerPropGroups = [];
 let propsGroup = null;
 let dimensionGroup = null;
 let firstBuild = true;
@@ -153,6 +156,10 @@ function renderUI() {
   updateReadouts();
   const shelfButton = document.getElementById('toggle-shelves');
   if (shelfButton) shelfButton.textContent = state.shelfRemoved ? '放回活动层板' : '取下活动层板';
+  const dividerButton = document.getElementById('toggle-drawer-dividers');
+  if (dividerButton) {
+    dividerButton.textContent = state.drawerDividersOn ? '隐藏活动隔板' : '显示活动隔板';
+  }
 }
 
 let rebuildPending = false;
@@ -239,7 +246,7 @@ function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, knobY }) {
   return group;
 }
 
-function addDrawer({ xCenter, width, yBottom, yTop, label }) {
+function addDrawer({ xCenter, width, yBottom, yTop, label, dividers = 0 }) {
   const height = yTop - yBottom;
   const centerY = (yBottom + yTop) / 2;
   const group = new THREE.Group();
@@ -281,6 +288,37 @@ function addDrawer({ xCenter, width, yBottom, yTop, label }) {
     z: boxCenterZ - boxD / 2 + 0.006,
   });
   group.add(bottom, leftSide, rightSide, back);
+
+  // Loose vertical dividers: stood on edge inside the drawer, running front-to-
+  // back and held in place by the folded clothes. They travel with the drawer.
+  if (dividers > 0) {
+    const innerW = boxW - 0.024;
+    const dividerT = 0.012;
+    const dividerH = boxH - 0.022;
+    const dividerD = boxD - 0.05;
+    const dividerY = boxCenterY + 0.001;
+    const dividerZ = boxCenterZ + 0.006;
+    const floorY = boxCenterY - boxH / 2 + 0.012;
+
+    for (let i = 0; i < dividers; i += 1) {
+      const x = -innerW / 2 + ((i + 1) * innerW) / (dividers + 1);
+      const divider = box(dividerT, dividerH, dividerD, materials.woodLight, {
+        x,
+        y: dividerY,
+        z: dividerZ,
+      });
+      group.add(divider);
+      drawerDividerGroups.push(divider);
+    }
+
+    for (let i = 0; i < dividers + 1; i += 1) {
+      const compartmentX = -innerW / 2 + ((i + 0.5) * innerW) / (dividers + 1);
+      const stack = createFoldedStack(0.16, 0.34, 4, i * 2);
+      stack.position.set(compartmentX, floorY, dividerZ);
+      group.add(stack);
+      drawerPropGroups.push(stack);
+    }
+  }
 
   const part = {
     type: 'drawer',
@@ -354,6 +392,8 @@ function buildCabinet() {
   interactiveParts = [];
   movableShelfGroups = [];
   movableShelfProps = [];
+  drawerDividerGroups = [];
+  drawerPropGroups = [];
 
   const W = state.W / 1000;
   const H = state.H / 1000;
@@ -491,6 +531,7 @@ function buildCabinet() {
       yBottom,
       yTop: yBottom + drawerH,
       label: `第 2 格抽屉 ${i + 1}`,
+      dividers: i === 1 ? 2 : 0,
     });
   }
 
@@ -514,6 +555,7 @@ function buildCabinet() {
       yBottom,
       yTop: yBottom + drawerH,
       label: `第 3 格抽屉 ${i + 1}`,
+      dividers: i === 2 ? 2 : 0,
     });
   }
 
@@ -593,6 +635,17 @@ function buildCabinet() {
       label: `${bay.name}右门`,
       knobY: 1.1,
     });
+  });
+
+  // Bay 5 top compartment: single door, hinged on the outer (right) side.
+  addDoor({
+    xLeft: bay5L + GAP,
+    xRight: bay5R - GAP,
+    yBottom: H - t - topRowH + GAP,
+    yTop: H - GAP,
+    hinge: 'right',
+    label: '最右顶格门',
+    knobY: H - t - topRowH + 0.12,
   });
 
   // Props
@@ -689,6 +742,20 @@ function applyVisibility() {
   movableShelfProps.forEach((prop) => {
     prop.visible = !state.shelfRemoved;
   });
+  drawerDividerGroups.forEach((group) => {
+    group.visible = state.drawerDividersOn;
+  });
+  drawerPropGroups.forEach((group) => {
+    group.visible = state.showProps;
+  });
+}
+
+function applyPartTransform(part) {
+  if (part.type === 'door') {
+    part.group.rotation.y = part.hingeSign * part.open * part.angle;
+  } else {
+    part.group.position.z = part.open * part.travel;
+  }
 }
 
 function rebuild() {
@@ -697,8 +764,20 @@ function rebuild() {
   if (direction.lengthSq() < 1e-6) direction.set(0.02, 0.12, 1);
   direction.normalize();
 
+  const openStates = new Map(
+    interactiveParts.map((part) => [part.label, { open: part.open, target: part.target }]),
+  );
+
   disposeGroup(cabinetGroup);
   buildCabinet();
+
+  interactiveParts.forEach((part) => {
+    const saved = openStates.get(part.label);
+    if (!saved) return;
+    part.open = saved.open;
+    part.target = saved.target;
+    applyPartTransform(part);
+  });
 
   const W = state.W / 1000;
   const H = state.H / 1000;
@@ -819,6 +898,12 @@ document.getElementById('toggle-shelves').addEventListener('click', () => {
   applyVisibility();
 });
 
+document.getElementById('toggle-drawer-dividers').addEventListener('click', () => {
+  state.drawerDividersOn = !state.drawerDividersOn;
+  renderUI();
+  applyVisibility();
+});
+
 document.getElementById('open-all').addEventListener('click', () => setPartTargets(true));
 document.getElementById('close-all').addEventListener('click', () => setPartTargets(false));
 document.getElementById('reset-view').addEventListener('click', resetView);
@@ -840,11 +925,7 @@ function animate() {
   for (const part of interactiveParts) {
     if (Math.abs(part.open - part.target) > 0.0005) {
       part.open = damp(part.open, part.target, 8.5, delta);
-      if (part.type === 'door') {
-        part.group.rotation.y = part.hingeSign * part.open * part.angle;
-      } else {
-        part.group.position.z = part.open * part.travel;
-      }
+      applyPartTransform(part);
     }
   }
   viewer.controls.update();
