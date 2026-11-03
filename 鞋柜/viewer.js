@@ -17,7 +17,10 @@ import {
 const DEFAULTS = {
   W: 1700,
   H: 2303,
-  D: 400,
+  D: 750,
+  backD: 350,
+  backW: 350,
+  backPull: 400,
   benchW: 300,
   benchH: 420,
   benchPull: 500,
@@ -36,12 +39,15 @@ const NARROW_RATIOS = [460, 460, 160, 160, 230, 175, 130, 130, 130];
 const NARROW_RATIO_SUM = NARROW_RATIOS.reduce((sum, value) => sum + value, 0);
 const MID_UPPER_RATIOS = [180, 160, 120, 100, 370];
 const MID_SHOE_RATIOS = [170, 170, 130, 100];
+const BACK_RATIOS = [340, 340, 220, 220, 220, 220, 150, 150, 150, 100];
+const BACK_RATIO_SUM = BACK_RATIOS.reduce((sum, value) => sum + value, 0);
 
 const state = {
   ...DEFAULTS,
   showDims: true,
   showProps: true,
   showDoors: true,
+  frontD: 400,
   midW: 0,
   kneeH: 0,
   midBottomH: 0,
@@ -50,6 +56,7 @@ const state = {
   midUpperParts: [],
   midShoeParts: [],
   narrowHeights: [],
+  backHeights: [],
   leftDoorW: 0,
   midDoorW: 0,
   benchMaxW: 0,
@@ -61,7 +68,10 @@ const SCENE = {
   bodyFront: 0.182,
   interiorD: 0.37,
   interiorZ: -0.003,
-  depth: 0.4,
+  depth: 0.75,
+  frontD: 0.4,
+  backD: 0.35,
+  backW: 0.35,
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -76,6 +86,40 @@ viewer.renderer.domElement.setAttribute('aria-label', '鞋柜三维预览');
 const materials = createMaterials();
 createLights(viewer.scene);
 const room = createRoom(viewer.scene, materials);
+
+// The shoe cabinet uses a stepped wall: the left/middle front layer sits
+// against a 400-deep wall, while the right 350-wide back rack sits in a niche.
+room.wall.visible = false;
+room.baseboard.visible = false;
+
+const shell = {
+  front: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials.wall),
+  nicheBack: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials.wall),
+  nicheSide: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials.wall),
+};
+Object.values(shell).forEach((piece) => {
+  piece.receiveShadow = true;
+  room.group.add(piece);
+});
+
+function updateShell() {
+  const W = state.W / 1000;
+  const frontD = state.frontD / 1000;
+  const backD = state.backD / 1000;
+  const backW = state.backW / 1000;
+
+  shell.front.scale.set(Math.max(0.05, W - backW), 3.4, 1);
+  shell.front.position.set(-backW / 2, 1.7, -frontD / 2 - 0.001);
+
+  shell.nicheBack.scale.set(Math.max(0.05, backW), 3.4, 1);
+  shell.nicheBack.position.set(W / 2 - backW / 2, 1.7, -frontD / 2 - backD - 0.001);
+
+  shell.nicheSide.scale.set(Math.max(0.05, backD), 3.4, 1);
+  shell.nicheSide.position.set(W / 2 - backW, 1.7, -frontD / 2 - backD / 2);
+  shell.nicheSide.rotation.y = Math.PI / 2;
+
+  room.contactShadow.position.z = -backD / 2;
+}
 
 const cabinetGroup = new THREE.Group();
 cabinetGroup.name = 'shoe-cabinet';
@@ -103,6 +147,7 @@ const MAT = {
 let interactiveParts = [];
 let propsGroup = null;
 let boardPropsGroup = null;
+let rackPropsGroup = null;
 let doorsGroup = null;
 let dimensionGroup = null;
 let firstBuild = true;
@@ -110,7 +155,8 @@ let firstBuild = true;
 function normalizeState() {
   state.W = clamp(state.W, 1600, 1800);
   state.H = clamp(state.H, 2100, 2500);
-  state.D = clamp(state.D, 350, 450);
+  state.D = clamp(state.D, 650, 850);
+  state.backD = clamp(state.backD, 300, 400);
   state.t = clamp(Math.round(state.t), 16, 25);
   state.toeKick = clamp(state.toeKick, 30, 100);
   state.topGap = clamp(state.topGap, 10, 60);
@@ -118,6 +164,20 @@ function normalizeState() {
   state.benchPull = clamp(state.benchPull, 300, 600);
   state.benchMaxW = LEFT_W - 2 * state.t;
   state.benchW = clamp(state.benchW, 260, state.benchMaxW);
+  state.backW = clamp(state.backW, 300, NARROW_W);
+  state.backPull = clamp(state.backPull, 300, 600);
+
+  state.frontD = state.D - state.backD;
+  if (state.frontD < 350) {
+    state.frontD = 350;
+    state.backD = state.D - state.frontD;
+  }
+  if (state.frontD > 500) {
+    state.frontD = 500;
+    state.backD = state.D - state.frontD;
+  }
+  state.backD = clamp(state.backD, 300, 400);
+  state.frontD = state.D - state.backD;
 
   state.midW = clamp(state.W - LEFT_W - NARROW_W - 4 * state.t, 700, 900);
   state.W = LEFT_W + state.midW + NARROW_W + 4 * state.t;
@@ -135,6 +195,10 @@ function normalizeState() {
   const narrowAvail = state.H - state.toeKick - state.topGap - 10 * state.t;
   const narrowScale = Math.max(0.5, narrowAvail / NARROW_RATIO_SUM);
   state.narrowHeights = NARROW_RATIOS.map((value) => value * narrowScale);
+
+  const backAvail = state.H - state.topGap - 11 * state.t;
+  const backScale = Math.max(0.5, backAvail / BACK_RATIO_SUM);
+  state.backHeights = BACK_RATIOS.map((value) => value * backScale);
 
   state.leftDoorW = LEFT_W - 6;
   state.midDoorW = (state.midW - 9) / 2;
@@ -163,13 +227,21 @@ function updateReadouts() {
     `${format(state.benchW, 0)} × ${format(state.benchH, 0)} / ${format(state.benchPull, 0)}`;
   document.getElementById('narrow-heights').textContent =
     `${state.narrowHeights.map((value) => format(value, 0)).join(' / ')} mm`;
+  document.getElementById('front-depth').textContent =
+    `${format(state.frontD, 0)} / ${format(state.backD, 0)} mm`;
+  document.getElementById('back-rack').textContent =
+    `${format(state.backW, 0)} × ${format(state.H, 0)} / 抽拉 ${format(state.backPull, 0)}`;
+  document.getElementById('back-heights').textContent =
+    `${state.backHeights.map((value) => format(value, 0)).join(' / ')} mm`;
 
   const warnings = [];
   if (state.kneeH < 300) warnings.push(`坐凳上空 ${format(state.kneeH, 0)} mm < 300`);
   if (state.midW < 740) warnings.push(`中段净宽 ${format(state.midW, 0)} mm < 740`);
   if (state.midShoeParts[3] < 90) warnings.push(`中段最下层 ${format(state.midShoeParts[3], 0)} mm < 90`);
   if (state.narrowHeights[8] < 100) warnings.push(`窄柜最下层 ${format(state.narrowHeights[8], 0)} mm < 100`);
-  if (state.D - state.t - 12 < 340) warnings.push(`净深 ${format(state.D - state.t - 12, 0)} mm < 340`);
+  if (state.frontD - state.t - 12 < 340) warnings.push(`前层净深 ${format(state.frontD - state.t - 12, 0)} mm < 340`);
+  if (state.backD - state.t - 12 < 300) warnings.push(`后层净深 ${format(state.backD - state.t - 12, 0)} mm < 300`);
+  if (state.backHeights[9] < 90) warnings.push(`后层最下层 ${format(state.backHeights[9], 0)} mm < 90`);
 
   const warning = document.getElementById('height-warning');
   warning.hidden = warnings.length === 0;
@@ -401,21 +473,23 @@ function createCushion(width, depth) {
   return group;
 }
 
-function addShoeRow(parent, { xCenter, y, z, count, type, colorOffset = 0, spacing = 0.25 }) {
+function addShoeRow(parent, { xCenter, y, z, count, type, colorOffset = 0, spacing = 0.25, scale = 1 }) {
   const start = -((count - 1) * spacing) / 2;
   for (let i = 0; i < count; i += 1) {
     const pair = createShoePair(type, colorOffset + i);
     pair.position.set(xCenter + start + i * spacing, y, z);
+    pair.scale.setScalar(scale);
     parent.add(pair);
   }
 }
 
-function addShoeBoxRow(parent, { xCenter, y, z, count, spacing = 0.25 }) {
+function addShoeBoxRow(parent, { xCenter, y, z, count, spacing = 0.25, scale = 1 }) {
   const start = -((count - 1) * spacing) / 2;
   for (let i = 0; i < count; i += 1) {
     const boxProp = createShoeBox();
     boxProp.position.set(xCenter + start + i * spacing, y, z);
     boxProp.rotation.y = (i - 1) * 0.04;
+    boxProp.scale.setScalar(scale);
     parent.add(boxProp);
   }
 }
@@ -426,6 +500,10 @@ function buildCabinet() {
   const W = state.W / 1000;
   const H = state.H / 1000;
   const D = state.D / 1000;
+  const frontD = state.frontD / 1000;
+  const backD = state.backD / 1000;
+  const backW = state.backW / 1000;
+  const backPull = state.backPull / 1000;
   const t = state.t / 1000;
   const toeKick = state.toeKick / 1000;
   const topGap = state.topGap / 1000;
@@ -437,12 +515,12 @@ function buildCabinet() {
   const benchPull = state.benchPull / 1000;
 
   const doorT = t;
-  const bodyFront = D / 2 - doorT;
-  const carcassD = D - doorT;
+  const bodyFront = frontD / 2 - doorT;
+  const carcassD = frontD - doorT;
   const carcassZ = -doorT / 2;
-  const interiorD = D - doorT - BACK_T;
+  const interiorD = frontD - doorT - BACK_T;
   const interiorZ = (BACK_T - doorT) / 2;
-  const doorZ = D / 2 - doorT / 2;
+  const doorZ = frontD / 2 - doorT / 2;
   const topPanelTop = H - topGap;
   const topPanelBottom = topPanelTop - t;
 
@@ -452,6 +530,9 @@ function buildCabinet() {
   SCENE.interiorD = interiorD;
   SCENE.interiorZ = interiorZ;
   SCENE.depth = D;
+  SCENE.frontD = frontD;
+  SCENE.backD = backD;
+  SCENE.backW = backW;
 
   const x0 = -W / 2;
   const leftInner0 = x0 + t;
@@ -481,7 +562,7 @@ function buildCabinet() {
     box(W, t, carcassD, materials.whiteCarcass, { y: topPanelBottom + t / 2, z: carcassZ }),
     box(W - 2 * t, H, BACK_T, materials.wood, {
       y: H / 2,
-      z: -D / 2 + BACK_T / 2,
+      z: -frontD / 2 + BACK_T / 2,
       cast: false,
     }),
     box(narrowInner1 - leftInner1, t, carcassD, materials.whiteCarcass, {
@@ -857,36 +938,185 @@ function buildCabinet() {
     spacing: 0.3,
   });
 
+  // Back layer: a 350-wide, 350-deep, full-height shoe rack behind the right
+  // narrow tower. It slides out to the right (side pull) on the niche.
+  const rackRight = W / 2;
+  const rackLeft = W / 2 - backW;
+  const rackCenterX = W / 2 - backW / 2;
+  const rackFrontZ = -frontD / 2;
+  const rackBackZ = -frontD / 2 - backD;
+  const rackCenterZ = -frontD / 2 - backD / 2;
+  const backInteriorZ = -frontD / 2 - backD / 2 + BACK_T / 2;
+  const backInteriorD = backD - BACK_T;
+  const rackInnerW = backW - 2 * t;
+
+  const rackGroup = new THREE.Group();
+  rackGroup.name = 'back-rack';
+  cabinetGroup.add(rackGroup);
+
+  rackGroup.add(
+    box(t, H, backD, materials.whiteCarcass, { x: rackLeft + t / 2, y: H / 2, z: rackCenterZ }),
+    box(t, H, backD, materials.whiteCarcass, { x: rackRight - t / 2, y: H / 2, z: rackCenterZ }),
+    box(backW, t, backD, materials.whiteCarcass, { x: rackCenterX, y: topPanelBottom + t / 2, z: rackCenterZ }),
+    box(backW, t, backD, materials.whiteCarcass, { x: rackCenterX, y: t / 2, z: rackCenterZ }),
+    box(backW - 2 * t, H, BACK_T, materials.whiteCarcass, {
+      x: rackCenterX,
+      y: H / 2,
+      z: rackBackZ + BACK_T / 2,
+      cast: false,
+    }),
+    box(backW, topGap, backD, materials.whiteEdge, {
+      x: rackCenterX,
+      y: H - topGap / 2,
+      z: rackCenterZ,
+    }),
+  );
+
+  let rackCursor = t;
+  const rackCells = [];
+  [...state.backHeights].reverse().forEach((heightMm, index, list) => {
+    const height = heightMm / 1000;
+    rackCells.push({ bottom: rackCursor, top: rackCursor + height, height });
+    rackCursor += height;
+    if (index < list.length - 1) {
+      rackGroup.add(
+        box(rackInnerW, t, backInteriorD, materials.whiteCarcass, {
+          x: rackCenterX,
+          y: rackCursor + t / 2,
+          z: backInteriorZ,
+        }),
+      );
+      rackCursor += t;
+    }
+  });
+
+  rackPropsGroup = new THREE.Group();
+  rackGroup.add(rackPropsGroup);
+  const rackCount = state.backW >= 340 ? 2 : 1;
+  const rackShoeScale = state.backW >= 340 ? 0.72 : 0.8;
+  const rackShoeSpacing = state.backW >= 340 ? 0.15 : 0;
+  const rackBoxScale = state.backW >= 340 ? 0.66 : 0.8;
+
+  rackCells.forEach((cell, index) => {
+    if (index === rackCells.length - 1) {
+      addShoeBoxRow(rackPropsGroup, {
+        xCenter: rackCenterX,
+        y: cell.bottom + 0.002,
+        z: backInteriorZ + 0.02,
+        count: rackCount,
+        spacing: 0.16,
+        scale: rackBoxScale,
+      });
+    } else if (index === rackCells.length - 2) {
+      addShoeRow(rackPropsGroup, {
+        xCenter: rackCenterX,
+        y: cell.bottom + 0.002,
+        z: backInteriorZ + 0.02,
+        count: 1,
+        type: 'boot',
+        colorOffset: 2,
+        spacing: 0,
+        scale: 0.8,
+      });
+    } else if (index >= 4) {
+      addShoeRow(rackPropsGroup, {
+        xCenter: rackCenterX,
+        y: cell.bottom + 0.002,
+        z: backInteriorZ + 0.02,
+        count: rackCount,
+        type: index % 2 === 0 ? 'heel' : 'sneaker',
+        colorOffset: index + 1,
+        spacing: rackShoeSpacing,
+        scale: rackShoeScale,
+      });
+    } else {
+      addShoeRow(rackPropsGroup, {
+        xCenter: rackCenterX,
+        y: cell.bottom + 0.002,
+        z: backInteriorZ + 0.02,
+        count: rackCount,
+        type: 'slipper',
+        colorOffset: index + 3,
+        spacing: rackShoeSpacing,
+        scale: rackShoeScale,
+      });
+    }
+  });
+
+  const rackHandleZ = -frontD / 2 - 0.06;
+  rackGroup.add(
+    box(0.02, 0.12, 0.03, materials.metal, {
+      x: W / 2 + 0.01,
+      y: 1.0,
+      z: rackHandleZ,
+    }),
+    box(0.012, 0.02, 0.02, materials.metal, {
+      x: W / 2 + 0.003,
+      y: 0.94,
+      z: rackHandleZ,
+    }),
+    box(0.012, 0.02, 0.02, materials.metal, {
+      x: W / 2 + 0.003,
+      y: 1.06,
+      z: rackHandleZ,
+    }),
+  );
+
+  const rackPart = {
+    type: 'backRack',
+    group: rackGroup,
+    open: 0,
+    target: 0,
+    travel: backPull,
+    label: '后层抽拉鞋架（向右拉出）',
+  };
+  rackGroup.userData.part = rackPart;
+  rackGroup.traverse((object) => {
+    if (object.isMesh) object.userData.part = rackPart;
+  });
+  interactiveParts.push(rackPart);
+
   dimensionGroup = createDimensions({ width: W, height: H, depth: D }, materials);
+  dimensionGroup.position.z = -backD / 2;
   cabinetGroup.add(dimensionGroup);
 
   updateRoom(room, { width: W, height: H, depth: D });
+  updateShell();
   applyVisibility();
 }
 
 function applyVisibility() {
   if (propsGroup) propsGroup.visible = state.showProps;
   if (boardPropsGroup) boardPropsGroup.visible = state.showProps;
+  if (rackPropsGroup) rackPropsGroup.visible = state.showProps;
   if (dimensionGroup) dimensionGroup.visible = state.showDims;
   if (doorsGroup) doorsGroup.visible = state.showDoors;
+}
+
+function fitCabinet(direction) {
+  const W = state.W / 1000;
+  const H = state.H / 1000;
+  const D = state.D / 1000;
+  fitCamera(viewer.camera, viewer.controls, { width: W, height: H, depth: D }, {
+    direction,
+    margin: 1.32,
+  });
+  const zShift = -state.backD / 2000;
+  viewer.camera.position.z += zShift;
+  viewer.controls.target.z += zShift;
+  viewer.controls.update();
 }
 
 function rebuild() {
   normalizeState();
   const direction = viewer.camera.position.clone().sub(viewer.controls.target);
-  if (direction.lengthSq() < 1e-6) direction.set(0.5, 0.16, 1);
+  if (direction.lengthSq() < 1e-6) direction.set(0.62, 0.16, 1);
   direction.normalize();
 
   disposeGroup(cabinetGroup);
   buildCabinet();
 
-  const W = state.W / 1000;
-  const H = state.H / 1000;
-  const D = state.D / 1000;
-  fitCamera(viewer.camera, viewer.controls, { width: W, height: H, depth: D }, {
-    direction: firstBuild ? new THREE.Vector3(0.5, 0.16, 1) : direction,
-    margin: 1.32,
-  });
+  fitCabinet(firstBuild ? new THREE.Vector3(0.62, 0.16, 1) : direction);
   firstBuild = false;
 
   renderUI();
@@ -894,12 +1124,7 @@ function rebuild() {
 }
 
 function resetView() {
-  fitCamera(
-    viewer.camera,
-    viewer.controls,
-    { width: state.W / 1000, height: state.H / 1000, depth: state.D / 1000 },
-    { direction: new THREE.Vector3(0.5, 0.16, 1), margin: 1.32 },
-  );
+  fitCabinet(new THREE.Vector3(0.62, 0.16, 1));
 }
 
 function setPartTargets(open) {
@@ -1033,6 +1258,8 @@ function animate() {
         part.group.rotation.y = part.hingeSign * part.open * part.angle;
       } else if (part.type === 'drawer' || part.type === 'bench' || part.type === 'board') {
         part.group.position.z = part.open * part.travel;
+      } else if (part.type === 'backRack') {
+        part.group.position.x = part.open * part.travel;
       }
     }
   }

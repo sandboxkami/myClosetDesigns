@@ -14,12 +14,12 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">鞋柜 · 柜子定制</p>
         <h1>鞋柜</h1>
-        <p class="subtitle">1700 宽三段 · 抽拉换鞋凳 · 无拉手平板门 · 420 开放鞋塔</p>
+        <p class="subtitle">1700 宽三段 · 前层 400 + 后层 350 · 后层右侧抽拉鞋架 · 换鞋凳</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.0</span>
-          <span class="chip">1700 × 2303 × 400</span>
+          <span class="chip chip-accent">v1.1</span>
+          <span class="chip">1700 × 2303 × 750</span>
+          <span class="chip">后层侧抽</span>
           <span class="chip">换鞋凳可拉出</span>
-          <span class="chip">活动层板</span>
         </div>
       </header>
 
@@ -53,10 +53,40 @@
           <div class="control-head">
             <label for="range-D">总深</label>
             <span class="control-number">
-              <input id="number-D" data-number="D" type="number" min="350" max="450" step="1" value="400" inputmode="numeric"> mm
+              <input id="number-D" data-number="D" type="number" min="650" max="850" step="10" value="750" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-D" data-range="D" type="range" min="350" max="450" step="1" value="400">
+          <input id="range-D" data-range="D" type="range" min="650" max="850" step="10" value="750">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-backD">后层深</label>
+            <span class="control-number">
+              <input id="number-backD" data-number="backD" type="number" min="300" max="400" step="10" value="350" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-backD" data-range="backD" type="range" min="300" max="400" step="10" value="350">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-backW">后层宽</label>
+            <span class="control-number">
+              <input id="number-backW" data-number="backW" type="number" min="300" max="420" step="10" value="350" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-backW" data-range="backW" type="range" min="300" max="420" step="10" value="350">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-backPull">后层抽拉</label>
+            <span class="control-number">
+              <input id="number-backPull" data-number="backPull" type="number" min="300" max="600" step="10" value="400" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-backPull" data-range="backPull" type="range" min="300" max="600" step="10" value="400">
         </div>
 
         <div class="control-row">
@@ -118,19 +148,22 @@
             </div>
             <input id="range-topGap" data-range="topGap" type="range" min="10" max="60" step="5" value="30">
           </div>
-          <p class="micro-hint">左 408 / 窄 420 固定，中段宽随总宽推导；中段与窄段层高按手稿比例随总高等比缩放。手稿右侧 800 双列鞋架不在本柜 1700 内。</p>
+          <p class="micro-hint">前层深 = 总深 − 后层深；后层只做右侧窄塔后，350 宽通高侧抽鞋架。3D 用台阶墙/凹龛表现后层，现场需确认右侧抽拉净空与 350 深凹位。</p>
         </details>
 
         <div class="computed">
           <div><span>左段净宽</span><strong id="left-width">408 mm</strong></div>
           <div><span>中段净宽</span><strong id="mid-width">800 mm</strong></div>
           <div><span>窄段净宽</span><strong id="narrow-width">420 mm</strong></div>
+          <div><span>前层 / 后层深</span><strong id="front-depth">400 / 350 mm</strong></div>
+          <div><span>后层鞋架</span><strong id="back-rack">350 × 2303 / 抽拉 400</strong></div>
           <div><span>左柜分区</span><strong id="left-zones">400 / 980 / 419 / 420</strong></div>
           <div><span>中柜分区</span><strong id="mid-zones">914 / 120 / 560 / 413</strong></div>
           <div><span>左门宽</span><strong id="left-door-width">402 mm</strong></div>
           <div><span>中门宽</span><strong id="mid-door-width">395.5 mm</strong></div>
           <div><span>换鞋凳</span><strong id="bench-size">300 × 420 / 500</strong></div>
           <div class="computed-wide"><span>窄柜 9 层净高</span><strong id="narrow-heights">462 / 462 / 161 / 161 / 231 / 176 / 131 / 131 / 131 mm</strong></div>
+          <div class="computed-wide"><span>后层 10 层净高</span><strong id="back-heights">334 / 334 / 216 / 216 / 216 / 216 / 148 / 148 / 148 / 98 mm</strong></div>
         </div>
         <div id="height-warning" class="warning" hidden></div>
       </section>
@@ -154,13 +187,13 @@
           <h2 id="notes-title">设计要点</h2>
         </div>
         <ul>
-          <li><strong>总体</strong> 1700 × 2303 × 400；三段 408 + 800 + 420，含 4 块 18mm 竖板；与琴柜平（手稿 1200 + 500 左右）。</li>
-          <li><strong>左 408</strong> 包袋格 400 + 挂衣区 980 + 坐凳上空 + 抽拉换鞋凳 420；凳宽 300 贴内侧，前伸 500，无底带轮。</li>
-          <li><strong>中 800</strong> 上柜 5 层 + 120 抽屉 + 开放鞋区 4 层 + 底部抽拉鞋板；上部/下部平板门，下柜门覆盖鞋区。</li>
-          <li><strong>窄 420</strong> 开放鞋塔 9 层：上部 2 个 460 靴位，中部 2 个 160 鞋盒位，下部 5 个活动鞋层。</li>
-          <li><strong>门板</strong> 平板无拉手、无反弹器；门板延长留 3mm 缝，用指扣/门缝开合。手稿右侧 800 双列鞋架不在本柜范围。</li>
+          <li><strong>总体</strong> 1700 × 2303 × 750；前层 400 + 后层 350；三段 408 + 800 + 420，含 4 块 18mm 竖板；与琴柜平。</li>
+          <li><strong>前层</strong> 左 408 包袋格 400 + 挂衣区 980 + 坐凳上空 + 换鞋凳 420；中 800 上柜 5 层 + 120 抽屉 + 开放鞋区 4 层 + 底部抽拉鞋板；窄 420 开放 9 层。</li>
+          <li><strong>后层</strong> 右侧窄塔后 350 宽 × 350 深通高侧抽鞋架；10 层按 340/340/220×4/150×3/100 缩放；白色柜体，右侧拉手，向右抽拉约 400。</li>
+          <li><strong>门板</strong> 前层左/中平板无拉手、无反弹器；前层窄塔保持开放，后层藏在它背后；后层用右侧拉手抽拉。</li>
+          <li><strong>现场</strong> 后层占用 350 深凹位，右侧需留约 400 抽拉净空；3D 用台阶墙/凹龛表现。手稿右侧 800 双列鞋架不在本柜范围。</li>
         </ul>
-        <p class="hint">v1.0 按手稿三段 1700 宽建模；包袋格/挂衣区门板、换鞋凳内部做法和现场插座开孔可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
+        <p class="hint">v1.1 按新增参考图增加前后双层；后层只做右侧窄塔后。包袋格/挂衣区门板、后层凹龛与插座开孔可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
       </section>
 
       <footer class="panel-footer">
@@ -172,10 +205,10 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">鞋柜 v1.0 · 三维预览</span>
-        <span class="stage-meta" id="size-readout">1700 × 2303 × 400 mm</span>
+        <span class="stage-title">鞋柜 v1.1 · 三维预览</span>
+        <span class="stage-meta" id="size-readout">1700 × 2303 × 750 mm</span>
       </div>
-      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门/抽屉/换鞋凳开合</div>
+      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门/抽屉/换鞋凳/后层鞋架开合</div>
       <div class="loading" id="loading">正在加载三维场景…</div>
       <div class="tooltip" id="tooltip"></div>
       <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
@@ -190,6 +223,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js"></script>
+  <script type="module" src="./viewer.js?v=1.1.0"></script>
 </body>
 </html>
