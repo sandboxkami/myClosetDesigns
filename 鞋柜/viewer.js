@@ -10,6 +10,8 @@ import {
   createHangingGarment,
   createDimensions,
   createDimensionLabel,
+  createDimensionAnnotation,
+  createLeaderAnnotation,
   disposeGroup,
   fitCamera,
   damp,
@@ -146,6 +148,12 @@ const focusLineMat = new THREE.LineBasicMaterial({
   opacity: 0.8,
   depthTest: false,
 });
+const focusDimMat = new THREE.LineBasicMaterial({
+  color: 0xffb347,
+  transparent: true,
+  opacity: 0.95,
+  depthTest: false,
+});
 
 const tourOverlay = document.getElementById('focus-tour');
 const tourProgress = document.getElementById('tour-progress');
@@ -154,8 +162,10 @@ const tourDesc = document.getElementById('tour-desc');
 const tourPart = document.getElementById('tour-part');
 const tourValue = document.getElementById('tour-value');
 const tourBar = document.getElementById('tour-bar');
+const tourPrev = document.getElementById('tour-prev');
+const tourNext = document.getElementById('tour-next');
+const tourEnd = document.getElementById('tour-end');
 const startTourButton = document.getElementById('start-tour');
-const panel = document.querySelector('.panel');
 const startTourLabel = startTourButton ? startTourButton.innerHTML : '';
 
 const tour = {
@@ -163,8 +173,7 @@ const tour = {
   index: 0,
   elapsed: 0,
   phase: 'idle',
-  moveDuration: 1.15,
-  holdDuration: 5,
+  moveDuration: 0.65,
   stops: [],
   fromPos: new THREE.Vector3(),
   fromTarget: new THREE.Vector3(),
@@ -1180,6 +1189,10 @@ function focusMm(value) {
   return `${focusNum(value)} mm`;
 }
 
+function focusMm1(value) {
+  return `${(Math.round(value * 10000) / 10).toFixed(1)} mm`;
+}
+
 function focusBox(x1, x2, y1, y2, z1, z2, fill = true) {
   return { x1, x2, y1, y2, z1, z2, fill };
 }
@@ -1197,13 +1210,13 @@ function buildFocusStops() {
   const L = layout;
   const front = L.frontZ;
   const door = L.doorZ;
+  const bodyZ = L.bodyFront;
   const bottomCenterX = (L.midInner0 + L.narrowInner1) / 2;
   const bottomCell0 = L.bottomCells[0];
   const bottomCell1 = L.bottomCells[1];
-  const bottomInsetZ1 = L.interiorZ - L.interiorD / 2;
   const bottomInsetZ2 = L.interiorZ + L.interiorD / 2 - L.frontShelfInset;
   const drawerZ = door + L.drawerTravel;
-  const drawerOffset = L.midW / 4;
+  const drawerW = L.midW / 2 - 1.5 * GAP;
   const upperValue = L.upperCells.map((cell) => focusNum(cell.top - cell.bottom)).join(' / ');
   const rightValue = L.rightCells.map((cell) => focusNum(cell.top - cell.bottom)).join(' / ');
   const bagHeight = L.topPanelBottom - L.bagBottom;
@@ -1213,6 +1226,7 @@ function buildFocusStops() {
   const rackHalfNetW = (L.backW - 3 * L.t) / 2;
   const benchShift = L.benchPull;
   const benchFrontZ = L.benchZ2 + benchShift;
+  const lastRight = L.rightCells[L.rightCells.length - 1];
 
   return [
     {
@@ -1222,16 +1236,33 @@ function buildFocusStops() {
       value: `${focusMm(L.W)} × ${focusMm(L.H)} × ${focusMm(L.D)}`,
       desc: `总宽 ${focusNum(L.W)}、总深 ${focusNum(L.D)} 固定，总高可在 2100–2500 调整；前柜 1220×400 + 后柜 1220×400，左柜 408×800 通深。`,
       boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, -L.D / 2, L.D / 2, false)],
+      dims: [
+        {
+          start: [-L.W / 2, L.H, front],
+          end: [L.W / 2, L.H, front],
+          offset: [0, 0.18, 0],
+          label: `总宽 ${focusNum(L.W)}`,
+          tick: 0.045,
+        },
+        {
+          start: [-L.W / 2, 0, front],
+          end: [-L.W / 2, L.H, front],
+          offset: [-0.2, 0, 0],
+          label: `总高 ${focusNum(L.H)}`,
+          tick: 0.045,
+        },
+        {
+          start: [L.W / 2, L.H * 0.35, -L.D / 2],
+          end: [L.W / 2, L.H * 0.35, L.D / 2],
+          offset: [0.2, 0, 0],
+          label: `总深 ${focusNum(L.D)}`,
+          tick: 0.045,
+        },
+      ],
       labels: [
-        focusLabel(`总宽 ${focusMm(L.W)}`, 0, L.H + 0.16, front, 'dim'),
-        focusLabel(`总高 ${focusMm(L.H)}`, -L.W / 2 - 0.22, L.H / 2, front, 'dim'),
-        focusLabel(`总深 ${focusMm(L.D)}`, L.W / 2 + 0.24, 0.14, 0, 'dim'),
         focusLabel('整体外形', 0, L.H * 0.56, front + 0.04, 'part'),
       ],
-      lines: [
-        focusLine(-L.W / 2, L.H + 0.1, front, L.W / 2, L.H + 0.1, front),
-        focusLine(-L.W / 2 - 0.14, 0, front, -L.W / 2 - 0.14, L.H, front),
-      ],
+      lines: [],
       dir: [0.62, 0.16, 1],
       margin: 1.32,
     },
@@ -1248,20 +1279,62 @@ function buildFocusStops() {
         focusBox(L.leftInner0, L.leftInner1, L.hangShelfY - L.t / 2, L.hangShelfY + L.t / 2,
           L.leftInteriorZ - L.leftInteriorD / 2, L.leftInteriorZ + L.leftInteriorD / 2),
       ],
+      dims: [
+        {
+          start: [L.leftInner0, L.H, front],
+          end: [L.leftInner1, L.H, front],
+          offset: [0, 0.14, 0],
+          label: `左柜 ${focusNum(L.leftW)}`,
+          tick: 0.03,
+        },
+        {
+          start: [L.leftInner0, L.H * 0.35, -L.D / 2],
+          end: [L.leftInner0, L.H * 0.35, L.D / 2],
+          offset: [-0.28, 0, 0],
+          label: `通深 ${focusNum(L.D)}`,
+          tick: 0.035,
+        },
+        {
+          start: [L.leftInner0, 0, front],
+          end: [L.leftInner0, L.benchH, front],
+          offset: [-0.14, 0, 0.02],
+          label: `换鞋凳 ${focusNum(L.benchH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.leftInner0, L.benchH, front],
+          end: [L.leftInner0, L.kneeTop, front],
+          offset: [-0.14, 0, 0.02],
+          label: `坐凳上空 ${focusNum(kneeH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.leftInner0, L.hangBottom, front],
+          end: [L.leftInner0, L.hangTop, front],
+          offset: [-0.14, 0, 0.02],
+          label: `挂衣区 ${focusNum(L.hangTop - L.hangBottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.leftInner0, L.bagBottom, front],
+          end: [L.leftInner0, L.topPanelBottom, front],
+          offset: [-0.14, 0, 0.02],
+          label: `包袋格 ${focusNum(bagHeight)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+      ],
       labels: [
-        focusLabel(`左柜 ${focusMm(L.leftW)}`, L.leftCenter, L.H * 0.8, front + 0.05, 'dim'),
-        focusLabel(`通深 ${focusMm(L.D)}`, L.leftCenter, L.H * 0.5, front + 0.05, 'dim'),
         focusLabel('无门板', L.leftCenter, L.H * 0.64, front + 0.05, 'part'),
-        focusLabel(`包袋格 ${focusNum(bagHeight)}`, L.leftCenter, (L.bagBottom + L.topPanelBottom) / 2, front + 0.05, 'ratio'),
-        focusLabel('挂衣区 980', L.leftCenter, (L.hangBottom + L.hangTop) / 2, front + 0.05, 'ratio'),
       ],
-      lines: [
-        focusLine(L.leftInner1 - 0.02, L.bagShelfY, front, L.leftInner1 - 0.02, L.topPanelBottom, front),
-        focusLine(L.leftInner1 - 0.02, L.hangBottom, front, L.leftInner1 - 0.02, L.hangTop, front),
-      ],
+      lines: [],
       dir: [-0.5, 0.12, 1],
       margin: 1.55,
       minDistance: 1.2,
+      targetY: 0.95,
     },
     {
       id: 'front-split',
@@ -1273,10 +1346,30 @@ function buildFocusStops() {
         focusBox(L.midInner0, L.midInner1, 0, L.H, 0, front, false),
         focusBox(L.narrowInner0, L.narrowInner1, 0, L.H, 0, front, false),
       ],
+      dims: [
+        {
+          start: [L.midInner0, L.H, front],
+          end: [L.midInner1, L.H, front],
+          offset: [0, 0.14, 0],
+          label: `中段 ${focusNum(L.midW)}`,
+          tick: 0.03,
+        },
+        {
+          start: [L.narrowInner0, L.H, front],
+          end: [L.narrowInner1, L.H, front],
+          offset: [0, 0.14, 0],
+          label: `右段 ${focusNum(L.narrowW)}`,
+          tick: 0.03,
+        },
+        {
+          start: [L.midInner0, L.H, front],
+          end: [L.narrowInner1, L.H, front],
+          offset: [0, 0.32, 0],
+          label: `前柜 ${focusNum(L.midW + L.narrowW)}`,
+          tick: 0.045,
+        },
+      ],
       labels: [
-        focusLabel(`中段 ${focusMm(L.midW)}`, L.midCenter, L.H * 0.64, front + 0.06, 'dim'),
-        focusLabel(`右段 ${focusMm(L.narrowW)}`, L.narrowCenter, L.H * 0.64, front + 0.06, 'dim'),
-        focusLabel(`前柜 ${focusMm(L.midW + L.narrowW)}`, (L.midInner0 + L.narrowInner1) / 2, L.H + 0.12, front + 0.04, 'dim'),
         focusLabel(`4 块 ${focusNum(L.t)}mm 竖板`, (L.midInner0 + L.narrowInner1) / 2, L.H * 0.42, front + 0.06, 'part'),
       ],
       lines: [],
@@ -1292,22 +1385,43 @@ function buildFocusStops() {
       boxes: [
         focusBox(L.midInner0, L.narrowInner1, bottomCell0.bottom, bottomCell0.top, 0, front, false),
         focusBox(L.midInner0, L.narrowInner1, bottomCell1.bottom, bottomCell1.top, 0, front, false),
-        focusBox(L.midInner0, L.narrowInner1, bottomCell0.top, bottomCell0.top + L.t, bottomInsetZ1, bottomInsetZ2),
+        focusBox(L.midInner0, L.narrowInner1, bottomCell0.top, bottomCell0.top + L.t, bottomInsetZ2,
+          L.interiorZ + L.interiorD / 2),
       ],
-      labels: [
-        focusLabel(`第 1 层 ${focusMm(bottomCell0.top - bottomCell0.bottom)}`, bottomCenterX,
-          (bottomCell0.bottom + bottomCell0.top) / 2, front + 0.06, 'ratio'),
-        focusLabel(`第 2 层 ${focusMm(bottomCell1.top - bottomCell1.bottom)}`, bottomCenterX,
-          (bottomCell1.bottom + bottomCell1.top) / 2, front + 0.06, 'ratio'),
-        focusLabel(`最下层板前缩 ${focusMm(L.frontShelfInset)}`, bottomCenterX,
-          bottomCell1.top + 0.08, front + 0.06, 'dim'),
-        focusLabel(`贯通 ${focusNum(L.midW + L.narrowW)} / 开放`, bottomCenterX,
-          bottomCell1.top + 0.2, front + 0.06, 'part'),
+      dims: [
+        {
+          start: [L.midInner0, bottomCell0.bottom, bodyZ],
+          end: [L.midInner0, bottomCell0.top, bodyZ],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(bottomCell0.top - bottomCell0.bottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.midInner0, bottomCell1.bottom, bodyZ],
+          end: [L.midInner0, bottomCell1.top, bodyZ],
+          offset: [-0.14, 0, 0.02],
+          label: `${focusNum(bottomCell1.top - bottomCell1.bottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.midInner0, (bottomCell1.bottom + bottomCell1.top) / 2, front],
+          end: [L.narrowInner1, (bottomCell1.bottom + bottomCell1.top) / 2, front],
+          offset: [0, 0.08, 0],
+          label: `贯通 ${focusNum(L.midW + L.narrowW)}`,
+          tick: 0.03,
+        },
+        {
+          start: [bottomCenterX, bottomCell0.top + L.t / 2, bottomInsetZ2],
+          end: [bottomCenterX, bottomCell0.top + L.t / 2, L.interiorZ + L.interiorD / 2],
+          offset: [0, -0.04, 0],
+          label: `前缩 ${focusNum(L.frontShelfInset)}`,
+          tick: 0.02,
+        },
       ],
-      lines: [
-        focusLine(bottomCenterX, bottomCell0.top + L.t / 2, bottomInsetZ2,
-          bottomCenterX, bottomCell0.top + L.t / 2, front),
-      ],
+      labels: [],
+      lines: [],
       dir: [0.1, 0.14, 1],
       margin: 1.9,
       minDistance: 1.7,
@@ -1326,16 +1440,39 @@ function buildFocusStops() {
           drawerZ - 0.014, drawerZ + 0.014),
         focusBox(L.midInner0, L.midInner1, L.nicheBottom, L.nicheTop, 0, front, false),
       ],
-      labels: [
-        focusLabel(`170 左`, L.midCenter - drawerOffset, (L.drawerBottom + L.drawerTop) / 2,
-          drawerZ + 0.05, 'ratio'),
-        focusLabel(`170 右`, L.midCenter + drawerOffset, (L.drawerBottom + L.drawerTop) / 2,
-          drawerZ + 0.05, 'ratio'),
-        focusLabel(`370 台面`, L.midCenter, (L.nicheBottom + L.nicheTop) / 2,
-          front + 0.05, 'dim'),
-        focusLabel('分左右 / 台面开放', L.midCenter, L.nicheTop + 0.08,
-          front + 0.05, 'part'),
+      dims: [
+        {
+          start: [L.midInner0, L.drawerBottom, drawerZ],
+          end: [L.midInner0, L.drawerTop, drawerZ],
+          offset: [-0.14, 0, 0.02],
+          label: `${FRONT_DRAWER}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.midInner0, L.drawerTop, drawerZ],
+          end: [L.midMeetingX - GAP / 2, L.drawerTop, drawerZ],
+          offset: [0, 0.1, 0],
+          label: focusMm1(drawerW),
+          tick: 0.02,
+        },
+        {
+          start: [L.midMeetingX + GAP / 2, L.drawerTop, drawerZ],
+          end: [L.midInner1, L.drawerTop, drawerZ],
+          offset: [0, 0.1, 0],
+          label: focusMm1(drawerW),
+          tick: 0.02,
+        },
+        {
+          start: [L.midInner1, L.nicheBottom, front],
+          end: [L.midInner1, L.nicheTop, front],
+          offset: [0.14, 0, 0],
+          label: `${FRONT_NICHE}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
       ],
+      labels: [],
       lines: [],
       dir: [0.18, 0.12, 1],
       margin: 1.7,
@@ -1351,10 +1488,15 @@ function buildFocusStops() {
       boxes: L.upperCells.map((cell) =>
         focusBox(L.midInner0, L.midInner1, cell.bottom, cell.top, 0, front, false),
       ),
-      labels: L.upperCells.map((cell) =>
-        focusLabel(`${focusNum(cell.top - cell.bottom)}`, L.midCenter,
-          (cell.bottom + cell.top) / 2, front + 0.06, 'ratio'),
-      ),
+      dims: L.upperCells.map((cell) => ({
+        start: [L.midInner0, cell.bottom, bodyZ],
+        end: [L.midInner0, cell.top, bodyZ],
+        offset: [-0.14, 0, 0.02],
+        label: `${focusNum(cell.top - cell.bottom)}`,
+        labelClass: 'focus-ratio-label',
+        tick: 0.02,
+      })),
+      labels: [],
       lines: [],
       dir: [0.08, 0.12, 1],
       margin: 1.45,
@@ -1370,11 +1512,32 @@ function buildFocusStops() {
       boxes: [
         focusBox(L.narrowInner0, L.narrowInner1, L.openBottomTop, L.H, 0, front, false),
       ],
+      dims: [
+        {
+          start: [L.narrowInner0, L.H, front],
+          end: [L.narrowInner1, L.H, front],
+          offset: [0, 0.14, 0],
+          label: `右柜 ${focusNum(L.narrowW)}`,
+          tick: 0.03,
+        },
+        {
+          start: [L.narrowInner1, L.openBottomTop, front],
+          end: [L.narrowInner1, L.H, front],
+          offset: [0.16, 0, 0],
+          label: `9 层区 ${focusNum(L.H - L.openBottomTop)}`,
+          tick: 0.03,
+        },
+        {
+          start: [L.narrowInner0, lastRight.bottom, front],
+          end: [L.narrowInner0, lastRight.top, front],
+          offset: [-0.14, 0, 0.02],
+          label: `顶格 ${focusNum(lastRight.top - lastRight.bottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+      ],
       labels: [
-        focusLabel(`右柜 ${focusMm(L.narrowW)}`, L.narrowCenter, L.H + 0.12, front + 0.05, 'dim'),
-        focusLabel('9 层', L.narrowCenter, (L.openBottomTop + L.H) / 2, front + 0.05, 'ratio'),
-        focusLabel('整高门 1 扇', L.narrowCenter, L.openBottomTop + 0.16, front + 0.08, 'part'),
-        focusLabel('底下两排开放', L.narrowCenter, bottomCell1.top + 0.08, front + 0.05, 'dim'),
+        focusLabel('整高门 1 扇', L.narrowCenter, L.H * 0.82, front + 0.05, 'part'),
       ],
       lines: [],
       dir: [0.55, 0.12, 1],
@@ -1392,10 +1555,30 @@ function buildFocusStops() {
         focusBox(L.rackLeft + rackShift, L.rackRight + rackShift, 0, L.H, -L.backD, 0, false),
         focusBox(rackDividerCenter - L.t / 2, rackDividerCenter + L.t / 2, 0, L.H, -L.backD, 0),
       ],
+      dims: [
+        {
+          start: [L.rackLeft + rackShift, L.H, -L.backD / 2],
+          end: [L.rackRight + rackShift, L.H, -L.backD / 2],
+          offset: [0, 0.16, 0],
+          label: `后柜宽 ${focusNum(L.backW)}`,
+          tick: 0.045,
+        },
+        {
+          start: [L.rackRight + rackShift, L.H * 0.35, -L.backD],
+          end: [L.rackRight + rackShift, L.H * 0.35, 0],
+          offset: [0.18, 0, 0],
+          label: `深 ${focusNum(L.backD)}`,
+          tick: 0.04,
+        },
+        {
+          start: [L.rackRight, L.H * 0.5, -L.backD / 2],
+          end: [L.rackRight + rackShift, L.H * 0.5, -L.backD / 2],
+          offset: [0, 0.18, 0],
+          label: `侧抽 ${focusNum(L.backPull)}`,
+          tick: 0.045,
+        },
+      ],
       labels: [
-        focusLabel(`后柜 ${focusMm(L.backW)} × ${focusMm(L.backD)}`, rackDividerCenter,
-          L.H + 0.14, -L.backD / 2, 'dim'),
-        focusLabel(`侧抽 ${focusMm(L.backPull)}`, rackDividerCenter, 0.14, -L.backD / 2, 'dim'),
         focusLabel('中间通高竖板', rackDividerCenter, L.H * 0.56, -L.backD / 2, 'part'),
       ],
       lines: [],
@@ -1417,17 +1600,35 @@ function buildFocusStops() {
         focusBox(L.benchCenterX - L.benchW / 2, L.benchCenterX + L.benchW / 2,
           L.benchH - CUSHION_T, L.benchH, L.benchZ1 + benchShift, benchFrontZ),
       ],
-      labels: [
-        focusLabel(`换鞋凳 ${focusMm(L.benchW)}`, L.benchCenterX, L.benchH + 0.06, benchFrontZ, 'dim'),
-        focusLabel(`高 ${focusMm(L.benchH)}`, L.benchCenterX - L.benchW / 2 - 0.14,
-          L.benchH / 2, benchFrontZ, 'dim'),
-        focusLabel(`前伸 ${focusMm(L.benchPull)}`, L.benchCenterX, 0.14, benchFrontZ + 0.08, 'dim'),
+      dims: [
+        {
+          start: [L.benchCenterX - L.benchW / 2, L.benchH, benchFrontZ],
+          end: [L.benchCenterX + L.benchW / 2, L.benchH, benchFrontZ],
+          offset: [0, 0.12, 0],
+          label: `宽 ${focusNum(L.benchW)}`,
+          tick: 0.025,
+        },
+        {
+          start: [L.benchCenterX - L.benchW / 2, 0, benchFrontZ],
+          end: [L.benchCenterX - L.benchW / 2, L.benchH, benchFrontZ],
+          offset: [-0.14, 0, 0],
+          label: `高 ${focusNum(L.benchH)}`,
+          tick: 0.025,
+        },
+        {
+          start: [L.benchCenterX + L.benchW / 2, L.benchH * 0.5, L.benchZ2],
+          end: [L.benchCenterX + L.benchW / 2, L.benchH * 0.5, benchFrontZ],
+          offset: [0.16, 0, 0],
+          label: `前伸 ${focusNum(L.benchPull)}`,
+          tick: 0.03,
+        },
       ],
+      labels: [],
       lines: [],
       dir: [-0.6, 0.14, 1],
       margin: 2.4,
       minDistance: 1.5,
-      targetY: 0.1,
+      targetY: 0.18,
     },
   ];
 }
@@ -1471,6 +1672,14 @@ function renderFocusStop(stop) {
     focusGroup.add(object);
   });
 
+  (stop.dims || []).forEach((spec) => {
+    focusGroup.add(createDimensionAnnotation({ material: focusDimMat, ...spec }));
+  });
+
+  (stop.leaders || []).forEach((spec) => {
+    focusGroup.add(createLeaderAnnotation({ material: focusDimMat, ...spec }));
+  });
+
   stop.labels.forEach((spec) => {
     const label = createDimensionLabel(spec.text);
     label.position.set(spec.x, spec.y, spec.z);
@@ -1494,6 +1703,22 @@ function focusCameraPose(stop) {
     maxY = Math.max(maxY, spec.y2);
     minZ = Math.min(minZ, spec.z1);
     maxZ = Math.max(maxZ, spec.z2);
+  });
+  (stop.dims || []).forEach((dim) => {
+    const ox = dim.offset[0];
+    const oy = dim.offset[1];
+    const oz = dim.offset[2];
+    [[dim.start, 0], [dim.end, 0], [dim.start, 1], [dim.end, 1]].forEach(([point, offset]) => {
+      const x = point[0] + (offset ? ox : 0);
+      const y = point[1] + (offset ? oy : 0);
+      const z = point[2] + (offset ? oz : 0);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+      minZ = Math.min(minZ, z);
+      maxZ = Math.max(maxZ, z);
+    });
   });
   if (!Number.isFinite(minX)) {
     minX = -0.2; maxX = 0.2; minY = 0; maxY = 0.5; minZ = -0.2; maxZ = 0.2;
@@ -1545,7 +1770,10 @@ function updateTourOverlay(stop, index) {
   tourDesc.textContent = stop.desc;
   tourPart.textContent = `部件：${stop.part}`;
   tourValue.textContent = stop.value;
-  tourBar.style.width = '0%';
+  if (tourBar) tourBar.style.width = `${((index + 1) / tour.stops.length) * 100}%`;
+  if (tourPrev) tourPrev.disabled = index <= 0;
+  if (tourNext) tourNext.disabled = index >= tour.stops.length - 1;
+  if (tourEnd) tourEnd.disabled = false;
 }
 
 function setTourParts(labels) {
@@ -1561,8 +1789,9 @@ function setTourParts(labels) {
 }
 
 function showFocusStop(index) {
+  if (!tour.active || tour.phase === 'returning') return;
+  if (index < 0 || index >= tour.stops.length) return;
   const stop = tour.stops[index];
-  if (!stop) return;
   tour.index = index;
   tour.phase = 'moving';
   tour.elapsed = 0;
@@ -1574,6 +1803,7 @@ function showFocusStop(index) {
   tour.fromTarget.copy(viewer.controls.target);
   tour.toPos.copy(pose.position);
   tour.toTarget.copy(pose.target);
+  viewer.controls.enabled = false;
 }
 
 function startTour() {
@@ -1588,17 +1818,10 @@ function startTour() {
   const defaultPose = computeDefaultPose();
   tour.returnPos.copy(defaultPose.position);
   tour.returnTarget.copy(defaultPose.target);
-  tour.fromPos.copy(viewer.camera.position);
-  tour.fromTarget.copy(viewer.controls.target);
   setPartTargets(false);
-  viewer.controls.enabled = false;
-  if (panel) {
-    panel.inert = true;
-    panel.classList.add('is-touring');
-  }
   if (startTourButton) {
     startTourButton.disabled = true;
-    startTourButton.innerHTML = '<span class="tour-start-icon">◌</span><span class="tour-start-copy"><strong>关键约束浏览中…</strong><small>请等待自动完成</small></span>';
+    startTourButton.innerHTML = '<span class="tour-start-icon">◌</span><span class="tour-start-copy"><strong>关键约束浏览中…</strong><small>用下方按钮切换 / 结束</small></span>';
   }
   setDimensionLabelsVisible(false);
   tooltip.classList.remove('is-visible');
@@ -1618,10 +1841,6 @@ function finishTour() {
   viewer.controls.enabled = true;
   viewer.controls.update();
   setPartTargets(false);
-  if (panel) {
-    panel.inert = false;
-    panel.classList.remove('is-touring');
-  }
   if (startTourButton) {
     startTourButton.disabled = false;
     startTourButton.innerHTML = startTourLabel;
@@ -1630,52 +1849,57 @@ function finishTour() {
   applyVisibility();
 }
 
-function startTourReturn() {
+function endTour() {
+  if (!tour.active || tour.phase === 'returning') return;
   tour.phase = 'returning';
   tour.elapsed = 0;
   tour.fromPos.copy(viewer.camera.position);
   tour.fromTarget.copy(viewer.controls.target);
   clearFocusGroup();
+  tour.openLabels = [];
   if (tourOverlay) tourOverlay.hidden = true;
+  setPartTargets(false);
+  viewer.controls.enabled = false;
+}
+
+function abortTourForRebuild() {
+  if (!tour.active) return;
+  tour.active = false;
+  tour.phase = 'idle';
+  tour.elapsed = 0;
+  clearFocusGroup();
+  tour.openLabels = [];
+  if (tourOverlay) tourOverlay.hidden = true;
+  viewer.controls.enabled = true;
+  if (startTourButton) {
+    startTourButton.disabled = false;
+    startTourButton.innerHTML = startTourLabel;
+  }
+  setDimensionLabelsVisible(state.showDims);
 }
 
 function updateTour(delta) {
   if (!tour.active) return;
-  if (tour.phase === 'moving' || tour.phase === 'returning') {
-    tour.elapsed += delta;
-    const duration = tour.phase === 'moving' ? tour.moveDuration : 1.15;
-    const k = Math.min(1, tour.elapsed / duration);
-    const eased = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-    if (tour.phase === 'moving') {
-      viewer.camera.position.lerpVectors(tour.fromPos, tour.toPos, eased);
-      viewer.controls.target.lerpVectors(tour.fromTarget, tour.toTarget, eased);
-    } else {
-      viewer.camera.position.lerpVectors(tour.fromPos, tour.returnPos, eased);
-      viewer.controls.target.lerpVectors(tour.fromTarget, tour.returnTarget, eased);
-    }
-    viewer.controls.update();
-    if (k >= 1) {
-      if (tour.phase === 'moving') {
-        tour.phase = 'holding';
-        tour.elapsed = 0;
-        if (tourBar) tourBar.style.width = '0%';
-      } else {
-        finishTour();
-      }
-    }
-    return;
+  if (tour.phase !== 'moving' && tour.phase !== 'returning') return;
+  tour.elapsed += delta;
+  const k = Math.min(1, tour.elapsed / tour.moveDuration);
+  const eased = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  if (tour.phase === 'moving') {
+    viewer.camera.position.lerpVectors(tour.fromPos, tour.toPos, eased);
+    viewer.controls.target.lerpVectors(tour.fromTarget, tour.toTarget, eased);
+  } else {
+    viewer.camera.position.lerpVectors(tour.fromPos, tour.returnPos, eased);
+    viewer.controls.target.lerpVectors(tour.fromTarget, tour.returnTarget, eased);
   }
-  if (tour.phase === 'holding') {
-    tour.elapsed += delta;
-    if (tourBar) {
-      tourBar.style.width = `${Math.min(100, (tour.elapsed / tour.holdDuration) * 100)}%`;
-    }
-    if (tour.elapsed >= tour.holdDuration) {
-      if (tour.index < tour.stops.length - 1) {
-        showFocusStop(tour.index + 1);
-      } else {
-        startTourReturn();
-      }
+  viewer.controls.update();
+  if (k >= 1) {
+    if (tour.phase === 'moving') {
+      tour.phase = 'idle';
+      tour.elapsed = 0;
+      viewer.controls.enabled = true;
+      viewer.controls.update();
+    } else {
+      finishTour();
     }
   }
 }
@@ -1691,6 +1915,7 @@ function applyPartTransform(part) {
 }
 
 function rebuild() {
+  if (tour.active) abortTourForRebuild();
   normalizeState();
   const direction = viewer.camera.position.clone().sub(viewer.controls.target);
   if (direction.lengthSq() < 1e-6) direction.set(0.62, 0.16, 1);
@@ -1719,6 +1944,10 @@ function rebuild() {
 }
 
 function resetView() {
+  if (tour.active) {
+    showFocusStop(tour.index);
+    return;
+  }
   fitCabinet(new THREE.Vector3(0.62, 0.16, 1));
 }
 
@@ -1770,14 +1999,12 @@ viewer.renderer.domElement.addEventListener('pointerdown', (event) => {
 });
 
 viewer.renderer.domElement.addEventListener('pointerup', (event) => {
-  if (tour.active) return;
   if (Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 6) return;
   const part = pickPart(event);
   if (part) part.target = part.target > 0.5 ? 0 : 1;
 });
 
 viewer.renderer.domElement.addEventListener('pointermove', (event) => {
-  if (tour.active) return;
   const part = pickPart(event);
   viewer.renderer.domElement.style.cursor = part ? 'pointer' : 'grab';
   if (!part) {
@@ -1833,6 +2060,25 @@ document.querySelectorAll('.decision-item[data-target]').forEach((item) => {
 });
 
 if (startTourButton) startTourButton.addEventListener('click', startTour);
+if (tourPrev) tourPrev.addEventListener('click', () => showFocusStop(tour.index - 1));
+if (tourNext) tourNext.addEventListener('click', () => showFocusStop(tour.index + 1));
+if (tourEnd) tourEnd.addEventListener('click', endTour);
+
+document.addEventListener('keydown', (event) => {
+  if (!tour.active) return;
+  const tag = event.target && event.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    showFocusStop(tour.index - 1);
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    showFocusStop(tour.index + 1);
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    endTour();
+  }
+});
 
 document.getElementById('reset-dimensions').addEventListener('click', () => {
   Object.assign(state, DEFAULTS);

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>鞋柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.9.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.10.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -14,16 +14,17 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">鞋柜 · 柜子定制</p>
         <h1>鞋柜</h1>
-        <p class="subtitle">1700 宽 × 800 深固定 · 左柜 408×800 通深无门 · 前柜下门 + 右柜整高门 · 170 抽屉分左右 · 双块决策看板 + 关键约束巡游</p>
+        <p class="subtitle">1700 宽 × 800 深固定 · 左柜 408×800 通深无门 · 前柜下门 + 右柜整高门 · 170 抽屉分左右 · 双块决策看板 + 手动分步巡游 + 尺寸标注线</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.9</span>
+          <span class="chip chip-accent">v1.10</span>
           <span class="chip">1700 × 800 固定</span>
           <span class="chip">前柜下门 + 右柜门</span>
           <span class="chip">170 抽屉分左右</span>
           <span class="chip">最下层板前缩 50</span>
           <span class="chip">后柜 1220 侧抽 · 中间竖板</span>
           <span class="chip">双块决策看板</span>
-          <span class="chip">关键约束自动巡游</span>
+          <span class="chip">关键约束手动巡游</span>
+          <span class="chip">尺寸标注线</span>
         </div>
       </header>
 
@@ -205,7 +206,7 @@
           <li><strong>后柜</strong> 1220×400×通高 2303 白色侧抽鞋架；10 层按 340/340/220×4/150×3/100 缩放；<strong>中间加一块通高竖向分隔板</strong>，左右各约 583，横板分两段；右侧金属拉手；抽拉 1220；藏在前柜背后。</li>
           <li><strong>靠墙</strong> 整柜 800 深靠平墙，不做凹龛/曲面；后柜只在右侧前柜背后。手稿右侧 800 双列鞋架不在本柜范围。</li>
         </ul>
-        <p class="hint">v1.9 新增双块决策看板与“关键约束聚焦”自动巡游：9 处关键尺寸/比例/结构逐点拉近，每处停留 5 秒，显示醒目文字、尺寸与部件标签和脉冲高亮；巡游期间面板/画布锁定，完成后自动回到默认视角。v1.8 的总宽 1700 / 总深 800 固定、前柜下门、右柜整高门、170 抽屉分左右、最下层板前缩 50 均保留。可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
+        <p class="hint">v1.10 把“关键约束聚焦”改为手动分步浏览：9 处关键尺寸/比例/结构逐点拉近，用“上一步 / 下一步 / 结束浏览”自己控制节奏，不再自动计时、不再锁定面板；尺寸改用标注线（延伸线 + 尺寸线 + 斜刻度）画出，尺寸标签直接落在标注线上。v1.9 的双块决策看板与 v1.8 的固定尺寸、前柜下门、右柜整高门、170 抽屉分左右、最下层板前缩 50 均保留。可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
       </section>
 
       <footer class="panel-footer">
@@ -217,14 +218,14 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">鞋柜 v1.9 · 三维预览</span>
+        <span class="stage-title">鞋柜 v1.10 · 三维预览</span>
         <span class="stage-meta" id="size-readout">1700 × 2303 × 800 mm</span>
       </div>
       <button id="start-tour" class="tour-start" type="button">
         <span class="tour-start-icon">◎</span>
         <span class="tour-start-copy">
           <strong>关键约束聚焦</strong>
-          <small>9 处 · 每处 5 秒 · 自动返回</small>
+          <small>9 处 · 手动浏览 · 可随时结束</small>
         </span>
       </button>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门/抽屉/换鞋凳/后柜鞋架开合</div>
@@ -244,7 +245,12 @@
           <strong class="focus-tour-value" id="tour-value">1700 × 2303 × 800</strong>
         </div>
         <div class="focus-tour-track"><span id="tour-bar"></span></div>
-        <p class="focus-tour-hint">自动浏览 · 每处停留 5 秒 · 完成后自动返回默认视角</p>
+        <div class="focus-tour-actions" role="group" aria-label="巡游浏览控制">
+          <button id="tour-prev" class="tour-nav" type="button" disabled>← 上一步</button>
+          <button id="tour-next" class="tour-nav is-primary" type="button">下一步 →</button>
+          <button id="tour-end" class="tour-nav is-ghost" type="button">结束浏览</button>
+        </div>
+        <p class="focus-tour-hint">手动浏览 · ← → 切换 · Esc 结束</p>
       </div>
       <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
     </main>
@@ -258,6 +264,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.9.0"></script>
+  <script type="module" src="./viewer.js?v=1.10.0"></script>
 </body>
 </html>

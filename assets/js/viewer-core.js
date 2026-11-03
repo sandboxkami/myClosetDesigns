@@ -490,6 +490,90 @@ export function createDimensionLabel(text) {
   return label;
 }
 
+function toVector3(value) {
+  return value && value.isVector3
+    ? value.clone()
+    : new THREE.Vector3(value[0], value[1], value[2]);
+}
+
+export function createDimensionAnnotation({
+  start,
+  end,
+  offset,
+  label,
+  material,
+  labelClass = 'focus-dim-label',
+  tick = 0.035,
+  extension = 0.02,
+  labelOffset = 0.06,
+}) {
+  const group = new THREE.Group();
+  const s = toVector3(start);
+  const e = toVector3(end);
+  const o = toVector3(offset);
+  const ds = s.clone().add(o);
+  const de = e.clone().add(o);
+  const dir = de.clone().sub(ds);
+  if (dir.lengthSq() < 1e-9) return group;
+  dir.normalize();
+  const od = o.lengthSq() > 1e-9 ? o.clone().normalize() : new THREE.Vector3(0, 1, 0);
+
+  const addLine = (a, b) => {
+    const geometry = new THREE.BufferGeometry().setFromPoints([a, b]);
+    const line = new THREE.Line(geometry, material);
+    line.renderOrder = 22;
+    group.add(line);
+  };
+
+  // Extension lines reach a little past the dimension line.
+  addLine(s, ds.clone().add(od.clone().multiplyScalar(extension)));
+  addLine(e, de.clone().add(od.clone().multiplyScalar(extension)));
+  // Dimension line and 45-degree architectural ticks at both ends.
+  addLine(ds, de);
+  const slash = dir.clone().add(od).normalize().multiplyScalar(tick);
+  addLine(ds.clone().sub(slash), ds.clone().add(slash));
+  addLine(de.clone().sub(slash), de.clone().add(slash));
+
+  const labelObject = createDimensionLabel(label);
+  labelObject.element.classList.add(labelClass);
+  labelObject.position.copy(
+    ds.clone().add(de).multiplyScalar(0.5).add(od.clone().multiplyScalar(labelOffset)),
+  );
+  group.add(labelObject);
+  return group;
+}
+
+export function createLeaderAnnotation({
+  point,
+  labelPoint,
+  label,
+  material,
+  labelClass = 'focus-dim-label',
+  cross = 0.018,
+}) {
+  const group = new THREE.Group();
+  const p = toVector3(point);
+  const l = toVector3(labelPoint);
+
+  const addLine = (a, b) => {
+    const geometry = new THREE.BufferGeometry().setFromPoints([a, b]);
+    const line = new THREE.Line(geometry, material);
+    line.renderOrder = 22;
+    group.add(line);
+  };
+
+  addLine(p, l);
+  addLine(p.clone().add(new THREE.Vector3(-cross, 0, 0)), p.clone().add(new THREE.Vector3(cross, 0, 0)));
+  addLine(p.clone().add(new THREE.Vector3(0, -cross, 0)), p.clone().add(new THREE.Vector3(0, cross, 0)));
+  addLine(p.clone().add(new THREE.Vector3(0, 0, -cross)), p.clone().add(new THREE.Vector3(0, 0, cross)));
+
+  const labelObject = createDimensionLabel(label);
+  labelObject.element.classList.add(labelClass);
+  labelObject.position.copy(l);
+  group.add(labelObject);
+  return group;
+}
+
 function lineFromPoints(points, material) {
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   return new THREE.Line(geometry, material);

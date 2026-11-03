@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>餐边柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.6.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.7.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -16,7 +16,7 @@
         <h1>餐边柜</h1>
         <p class="subtitle">下柜深 400 固定 · 台面离地 1000 · 窄柜 2 门 · 左 3 抽屉 2:3:4 · 中/右 2:7 · 中柜半高隔板 · 右猫格加底板</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.6</span>
+          <span class="chip chip-accent">v1.7</span>
           <span class="chip">台面离地 1000</span>
           <span class="chip">下柜深 400 固定</span>
           <span class="chip">窄柜 2 门</span>
@@ -25,7 +25,8 @@
           <span class="chip">猫格加底板</span>
           <span class="chip">右活动层板 y≈400</span>
           <span class="chip">双块决策看板</span>
-          <span class="chip">关键约束自动巡游</span>
+          <span class="chip">关键约束手动巡游</span>
+          <span class="chip">尺寸标注线</span>
         </div>
         <div id="utility-warning" class="warning" hidden></div>
       </header>
@@ -241,7 +242,7 @@
           <li><strong>活动层板</strong> 右地柜活动层板降至板面 <strong>y≈400</strong>，位于猫用品格上沿；点“取下活动层板”可手动取出，层板两侧支撑钉保留，再点“放回活动层板”装回。</li>
           <li><strong>弱电箱检查</strong> 层板降至 400 后，不再与弱电箱（底 400）重叠，默认不显示干涉警告/红带；点“弱电箱检查”仍会打开右地柜门并聚焦箱体。</li>
         </ul>
-        <p class="hint">v1.6 新增“关键约束聚焦”自动巡游：点击舞台右上按钮，镜头依次拉近 9 处关键约束并高亮、显示尺寸与部件名称，每处停留 5 秒，完成后自动回到默认视角。双块决策看板、背板/台面/圆角可调等保持 v1.5。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
+        <p class="hint">v1.7 把“关键约束聚焦”改为手动分步浏览：点击舞台右上按钮后，用“上一步 / 下一步 / 结束浏览”自己控制 9 处关键约束，不再自动计时、不再锁定面板；尺寸改用标注线（延伸线 + 尺寸线 + 斜刻度）画出，尺寸标签直接落在标注线上。双块决策看板、背板/台面/圆角可调等保持 v1.5–v1.6。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
       </section>
 
       <footer class="panel-footer">
@@ -253,14 +254,14 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">餐边柜 v1.6 · 三维预览</span>
+        <span class="stage-title">餐边柜 v1.7 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2752 × 2400 × 400 mm</span>
       </div>
       <button id="start-tour" class="tour-start" type="button">
         <span class="tour-start-icon">◎</span>
         <span class="tour-start-copy">
           <strong>关键约束聚焦</strong>
-          <small>9 处 · 每处 5 秒 · 自动返回</small>
+          <small>9 处 · 手动浏览 · 可随时结束</small>
         </span>
       </button>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 可取下层板 / 弱电箱检查</div>
@@ -280,7 +281,12 @@
           <strong class="focus-tour-value" id="tour-value">2752 × 2400 × 400</strong>
         </div>
         <div class="focus-tour-track"><span id="tour-bar"></span></div>
-        <p class="focus-tour-hint">自动浏览 · 每处停留 5 秒 · 完成后自动返回默认视角</p>
+        <div class="focus-tour-actions" role="group" aria-label="巡游浏览控制">
+          <button id="tour-prev" class="tour-nav" type="button" disabled>← 上一步</button>
+          <button id="tour-next" class="tour-nav is-primary" type="button">下一步 →</button>
+          <button id="tour-end" class="tour-nav is-ghost" type="button">结束浏览</button>
+        </div>
+        <p class="focus-tour-hint">手动浏览 · ← → 切换 · Esc 结束</p>
       </div>
       <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
     </main>
@@ -294,6 +300,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.6.0"></script>
+  <script type="module" src="./viewer.js?v=1.7.0"></script>
 </body>
 </html>

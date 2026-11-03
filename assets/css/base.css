@@ -1247,11 +1247,6 @@ button.decision-item:focus-visible {
   color: rgba(255, 250, 245, 0.75);
 }
 
-.panel.is-touring {
-  opacity: 0.72;
-  pointer-events: none;
-}
-
 .focus-tour {
   position: absolute;
   left: 50%;
@@ -1332,6 +1327,59 @@ button.decision-item:focus-visible {
   white-space: nowrap;
 }
 
+.focus-tour-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.tour-nav {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 183, 112, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffe0b8;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.tour-nav:hover:not(:disabled) {
+  border-color: rgba(255, 196, 132, 0.75);
+  background: rgba(255, 183, 112, 0.18);
+}
+
+.tour-nav:focus-visible {
+  outline: 2px solid rgba(255, 196, 132, 0.75);
+  outline-offset: 2px;
+}
+
+.tour-nav:disabled {
+  cursor: default;
+  opacity: 0.34;
+}
+
+.tour-nav.is-primary {
+  border-color: transparent;
+  background: #ffb76b;
+  color: #3a291a;
+  font-weight: 700;
+}
+
+.tour-nav.is-primary:hover:not(:disabled) {
+  background: #ffc98c;
+}
+
+.tour-nav.is-ghost {
+  flex: 0 0 auto;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 250, 244, 0.78);
+}
+
 .focus-tour-track {
   height: 3px;
   margin-top: 13px;
@@ -1374,6 +1422,7 @@ button.decision-item:focus-visible {
   border: 1px solid rgba(255, 183, 112, 0.72);
   background: rgba(42, 32, 23, 0.93);
   color: #ffe0b8;
+  animation: none;
 }
 
 .focus-part-label {
@@ -1430,5 +1479,15 @@ button.decision-item:focus-visible {
     margin-top: 7px;
     font-size: 18px;
     white-space: normal;
+  }
+
+  .focus-tour-actions {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .tour-nav {
+    padding: 7px 8px;
+    font-size: 10.5px;
   }
 }
