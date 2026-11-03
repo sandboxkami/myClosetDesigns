@@ -19,13 +19,12 @@ const DEFAULTS = {
   H: 2303,
   D: 750,
   backD: 350,
-  backW: 350,
-  backPull: 400,
+  backW: 420,
+  backPull: 420,
   benchW: 300,
   benchH: 420,
   benchPull: 500,
   t: 18,
-  toeKick: 50,
   topGap: 30,
 };
 
@@ -71,7 +70,7 @@ const SCENE = {
   depth: 0.75,
   frontD: 0.4,
   backD: 0.35,
-  backW: 0.35,
+  backW: 0.42,
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -87,46 +86,14 @@ const materials = createMaterials();
 createLights(viewer.scene);
 const room = createRoom(viewer.scene, materials);
 
-// The shoe cabinet uses a stepped wall: the left/middle front layer sits
-// against a 400-deep wall, while the right 350-wide back rack sits in a niche.
-room.wall.visible = false;
+// Flat wall: the whole 750-deep cabinet stands against one wall, no niche.
 room.baseboard.visible = false;
-
-const shell = {
-  front: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials.wall),
-  nicheBack: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials.wall),
-  nicheSide: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials.wall),
-};
-Object.values(shell).forEach((piece) => {
-  piece.receiveShadow = true;
-  room.group.add(piece);
-});
-
-function updateShell() {
-  const W = state.W / 1000;
-  const frontD = state.frontD / 1000;
-  const backD = state.backD / 1000;
-  const backW = state.backW / 1000;
-
-  shell.front.scale.set(Math.max(0.05, W - backW), 3.4, 1);
-  shell.front.position.set(-backW / 2, 1.7, -frontD / 2 - 0.001);
-
-  shell.nicheBack.scale.set(Math.max(0.05, backW), 3.4, 1);
-  shell.nicheBack.position.set(W / 2 - backW / 2, 1.7, -frontD / 2 - backD - 0.001);
-
-  shell.nicheSide.scale.set(Math.max(0.05, backD), 3.4, 1);
-  shell.nicheSide.position.set(W / 2 - backW, 1.7, -frontD / 2 - backD / 2);
-  shell.nicheSide.rotation.y = Math.PI / 2;
-
-  room.contactShadow.position.z = -backD / 2;
-}
 
 const cabinetGroup = new THREE.Group();
 cabinetGroup.name = 'shoe-cabinet';
 viewer.scene.add(cabinetGroup);
 
 const MAT = {
-  toeKick: new THREE.MeshStandardMaterial({ color: 0x3c3731, roughness: 0.94 }),
   pull: new THREE.MeshStandardMaterial({ color: 0x4a443b, roughness: 0.66 }),
   cushion: new THREE.MeshStandardMaterial({ color: 0xb6a58d, roughness: 0.96 }),
   bag: new THREE.MeshStandardMaterial({ color: 0xb0825f, roughness: 0.7 }),
@@ -146,7 +113,6 @@ const MAT = {
 
 let interactiveParts = [];
 let propsGroup = null;
-let boardPropsGroup = null;
 let rackPropsGroup = null;
 let doorsGroup = null;
 let dimensionGroup = null;
@@ -158,7 +124,6 @@ function normalizeState() {
   state.D = clamp(state.D, 650, 850);
   state.backD = clamp(state.backD, 300, 400);
   state.t = clamp(Math.round(state.t), 16, 25);
-  state.toeKick = clamp(state.toeKick, 30, 100);
   state.topGap = clamp(state.topGap, 10, 60);
   state.benchH = clamp(state.benchH, 380, 460);
   state.benchPull = clamp(state.benchPull, 300, 600);
@@ -184,7 +149,7 @@ function normalizeState() {
 
   state.kneeH = state.H - state.topGap - 3 * state.t - 400 - 980 - state.benchH;
 
-  const midFixed = state.toeKick + state.topGap + 120 + 12 * state.t;
+  const midFixed = state.topGap + 120 + 12 * state.t;
   const midScale = Math.max(0.5, (state.H - midFixed) / 1920);
   state.midBottomH = 420 * midScale;
   state.midShoeH = 570 * midScale;
@@ -192,7 +157,7 @@ function normalizeState() {
   state.midUpperParts = MID_UPPER_RATIOS.map((value) => value * (state.midUpperH / 930));
   state.midShoeParts = MID_SHOE_RATIOS.map((value) => value * (state.midShoeH / 570));
 
-  const narrowAvail = state.H - state.toeKick - state.topGap - 10 * state.t;
+  const narrowAvail = state.H - state.topGap - 9 * state.t;
   const narrowScale = Math.max(0.5, narrowAvail / NARROW_RATIO_SUM);
   state.narrowHeights = NARROW_RATIOS.map((value) => value * narrowScale);
 
@@ -217,6 +182,7 @@ function updateReadouts() {
   document.getElementById('left-width').textContent = `${LEFT_W} mm`;
   document.getElementById('mid-width').textContent = `${format(state.midW, 0)} mm`;
   document.getElementById('narrow-width').textContent = `${NARROW_W} mm`;
+  document.getElementById('hanging-depth').textContent = `${format(state.D, 0)} mm（贯通）`;
   document.getElementById('left-zones').textContent =
     `400 / 980 / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
   document.getElementById('mid-zones').textContent =
@@ -505,7 +471,6 @@ function buildCabinet() {
   const backW = state.backW / 1000;
   const backPull = state.backPull / 1000;
   const t = state.t / 1000;
-  const toeKick = state.toeKick / 1000;
   const topGap = state.topGap / 1000;
   const leftW = LEFT_W / 1000;
   const midW = state.midW / 1000;
@@ -520,6 +485,8 @@ function buildCabinet() {
   const carcassZ = -doorT / 2;
   const interiorD = frontD - doorT - BACK_T;
   const interiorZ = (BACK_T - doorT) / 2;
+  const leftInteriorD = D - BACK_T;
+  const leftInteriorZ = -backD / 2 + BACK_T / 2;
   const doorZ = frontD / 2 - doorT / 2;
   const topPanelTop = H - topGap;
   const topPanelBottom = topPanelTop - t;
@@ -553,34 +520,37 @@ function buildCabinet() {
   doorsGroup.name = 'doors';
   cabinetGroup.add(doorsGroup);
 
-  // Carcass: five vertical panels, top, back, and the middle/narrow bottom.
+  // Carcass: left column and divider 1 run the full 750 depth; middle/narrow
+  // front layer is 400 deep, with the flat back at -0.55 closing the cabinet.
   cabinetGroup.add(
-    box(t, H, carcassD, materials.whiteCarcass, { x: x0 + t / 2, y: H / 2, z: carcassZ }),
+    box(t, H, D, materials.whiteCarcass, { x: x0 + t / 2, y: H / 2, z: 0 }),
     box(t, H, carcassD, materials.whiteCarcass, { x: x1 - t / 2, y: H / 2, z: carcassZ }),
-    box(t, H, carcassD, materials.whiteCarcass, { x: divider1X, y: H / 2, z: carcassZ }),
+    box(t, H, D, materials.whiteCarcass, { x: divider1X, y: H / 2, z: 0 }),
     box(t, H, carcassD, materials.whiteCarcass, { x: divider2X, y: H / 2, z: carcassZ }),
-    box(W, t, carcassD, materials.whiteCarcass, { y: topPanelBottom + t / 2, z: carcassZ }),
+    box(leftInner1 - x0, t, D, materials.whiteCarcass, {
+      x: (x0 + leftInner1) / 2,
+      y: topPanelBottom + t / 2,
+      z: 0,
+    }),
+    box(x1 - leftInner1, t, carcassD, materials.whiteCarcass, {
+      x: (leftInner1 + x1) / 2,
+      y: topPanelBottom + t / 2,
+      z: carcassZ,
+    }),
     box(W - 2 * t, H, BACK_T, materials.wood, {
+      y: H / 2,
+      z: -D / 2 + BACK_T / 2,
+      cast: false,
+    }),
+    box(narrowInner1 - leftInner1, H, BACK_T, materials.wood, {
+      x: (leftInner1 + narrowInner1) / 2,
       y: H / 2,
       z: -frontD / 2 + BACK_T / 2,
       cast: false,
     }),
-    box(narrowInner1 - leftInner1, t, carcassD, materials.whiteCarcass, {
-      x: (leftInner1 + narrowInner1) / 2,
-      y: toeKick + t / 2,
-      z: carcassZ,
-    }),
   );
 
-  // Recessed toe kick under the middle and open tower. The bench bay is open to the floor.
-  cabinetGroup.add(
-    box(narrowInner1 - leftInner1, toeKick, 0.018, MAT.toeKick, {
-      x: (leftInner1 + narrowInner1) / 2,
-      y: toeKick / 2,
-      z: bodyFront - 0.05 - 0.009,
-      cast: false,
-    }),
-  );
+  // No toe kick or bottom panel in the front row: the lowest layer is the floor.
 
   // 30 mm top scribe/filler across the front.
   cabinetGroup.add(
@@ -600,15 +570,15 @@ function buildCabinet() {
   const bagBottom = hangTop + t;
 
   cabinetGroup.add(
-    box(leftW, t, interiorD, materials.wood, { x: leftCenter, y: hangShelfY, z: interiorZ }),
-    box(leftW, t, interiorD, materials.wood, { x: leftCenter, y: bagShelfY, z: interiorZ }),
+    box(leftW, t, leftInteriorD, materials.wood, { x: leftCenter, y: hangShelfY, z: leftInteriorZ }),
+    box(leftW, t, leftInteriorD, materials.wood, { x: leftCenter, y: bagShelfY, z: leftInteriorZ }),
   );
 
   const rodY = hangTop - 0.06;
   const rod = cylinder(0.0125, leftW - 0.02, materials.woodDark, {
     x: leftCenter,
     y: rodY,
-    z: interiorZ,
+    z: leftInteriorZ,
   });
   rod.rotation.z = Math.PI / 2;
   cabinetGroup.add(rod);
@@ -632,10 +602,12 @@ function buildCabinet() {
     label: '左柜下门（挂衣区）',
   });
 
-  // Middle: bottom open bay, shoe shelves, 120 drawer, upper storage.
-  const midBottomStart = toeKick + t;
-  const midBottomTop = midBottomStart + state.midBottomH / 1000;
+  // Middle: bottom open bay (floor + plain fixed board), shoe shelves,
+  // 120 drawer, upper storage. No toe kick, no bottom panel, no pull-out.
+  const midBottomStart = 0;
+  const midBottomTop = state.midBottomH / 1000;
   const midBottomShelfY = midBottomTop + t / 2;
+  const fixedBoardTop = clamp(state.midBottomH / 2000, 0.15, 0.3);
 
   cabinetGroup.add(
     box(midW, t, interiorD, materials.wood, { x: midCenter, y: midBottomShelfY, z: interiorZ }),
@@ -728,55 +700,17 @@ function buildCabinet() {
     label: '中柜上门（右）',
   });
 
-  // Bottom pull-out shoe board in the middle open bay.
-  const boardY = midBottomStart + clamp(state.midBottomH / 2000, 0.15, 0.26);
-  const boardGroup = new THREE.Group();
-  boardGroup.name = 'pull-out-board';
-  cabinetGroup.add(boardGroup);
-
-  boardGroup.add(
+  // Bottom two layers of the front row are plain: bare floor + one fixed board.
+  cabinetGroup.add(
     box(midW - 0.02, t, interiorD - 0.02, materials.wood, {
-      y: boardY - t / 2,
+      x: midCenter,
+      y: fixedBoardTop - t / 2,
       z: interiorZ,
-    }),
-    box(midW - 0.02, 0.035, 0.018, materials.whiteEdge, {
-      y: boardY + 0.017,
-      z: bodyFront - 0.009,
-    }),
-    box(0.12, 0.006, 0.004, MAT.pull, {
-      y: boardY + 0.02,
-      z: bodyFront + 0.002,
     }),
   );
 
-  boardPropsGroup = new THREE.Group();
-  boardGroup.add(boardPropsGroup);
-  addShoeRow(boardPropsGroup, {
-    xCenter: midCenter,
-    y: boardY,
-    z: interiorZ + 0.03,
-    count: 2,
-    type: 'slipper',
-    colorOffset: 0,
-    spacing: 0.3,
-  });
-
-  const boardPart = {
-    type: 'board',
-    group: boardGroup,
-    open: 0,
-    target: 0,
-    travel: 0.3,
-    label: '底部抽拉鞋板',
-  };
-  boardGroup.userData.part = boardPart;
-  boardGroup.traverse((object) => {
-    if (object.isMesh) object.userData.part = boardPart;
-  });
-  interactiveParts.push(boardPart);
-
-  // Narrow open tower: nine clear bays, two boot bays at top.
-  let narrowCursor = toeKick + t;
+  // Narrow open tower: nine clear bays, two boot bays at top; bottom is floor.
+  let narrowCursor = 0;
   const narrowCells = [];
   // Ratios are stored top-to-bottom; build from the floor up.
   [...state.narrowHeights].reverse().forEach((heightMm, index, list) => {
@@ -871,7 +805,7 @@ function buildCabinet() {
 
   for (let i = 0; i < 2; i += 1) {
     const garment = createHangingGarment(materials, i + 1, 0.86, 0.3);
-    garment.position.set(leftCenter + (i === 0 ? -0.085 : 0.085), rodY, interiorZ);
+    garment.position.set(leftCenter + (i === 0 ? -0.085 : 0.085), rodY, leftInteriorZ);
     propsGroup.add(garment);
   }
 
@@ -938,16 +872,25 @@ function buildCabinet() {
     spacing: 0.3,
   });
 
-  // Back layer: a 350-wide, 350-deep, full-height shoe rack behind the right
-  // narrow tower. It slides out to the right (side pull) on the niche.
+  addShoeRow(propsGroup, {
+    xCenter: midCenter,
+    y: fixedBoardTop + 0.002,
+    z: interiorZ + 0.035,
+    count: 2,
+    type: 'sneaker',
+    colorOffset: 1,
+    spacing: 0.3,
+  });
+
+  // Back layer: a back rack the same width as the front narrow tower,
+  // behind it and against the flat wall. It slides out to the right (side pull).
   const rackRight = W / 2;
   const rackLeft = W / 2 - backW;
   const rackCenterX = W / 2 - backW / 2;
-  const rackFrontZ = -frontD / 2;
   const rackBackZ = -frontD / 2 - backD;
   const rackCenterZ = -frontD / 2 - backD / 2;
-  const backInteriorZ = -frontD / 2 - backD / 2 + BACK_T / 2;
-  const backInteriorD = backD - BACK_T;
+  const backInteriorZ = -frontD / 2 - backD / 2 + BACK_T;
+  const backInteriorD = backD - 2 * BACK_T;
   const rackInnerW = backW - 2 * t;
 
   const rackGroup = new THREE.Group();
@@ -962,7 +905,7 @@ function buildCabinet() {
     box(backW - 2 * t, H, BACK_T, materials.whiteCarcass, {
       x: rackCenterX,
       y: H / 2,
-      z: rackBackZ + BACK_T / 2,
+      z: rackBackZ + BACK_T * 1.5,
       cast: false,
     }),
     box(backW, topGap, backD, materials.whiteEdge, {
@@ -1081,13 +1024,12 @@ function buildCabinet() {
   cabinetGroup.add(dimensionGroup);
 
   updateRoom(room, { width: W, height: H, depth: D });
-  updateShell();
+  room.contactShadow.position.z = -backD / 2;
   applyVisibility();
 }
 
 function applyVisibility() {
   if (propsGroup) propsGroup.visible = state.showProps;
-  if (boardPropsGroup) boardPropsGroup.visible = state.showProps;
   if (rackPropsGroup) rackPropsGroup.visible = state.showProps;
   if (dimensionGroup) dimensionGroup.visible = state.showDims;
   if (doorsGroup) doorsGroup.visible = state.showDoors;
@@ -1256,7 +1198,7 @@ function animate() {
       part.open = damp(part.open, part.target, 8.5, delta);
       if (part.type === 'door') {
         part.group.rotation.y = part.hingeSign * part.open * part.angle;
-      } else if (part.type === 'drawer' || part.type === 'bench' || part.type === 'board') {
+      } else if (part.type === 'drawer' || part.type === 'bench') {
         part.group.position.z = part.open * part.travel;
       } else if (part.type === 'backRack') {
         part.group.position.x = part.open * part.travel;
