@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>餐边柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.4.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.5.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -16,7 +16,7 @@
         <h1>餐边柜</h1>
         <p class="subtitle">下柜深 400 固定 · 台面离地 1000 · 窄柜 2 门 · 左 3 抽屉 2:3:4 · 中/右 2:7 · 中柜半高隔板 · 右猫格加底板</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.4</span>
+          <span class="chip chip-accent">v1.5</span>
           <span class="chip">台面离地 1000</span>
           <span class="chip">下柜深 400 固定</span>
           <span class="chip">窄柜 2 门</span>
@@ -24,9 +24,53 @@
           <span class="chip">中/右 2:7</span>
           <span class="chip">猫格加底板</span>
           <span class="chip">右活动层板 y≈400</span>
+          <span class="chip">双块决策看板</span>
         </div>
         <div id="utility-warning" class="warning" hidden></div>
       </header>
+
+      <section class="decision-board" aria-label="设计决策看板">
+        <article class="decision-card is-fixed">
+          <div class="decision-head">
+            <span class="decision-dot"></span>
+            <h2>已确认固定</h2>
+            <span class="decision-count">8 项</span>
+          </div>
+          <div class="decision-grid">
+            <div class="decision-item"><span class="decision-label">下柜深</span><span class="decision-value">400 mm</span></div>
+            <div class="decision-item"><span class="decision-label">台面离地</span><span class="decision-value">1000 mm</span></div>
+            <div class="decision-item"><span class="decision-label">右活动层板</span><span class="decision-value">板面 400</span></div>
+            <div class="decision-item"><span class="decision-label">左抽比例</span><span class="decision-value">2 : 3 : 4</span></div>
+            <div class="decision-item"><span class="decision-label">中/右 抽:柜</span><span class="decision-value">2 : 7</span></div>
+            <div class="decision-item"><span class="decision-label">中柜隔板</span><span class="decision-value">1 / 2 高</span></div>
+            <div class="decision-item"><span class="decision-label">右猫格底板</span><span class="decision-value">18 mm</span></div>
+            <div class="decision-item"><span class="decision-label">窄柜门</span><span class="decision-value">2 扇（中+上合并）</span></div>
+          </div>
+        </article>
+
+        <article class="decision-card is-open">
+          <div class="decision-head">
+            <span class="decision-dot"></span>
+            <h2>待确认关键</h2>
+            <span class="decision-count">12 项 · 可调 / 联动</span>
+          </div>
+          <div class="decision-grid">
+            <button class="decision-item" type="button" data-target="number-W"><span class="decision-label">总长</span><span class="decision-value" id="decision-W">2752 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-H"><span class="decision-label">总高</span><span class="decision-value" id="decision-H">2400 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-upperH"><span class="decision-label">上柜高</span><span class="decision-value" id="decision-upperH">750 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-upperH"><span class="decision-label">中间开放高</span><span class="decision-value" id="decision-gapH">620 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-upperD"><span class="decision-label">上柜深</span><span class="decision-value" id="decision-upperD">350 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-narrowW"><span class="decision-label">窄柜宽</span><span class="decision-value" id="decision-narrowW">352 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-narrowW"><span class="decision-label">主格宽</span><span class="decision-value" id="decision-moduleW">800 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-petH"><span class="decision-label">猫用品格高</span><span class="decision-value" id="decision-petH">400 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-t"><span class="decision-label">柜体板厚</span><span class="decision-value" id="decision-t">18 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-backT"><span class="decision-label">背板厚</span><span class="decision-value" id="decision-backT">7 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-counterT"><span class="decision-label">台面厚</span><span class="decision-value" id="decision-counterT">20 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-endRadius"><span class="decision-label">右端圆角</span><span class="decision-value" id="decision-endRadius">R50</span><span class="decision-flag">可调</span></button>
+          </div>
+          <p class="decision-hint">点击“可调 / 联动”项，跳到下方对应的调节项；联动项由上游尺寸推导。</p>
+        </article>
+      </section>
 
       <section class="controls" aria-labelledby="dimensions-title">
         <div class="section-heading">
@@ -101,7 +145,7 @@
 
           <div class="control-row compact">
             <div class="control-head">
-              <label for="range-t">板厚</label>
+              <label for="range-t">柜体板厚</label>
               <span class="control-number">
                 <input id="number-t" data-number="t" type="number" min="16" max="25" step="1" value="18" inputmode="numeric"> mm
               </span>
@@ -109,7 +153,37 @@
             <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
           </div>
 
-          <p class="micro-hint">总长 = 最左窄柜 + 3 个主格。下柜固定 1000 高（台面离地 1000），中间开放高 = 总高 − 30 顶缝 − 1000 − 上柜高。下柜 9 等分：左抽 2:3:4；中/右抽屉:柜体 2:7，三格上抽底边对齐。</p>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-backT">背板厚</label>
+              <span class="control-number">
+                <input id="number-backT" data-number="backT" type="number" min="5" max="12" step="1" value="7" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-backT" data-range="backT" type="range" min="5" max="12" step="1" value="7">
+          </div>
+
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-counterT">台面厚</label>
+              <span class="control-number">
+                <input id="number-counterT" data-number="counterT" type="number" min="15" max="30" step="1" value="20" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-counterT" data-range="counterT" type="range" min="15" max="30" step="1" value="20">
+          </div>
+
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-endRadius">右端圆角 R</label>
+              <span class="control-number">
+                <input id="number-endRadius" data-number="endRadius" type="number" min="20" max="80" step="5" value="50" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-endRadius" data-range="endRadius" type="range" min="20" max="80" step="5" value="50">
+          </div>
+
+          <p class="micro-hint">总长 = 最左窄柜 + 3 个主格。下柜固定 1000 高（台面离地 1000），中间开放高 = 总高 − 30 顶缝 − 1000 − 上柜高。下柜 9 等分：左抽 2:3:4；中/右抽屉:柜体 2:7，三格上抽底边对齐。背板厚、台面厚和右端圆角先按可调工艺参数处理，确认后再固定。</p>
         </details>
 
         <div class="computed">
@@ -127,7 +201,7 @@
           <div class="computed-wide"><span>窄柜分层（自上而下）</span><strong id="narrow-layer-heights">375 / 375 / 620 / 500 / 500 mm</strong></div>
           <div class="computed-wide"><span>左抽屉（2:3:4）</span><strong id="left-drawer-heights">217.8 / 326.7 / 435.6 mm</strong></div>
           <div class="computed-wide"><span>中/右抽屉 : 柜体（2:7）</span><strong id="mid-drawer-cabinet">217.8 / 762.2 mm</strong></div>
-          <div class="computed-wide"><span>右端圆角</span><strong>R50（最右门 / 抽屉 / 上翻门内缩 50）</strong></div>
+          <div class="computed-wide"><span>右端圆角</span><strong id="end-radius">R50（最右门 / 抽屉 / 上翻门内缩 50）</strong></div>
         </div>
         <div id="height-warning" class="warning" hidden></div>
       </section>
@@ -166,7 +240,7 @@
           <li><strong>活动层板</strong> 右地柜活动层板降至板面 <strong>y≈400</strong>，位于猫用品格上沿；点“取下活动层板”可手动取出，层板两侧支撑钉保留，再点“放回活动层板”装回。</li>
           <li><strong>弱电箱检查</strong> 层板降至 400 后，不再与弱电箱（底 400）重叠，默认不显示干涉警告/红带；点“弱电箱检查”仍会打开右地柜门并聚焦箱体。</li>
         </ul>
-        <p class="hint">v1.4 将右地柜活动层板降至板面 400，位于猫格上沿并避让弱电箱；同时保留 v1.3 的台面 1000、下柜深 400、左抽 2:3:4、中/右 2:7、中柜半高隔板、右猫格底板和窄柜合并门。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
+        <p class="hint">v1.5 在左上新增“已确认固定 / 待确认关键”双块决策看板；点击块 2 的“可调 / 联动”项可跳到对应调节。背板厚、台面厚、右端圆角新设为可调，确认前可随时调整。其余保持 v1.4。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
       </section>
 
       <footer class="panel-footer">
@@ -178,7 +252,7 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">餐边柜 v1.4 · 三维预览</span>
+        <span class="stage-title">餐边柜 v1.5 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2752 × 2400 × 400 mm</span>
       </div>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 可取下层板 / 弱电箱检查</div>
@@ -196,6 +270,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.4.0"></script>
+  <script type="module" src="./viewer.js?v=1.5.0"></script>
 </body>
 </html>

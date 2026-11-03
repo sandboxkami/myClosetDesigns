@@ -25,14 +25,14 @@ const DEFAULTS = {
   narrowW: 352,
   petH: 400,
   t: 18,
+  backT: 7,
+  counterT: 20,
+  endRadius: 50,
   shelfRemoved: false,
 };
 
 const GAP = 0.003;
 const TOP_GAP = 0.03;
-const ROUND_R = 0.05;
-const COUNTER_T = 0.02;
-const BACK_T = 0.007;
 const LEFT_DRAWER_RATIO = [2, 3, 4];
 const DRAWER_CABINET_RATIO = [2, 7];
 // Right lower movable shelf: its top surface is fixed at 400 above the floor,
@@ -129,12 +129,15 @@ function normalizeState() {
   state.W = clamp(state.W, 2300, 3200);
   state.H = clamp(state.H, 2200, 2600);
   state.lowerD = FIXED.lowerD;
+  state.t = clamp(Math.round(state.t), 16, 25);
+  state.backT = clamp(Math.round(state.backT), 5, 12);
+  state.counterT = clamp(Math.round(state.counterT), 15, 30);
+  state.endRadius = clamp(Math.round(state.endRadius / 5) * 5, 20, 80);
   state.upperD = clamp(state.upperD, 300, 400);
   state.upperD = Math.min(state.upperD, state.lowerD - state.t);
   state.upperH = clamp(state.upperH, 600, 900);
   state.narrowW = clamp(state.narrowW, 250, 450);
   state.petH = clamp(state.petH, 300, RIGHT_SHELF_TOP);
-  state.t = clamp(Math.round(state.t), 16, 25);
 
   // Counter top is fixed at 1000 above the floor; the open gap absorbs the
   // remaining height after the fixed lower cabinet and the adjustable upper.
@@ -149,7 +152,7 @@ function normalizeState() {
 
   // Lower body: 9 equal parts. Left = 2:3:4; middle/right = top drawer 2,
   // cabinet 7, so the top drawer bottom aligns across all three modules.
-  const lowerBodyH = state.lowerH - COUNTER_T * 1000;
+  const lowerBodyH = state.lowerH - state.counterT;
   const part = lowerBodyH / 9;
   state.drawerH = DRAWER_CABINET_RATIO[0] * part;
   state.lowerDoorH = DRAWER_CABINET_RATIO[1] * part;
@@ -164,6 +167,8 @@ function getUtilityInfo() {
   const W = state.W / 1000;
   const lowerD = state.lowerD / 1000;
   const t = state.t / 1000;
+  const backT = state.backT / 1000;
+  const endRadius = state.endRadius / 1000;
   const moduleW = state.moduleW / 1000;
   const right = W / 2;
   const boxRight = right - UTILITY.rightOffset / 1000;
@@ -176,10 +181,10 @@ function getUtilityInfo() {
   // The only right-module shelf in the box's height range.
   const shelfTop = RIGHT_SHELF_TOP / 1000;
   const shelfY = shelfTop - t / 2;
-  const shelfBack = -lowerD / 2 + BACK_T;
+  const shelfBack = -lowerD / 2 + backT;
   const shelfFront = lowerD / 2 - t;
   const rightModuleLeft = right - moduleW;
-  const rightInnerX = right - ROUND_R;
+  const rightInnerX = right - endRadius;
 
   const overlapX = Math.min(boxRight, rightInnerX) - Math.max(boxLeft, rightModuleLeft);
   const overlapY = Math.min(boxTop, shelfY + t / 2) - Math.max(boxBottom, shelfY - t / 2);
@@ -247,6 +252,22 @@ function updateReadouts() {
     `${format(state.drawerH, 1)} / ${format(state.lowerDoorH, 1)} mm`;
   document.getElementById('narrow-layer-heights').textContent =
     `${format(state.upperH / 2, 0)} / ${format(state.upperH / 2, 0)} / ${format(state.gapH, 0)} / ${format(state.lowerH / 2, 0)} / ${format(state.lowerH / 2, 0)} mm`;
+
+  // Decision-board values (block 2: unfixed key dimensions)
+  document.getElementById('decision-W').textContent = `${format(state.W, 0)} mm`;
+  document.getElementById('decision-H').textContent = `${format(state.H, 0)} mm`;
+  document.getElementById('decision-upperH').textContent = `${format(state.upperH, 0)} mm`;
+  document.getElementById('decision-gapH').textContent = `${format(state.gapH, 0)} mm`;
+  document.getElementById('decision-upperD').textContent = `${format(state.upperD, 0)} mm`;
+  document.getElementById('decision-narrowW').textContent = `${format(state.narrowW, 1)} mm`;
+  document.getElementById('decision-moduleW').textContent = `${format(state.moduleW, 1)} mm`;
+  document.getElementById('decision-petH').textContent = `${format(state.petH, 0)} mm`;
+  document.getElementById('decision-t').textContent = `${format(state.t, 0)} mm`;
+  document.getElementById('decision-backT').textContent = `${format(state.backT, 0)} mm`;
+  document.getElementById('decision-counterT').textContent = `${format(state.counterT, 0)} mm`;
+  document.getElementById('decision-endRadius').textContent = `R${format(state.endRadius, 0)}`;
+  document.getElementById('end-radius').textContent =
+    `R${format(state.endRadius, 0)}（最右门 / 抽屉 / 上翻门内缩 ${format(state.endRadius, 0)}）`;
 
   const warnings = [];
   if (state.moduleW < 650) warnings.push(`主格宽 ${format(state.moduleW, 0)} mm < 650`);
@@ -586,6 +607,9 @@ function buildCabinet() {
   const drawerH = state.drawerH / 1000;
   const petH = state.petH / 1000;
   const t = state.t / 1000;
+  const backT = state.backT / 1000;
+  const counterT = state.counterT / 1000;
+  const endRadius = state.endRadius / 1000;
   const moduleW = state.moduleW / 1000;
   const lowerH = state.lowerH / 1000;
   const lowerDoorH = state.lowerDoorH / 1000;
@@ -595,19 +619,19 @@ function buildCabinet() {
   const lowerBodyFront = lowerFront - doorT;
   const lowerBodyDepth = lowerD - doorT;
   const lowerBodyCenterZ = -doorT / 2;
-  const lowerInteriorD = lowerD - doorT - BACK_T;
-  const lowerInteriorZ = (-lowerD / 2 + BACK_T + lowerBodyFront) / 2;
+  const lowerInteriorD = lowerD - doorT - backT;
+  const lowerInteriorZ = (-lowerD / 2 + backT + lowerBodyFront) / 2;
 
   const upperFront = -lowerD / 2 + upperD;
   const upperBodyFront = upperFront - doorT;
   const upperBodyDepth = upperD - doorT;
   const upperBodyCenterZ = (-lowerD / 2 + upperBodyFront) / 2;
-  const upperInteriorD = upperD - doorT - BACK_T;
-  const upperInteriorZ = (-lowerD / 2 + BACK_T + upperBodyFront) / 2;
+  const upperInteriorD = upperD - doorT - backT;
+  const upperInteriorZ = (-lowerD / 2 + backT + upperBodyFront) / 2;
   const upperDoorZ = upperFront - doorT / 2;
   const lowerDoorZ = lowerFront - doorT / 2;
 
-  const lowerBodyTop = lowerH - COUNTER_T;
+  const lowerBodyTop = lowerH - counterT;
   const upperBottom = lowerH + gapH;
   const upperTop = H - TOP_GAP;
   const drawerTop = lowerBodyTop;
@@ -622,7 +646,7 @@ function buildCabinet() {
   const c1 = (x1 + x2) / 2;
   const c2 = (x2 + x3) / 2;
   const c3 = (x3 + x4) / 2;
-  const rightInnerX = x4 - ROUND_R;
+  const rightInnerX = x4 - endRadius;
   const utility = getUtilityInfo();
 
   SCENE.doorT = doorT;
@@ -639,7 +663,7 @@ function buildCabinet() {
     backPanelWithRectHole(
       rightInnerX - x1,
       lowerBodyTop,
-      BACK_T,
+      backT,
       utility.xCenter - (x1 + rightInnerX) / 2,
       utility.yCenter,
       UTILITY.w / 1000 + (UTILITY.reveal * 2) / 1000,
@@ -700,7 +724,7 @@ function buildCabinet() {
       box(utility.overlapX, utility.overlapY, utility.overlapZ, UTILITY_MAT.conflict, {
         x: utility.xCenter,
         y: utility.shelfY,
-        z: (Math.max(utility.wallZ, -lowerD / 2 + BACK_T) + Math.min(utility.frontZ, lowerD / 2 - t)) / 2,
+        z: (Math.max(utility.wallZ, -lowerD / 2 + backT) + Math.min(utility.frontZ, lowerD / 2 - t)) / 2,
         cast: false,
         receive: false,
       }),
@@ -740,10 +764,10 @@ function buildCabinet() {
   cabinetGroup.add(
     box(rightInnerX - x1, t, upperBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: upperTop - t / 2, z: upperBodyCenterZ }),
     box(rightInnerX - x1, t, upperBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: upperBottom + t / 2, z: upperBodyCenterZ }),
-    box(rightInnerX - x1, upperH, BACK_T, materials.wood, {
+    box(rightInnerX - x1, upperH, backT, materials.wood, {
       x: (x1 + rightInnerX) / 2,
       y: (upperBottom + upperTop) / 2,
-      z: -lowerD / 2 + BACK_T / 2,
+      z: -lowerD / 2 + backT / 2,
       cast: false,
     }),
   );
@@ -764,7 +788,7 @@ function buildCabinet() {
       zFront: lowerFront,
       yBottom: 0,
       yTop: lowerBodyTop,
-      radius: ROUND_R,
+      radius: endRadius,
       material: materials.whiteCarcass,
     }),
     createRoundedPanel({
@@ -774,7 +798,7 @@ function buildCabinet() {
       zFront: upperFront,
       yBottom: upperBottom,
       yTop: upperTop,
-      radius: ROUND_R,
+      radius: endRadius,
       material: materials.whiteCarcass,
     }),
   );
@@ -810,10 +834,10 @@ function buildCabinet() {
     box(t, upperTop, lowerBodyDepth, materials.whiteCarcass, { x: x1 - t / 2, y: upperTop / 2, z: lowerBodyCenterZ }),
     box(narrowW, t, lowerBodyDepth, materials.whiteCarcass, { x: cN, y: upperTop - t / 2, z: lowerBodyCenterZ }),
     box(narrowW, t, lowerBodyDepth, materials.whiteCarcass, { x: cN, y: t / 2, z: lowerBodyCenterZ }),
-    box(narrowW, upperTop, BACK_T, materials.wood, {
+    box(narrowW, upperTop, backT, materials.wood, {
       x: cN,
       y: upperTop / 2,
-      z: -lowerD / 2 + BACK_T / 2,
+      z: -lowerD / 2 + backT / 2,
       cast: false,
     }),
   );
@@ -852,9 +876,9 @@ function buildCabinet() {
       xRight: x4,
       zBack: -lowerD / 2,
       zFront: lowerFront,
-      yBottom: lowerH - COUNTER_T,
+      yBottom: lowerH - counterT,
       yTop: lowerH,
-      radius: ROUND_R,
+      radius: endRadius,
       material: materials.whiteEdge,
     }),
   );
@@ -1250,6 +1274,20 @@ document.querySelectorAll('[data-number]').forEach((input) => {
   });
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') input.blur();
+  });
+});
+
+document.querySelectorAll('.decision-item[data-target]').forEach((item) => {
+  item.addEventListener('click', () => {
+    const target = document.getElementById(item.dataset.target);
+    if (!target) return;
+    const details = target.closest('details');
+    if (details) details.open = true;
+    requestAnimationFrame(() => {
+      target.focus({ preventScroll: true });
+      if (typeof target.select === 'function') target.select();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   });
 });
 
