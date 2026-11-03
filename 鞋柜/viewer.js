@@ -14,15 +14,18 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
+const FIXED = Object.freeze({ W: 1700, D: 800 });
+
 const DEFAULTS = {
-  W: 1700,
+  W: FIXED.W,
   H: 2303,
-  D: 800,
+  D: FIXED.D,
   backD: 400,
   benchW: 300,
   benchH: 420,
   benchPull: 500,
   t: 18,
+  frontShelfInset: 50,
   topGap: 0,
 };
 
@@ -121,11 +124,13 @@ let dimensionGroup = null;
 let firstBuild = true;
 
 function normalizeState() {
-  state.W = clamp(state.W, 1600, 1800);
+  // Overall width and depth are fixed; the height and internal layout stay adjustable.
+  state.W = FIXED.W;
   state.H = clamp(state.H, 2100, 2500);
-  state.D = clamp(state.D, 700, 900);
+  state.D = FIXED.D;
   state.backD = clamp(state.backD, 350, 450);
   state.t = clamp(Math.round(state.t), 16, 25);
+  state.frontShelfInset = clamp(Math.round(state.frontShelfInset / 5) * 5, 0, 120);
   state.topGap = 0;
   state.benchH = clamp(state.benchH, 380, 460);
   state.benchPull = clamp(state.benchPull, 300, 600);
@@ -156,8 +161,10 @@ function normalizeState() {
   state.backHeights = BACK_RATIOS.map((value) => value * backScale);
 
   // Right tower: above the through 200/120 bottom two, 9 layers with the last
-  // one taking the remaining space. Starts at 356 (200 + 18 + 120 + 18).
-  state.rightN = state.H - 356 - 8 * state.t - 18 - RIGHT_FIXED_SUM;
+  // one taking the remaining space. The tower starts at the top of the 120
+  // layer: 200 + t + 120 + t.
+  const openBottomTopMm = FRONT_BOTTOM[0] + FRONT_BOTTOM[1] + 2 * state.t;
+  state.rightN = state.H - openBottomTopMm - 8 * state.t - 18 - RIGHT_FIXED_SUM;
 
   state.midDoorW = (state.midW - 9) / 2;
 }
@@ -182,7 +189,8 @@ function updateReadouts() {
     `400 / 980 / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
   document.getElementById('front-bottom').textContent =
     `${FRONT_BOTTOM.join(' / ')} mm`;
-  document.getElementById('front-drawer').textContent = `${FRONT_DRAWER} mm`;
+  document.getElementById('front-drawer').textContent = `${FRONT_DRAWER} mm × 2（左右）`;
+  document.getElementById('front-inset').textContent = `${format(state.frontShelfInset, 0)} mm`;
   document.getElementById('front-niche').textContent = `${FRONT_NICHE} mm`;
   document.getElementById('front-upper').textContent = `${FRONT_UPPER.join(' / ')} mm`;
   document.getElementById('right-heights').textContent =
@@ -581,10 +589,12 @@ function buildCabinet() {
   const frontW = frontX1 - frontX0;
   const frontCenterX = (frontX0 + frontX1) / 2;
   const midMeetingX = (midInner0 + midInner1) / 2;
+  // Top of the through 120 layer: 200 + board + 120 + board.
+  const openBottomTop = (FRONT_BOTTOM[0] + FRONT_BOTTOM[1]) / 1000 + 2 * t;
 
-  const addFullShelf = (y) =>
-    cabinetGroup.add(box(frontW, t, interiorD, materials.wood, {
-      x: frontCenterX, y: y + t / 2, z: interiorZ,
+  const addFullShelf = (y, inset = 0) =>
+    cabinetGroup.add(box(frontW, t, interiorD - inset, materials.wood, {
+      x: frontCenterX, y: y + t / 2, z: interiorZ - inset / 2,
     }));
   const addMiddleShelf = (y) =>
     cabinetGroup.add(box(midW, t, interiorD, materials.wood, {
@@ -602,7 +612,7 @@ function buildCabinet() {
     frontBottomCells.push({ bottom: fy, top: fy + height });
     fy += height;
     if (index < FRONT_BOTTOM.length - 1) {
-      if (index < 2) addFullShelf(fy);
+      if (index < 2) addFullShelf(fy, index === 0 ? state.frontShelfInset / 1000 : 0);
       else addMiddleShelf(fy);
       fy += t;
     }
@@ -611,12 +621,23 @@ function buildCabinet() {
   fy += t;
   const drawerBottom = fy;
   const drawerTop = drawerBottom + FRONT_DRAWER / 1000;
+  // The 170 drawer is split into two equal drawers, one on each side.
+  // Match the upper doors: 3 mm outer margins and a 3 mm centre gap.
+  const drawerW = midW / 2 - 1.5 * GAP;
+  const drawerOffset = drawerW / 2 + GAP / 2;
   addDrawer({
-    xCenter: midCenter,
-    width: midW - 0.006,
+    xCenter: midCenter - drawerOffset,
+    width: drawerW,
     yBottom: drawerBottom + GAP / 2,
     yTop: drawerTop - GAP / 2,
-    label: '前柜抽屉 170',
+    label: '前柜抽屉 170（左）',
+  });
+  addDrawer({
+    xCenter: midCenter + drawerOffset,
+    width: drawerW,
+    yBottom: drawerBottom + GAP / 2,
+    yTop: drawerTop - GAP / 2,
+    label: '前柜抽屉 170（右）',
   });
 
   addMiddleShelf(drawerTop);
@@ -642,7 +663,7 @@ function buildCabinet() {
 
   // Right 420 tower: the bottom two 200/120 are already the through shelves;
   // the upper 7 keep the original tower order, scaled to fit.
-  let ry = 0.356;
+  let ry = openBottomTop;
   const rightTowerCells = [];
   const rightHeights = [...RIGHT_FIXED.map((value) => value / 1000), state.rightN / 1000];
   rightHeights.forEach((height, index) => {
@@ -675,9 +696,37 @@ function buildCabinet() {
     label: '前柜上门（右）',
   });
 
+  // Lower pair covers the three shoe rows above the two open bottom rows.
+  addDoor({
+    xLeft: midInner0 + GAP,
+    xRight: midMeetingX - GAP / 2,
+    yBottom: openBottomTop + GAP / 2,
+    yTop: drawerBottom - GAP / 2,
+    hinge: 'left',
+    label: '前柜下门（左）',
+  });
+  addDoor({
+    xLeft: midMeetingX + GAP / 2,
+    xRight: midInner1 - GAP,
+    yBottom: openBottomTop + GAP / 2,
+    yTop: drawerBottom - GAP / 2,
+    hinge: 'right',
+    label: '前柜下门（右）',
+  });
+
+  // Right 420 tower: one full-height door above the two open bottom rows.
+  addDoor({
+    xLeft: narrowInner0 + GAP,
+    xRight: narrowInner1 - GAP,
+    yBottom: openBottomTop + GAP / 2,
+    yTop: H - GAP,
+    hinge: 'right',
+    label: '右柜门',
+  });
+
   // Divider 2 runs from the top of the through 120 layer to the top.
-  cabinetGroup.add(box(t, H - 0.356, carcassD, materials.whiteCarcass, {
-    x: divider2X, y: (0.356 + H) / 2, z: carcassZ,
+  cabinetGroup.add(box(t, H - openBottomTop, carcassD, materials.whiteCarcass, {
+    x: divider2X, y: (openBottomTop + H) / 2, z: carcassZ,
   }));
 
   // Pull-out bench: 300 wide, right-aligned against the middle divider.
@@ -766,7 +815,8 @@ function buildCabinet() {
       addShoeRow(propsGroup, {
         xCenter: frontCenterX,
         y: cell.bottom + 0.002,
-        z: interiorZ + 0.035,
+        // The 120 layer sits on the inset lowest shelf, so its props move back too.
+        z: interiorZ + 0.035 - (index === 1 ? state.frontShelfInset / 1000 : 0),
         count: 6,
         type: index === 0 ? 'slipper' : 'sneaker',
         colorOffset: index * 3,
@@ -971,14 +1021,36 @@ function fitCabinet(direction) {
   });
 }
 
+function applyPartTransform(part) {
+  if (part.type === 'door') {
+    part.group.rotation.y = part.hingeSign * part.open * part.angle;
+  } else if (part.type === 'drawer' || part.type === 'bench') {
+    part.group.position.z = part.open * part.travel;
+  } else if (part.type === 'backRack') {
+    part.group.position.x = part.open * part.travel;
+  }
+}
+
 function rebuild() {
   normalizeState();
   const direction = viewer.camera.position.clone().sub(viewer.controls.target);
   if (direction.lengthSq() < 1e-6) direction.set(0.62, 0.16, 1);
   direction.normalize();
 
+  const openStates = new Map(
+    interactiveParts.map((part) => [part.label, { open: part.open, target: part.target }]),
+  );
+
   disposeGroup(cabinetGroup);
   buildCabinet();
+
+  interactiveParts.forEach((part) => {
+    const saved = openStates.get(part.label);
+    if (!saved) return;
+    part.open = saved.open;
+    part.target = saved.target;
+    applyPartTransform(part);
+  });
 
   fitCabinet(firstBuild ? new THREE.Vector3(0.62, 0.16, 1) : direction);
   firstBuild = false;
@@ -1118,13 +1190,7 @@ function animate() {
   for (const part of interactiveParts) {
     if (Math.abs(part.open - part.target) > 0.0005) {
       part.open = damp(part.open, part.target, 8.5, delta);
-      if (part.type === 'door') {
-        part.group.rotation.y = part.hingeSign * part.open * part.angle;
-      } else if (part.type === 'drawer' || part.type === 'bench') {
-        part.group.position.z = part.open * part.travel;
-      } else if (part.type === 'backRack') {
-        part.group.position.x = part.open * part.travel;
-      }
+      applyPartTransform(part);
     }
   }
   viewer.controls.update();
