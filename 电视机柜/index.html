@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>电视机柜 · 三维预览 | 柜子定制</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body class="viewer-page">
+  <div class="app">
+    <aside class="panel">
+      <header class="panel-header">
+        <a class="back-link" href="../index.html">← 返回总入口</a>
+        <p class="eyebrow">电视机柜 · 柜子定制</p>
+        <h1>电视机柜</h1>
+        <p class="subtitle">2900 宽 · 5 层 × 348 + 底 600 · 左猫踏步 550 · 右猫洞 ⌀220 · 电视已移走</p>
+        <div class="chips">
+          <span class="chip chip-accent">v1.0</span>
+          <span class="chip">2900 × 2340 × 300</span>
+          <span class="chip">上柜全开放</span>
+          <span class="chip">左猫踏步 / 右猫洞</span>
+          <span class="chip">不为电视留位</span>
+        </div>
+      </header>
+
+      <section class="controls" aria-labelledby="dimensions-title">
+        <div class="section-heading">
+          <h2 id="dimensions-title">关键尺寸</h2>
+          <span class="section-note">单位 mm</span>
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-W">总宽</label>
+            <span class="control-number">
+              <input id="number-W" data-number="W" type="number" min="2600" max="3200" step="10" value="2900" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-W" data-range="W" type="range" min="2600" max="3200" step="10" value="2900">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-H">总高</label>
+            <span class="control-number">
+              <input id="number-H" data-number="H" type="number" min="2100" max="2500" step="10" value="2340" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-H" data-range="H" type="range" min="2100" max="2500" step="10" value="2340">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-D">柜深</label>
+            <span class="control-number">
+              <input id="number-D" data-number="D" type="number" min="280" max="400" step="10" value="300" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-D" data-range="D" type="range" min="280" max="400" step="10" value="300">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-bottomH">底部开放层高</label>
+            <span class="control-number">
+              <input id="number-bottomH" data-number="bottomH" type="number" min="500" max="700" step="10" value="600" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-bottomH" data-range="bottomH" type="range" min="500" max="700" step="10" value="600">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-catStepW">猫踏步宽</label>
+            <span class="control-number">
+              <input id="number-catStepW" data-number="catStepW" type="number" min="450" max="650" step="10" value="550" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-catStepW" data-range="catStepW" type="range" min="450" max="650" step="10" value="550">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-catHoleD">猫洞直径</label>
+            <span class="control-number">
+              <input id="number-catHoleD" data-number="catHoleD" type="number" min="180" max="260" step="10" value="220" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-catHoleD" data-range="catHoleD" type="range" min="180" max="260" step="10" value="220">
+        </div>
+
+        <details class="more-settings">
+          <summary>更多尺寸</summary>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-t">板厚</label>
+              <span class="control-number">
+                <input id="number-t" data-number="t" type="number" min="16" max="25" step="1" value="18" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
+          </div>
+          <p class="micro-hint">7 列按 400 × 6 + 500 的比例：W 变化时列宽等比缩放；上部 5 层随总高等分；底部 600 固定。</p>
+        </details>
+
+        <div class="computed">
+          <div><span>7 列（单位 mm）</span><strong id="col-width">400 × 6 + 500 mm</strong></div>
+          <div><span>上部层高 × 5</span><strong id="row-height">348 mm × 5</strong></div>
+          <div><span>左猫踏步区</span><strong id="left-zone">800 mm</strong></div>
+          <div><span>踏步错位</span><strong id="step-stagger">232 mm</strong></div>
+          <div><span>猫洞</span><strong id="cat-hole">⌀220 mm</strong></div>
+          <div><span>猫洞净边</span><strong id="hole-clear">81 mm</strong></div>
+          <div><span>底部开放层</span><strong id="bottom-open">600 mm</strong></div>
+        </div>
+        <div id="height-warning" class="warning" hidden></div>
+      </section>
+
+      <section class="actions" aria-label="预览操作">
+        <div class="action-grid">
+          <button id="reset-view" class="button button-primary" type="button">重置视角</button>
+          <button id="reset-dimensions" class="button button-ghost" type="button">恢复默认尺寸</button>
+        </div>
+        <div class="toggles">
+          <label><input id="show-dims" type="checkbox" checked> 显示尺寸</label>
+          <label><input id="show-props" type="checkbox" checked> 显示示例物品</label>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-title">
+        <div class="section-heading">
+          <h2 id="notes-title">设计要点</h2>
+        </div>
+        <ul>
+          <li><strong>外形</strong> 2900 × 2340 × 300；7 列：400 / 400 / 400 / 500 / 400 / 400 / 400；上部 5 层 × 348（含板厚），底部 600 开放放筐。</li>
+          <li><strong>电视不占位</strong> 电视已改用移动支架，中央 500 格不做电视龛，全部做开放层板。</li>
+          <li><strong>左侧猫踏步</strong> 左起两列约 800 宽；550 宽层板上下左右交错，错位约 232，猫可从底部逐级跳上。</li>
+          <li><strong>右侧猫洞</strong> 最右 400 列每层横板开 ⌀220 圆洞，洞心距右端 200；5 块层板贯通上下。</li>
+          <li><strong>管线</strong> 背板保留 ⌀50 管开口；中央 500 格两侧竖板各留 ⌀60 过线孔（位置待现场确认）。</li>
+          <li><strong>门型</strong> 上柜全开放，不做移门；手稿顶部“移门”不计入本柜。</li>
+          <li><strong>材质</strong> 白框 + 暖木色层板/竖板；猫踏步用浅木色区分；具体板材和颜色待确认。</li>
+        </ul>
+        <p class="hint">v1.0 按手绘立面建模；猫通道按确认的“左猫踏步 550 + 右层板猫洞 ⌀220”实施，蓝色路线图和第二张猫爬架草图均不参考。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../电视机柜/设计说明.md">设计说明.md</a>。</p>
+      </section>
+
+      <footer class="panel-footer">
+        <span>HTML / CSS / JS + three.js</span>
+        <span>尺寸单位 mm</span>
+      </footer>
+    </aside>
+
+    <main class="stage" id="stage">
+      <div id="canvas-container" class="canvas-container"></div>
+      <div class="stage-topbar">
+        <span class="stage-title">电视机柜 v1.0 · 三维预览</span>
+        <span class="stage-meta" id="size-readout">2900 × 2340 × 300 mm</span>
+      </div>
+      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 左侧猫踏步 / 右侧猫洞</div>
+      <div class="loading" id="loading">正在加载三维场景…</div>
+      <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
+    </main>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../assets/vendor/three/three.module.js",
+        "three/addons/": "../assets/vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="./viewer.js?v=1.0.0"></script>
+</body>
+</html>
