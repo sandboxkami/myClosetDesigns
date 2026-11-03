@@ -1414,14 +1414,21 @@ button.decision-item:focus-visible {
   }
 
   .focus-tour-body {
-    gap: 10px;
+    display: block;
   }
 
   .focus-tour-copy p {
+    display: -webkit-box;
+    overflow: hidden;
     font-size: 10.5px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .focus-tour-value {
-    font-size: 17px;
+    display: block;
+    margin-top: 7px;
+    font-size: 18px;
+    white-space: normal;
   }
 }
