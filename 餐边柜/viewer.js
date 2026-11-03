@@ -25,6 +25,7 @@ const DEFAULTS = {
   drawerH: 160,
   petH: 400,
   t: 18,
+  shelfRemoved: false,
 };
 
 const GAP = 0.003;
@@ -80,6 +81,9 @@ let interactiveParts = [];
 let propsGroup = null;
 let dimensionGroup = null;
 let utilityGroup = null;
+let utilityConflictGroup = null;
+let movableShelfGroups = [];
+let movableShelfProps = [];
 let firstBuild = true;
 
 const UTILITY_MAT = {
@@ -205,11 +209,15 @@ function updateReadouts() {
   document.getElementById('narrow-width').textContent = `${format(state.narrowW, 0)} mm`;
   document.getElementById('utility-box').textContent = '400 × 300 × 100 mm';
   document.getElementById('utility-pos').textContent = '底 400 / 右距角 250';
+  const rightShelfY = state.petH + (state.lowerDoorH - state.petH) / 2;
+  document.getElementById('movable-shelf').textContent = state.shelfRemoved
+    ? '已取下（支撑钉可见）'
+    : `已装（y≈${format(rightShelfY, 0)}）`;
 
   const utility = getUtilityInfo();
   const utilityWarning = document.getElementById('utility-warning');
   const utilityMessages = [];
-  if (utility.interference) {
+  if (!state.shelfRemoved && utility.interference) {
     utilityMessages.push(
       `弱电箱与右地柜层板（y≈${format(utility.shelfY * 1000, 0)}）重叠 ${format(utility.overlapY * 1000, 0)} mm；需下移/取消层板，或改箱位/加深柜体`,
     );
@@ -242,6 +250,8 @@ function updateReadouts() {
 function renderUI() {
   syncInputs();
   updateReadouts();
+  const shelfButton = document.getElementById('toggle-shelves');
+  if (shelfButton) shelfButton.textContent = state.shelfRemoved ? '放回活动层板' : '取下活动层板';
 }
 
 let rebuildPending = false;
@@ -265,6 +275,21 @@ function createKnob() {
   ball.receiveShadow = true;
   group.add(stem, ball);
   return group;
+}
+
+function addShelfPins({ leftX, rightX, shelfCenterY, zCenter, zSpan, t, count = 4 }) {
+  const radius = 0.004;
+  const length = 0.022;
+  const y = shelfCenterY - t / 2 - radius;
+  for (let i = 0; i < count; i += 1) {
+    const z = zCenter + (i / (count - 1) - 0.5) * zSpan;
+    const leftPin = cylinder(radius, length, materials.metal, { x: leftX + length / 2, y, z });
+    leftPin.rotation.z = Math.PI / 2;
+    cabinetGroup.add(leftPin);
+    const rightPin = cylinder(radius, length, materials.metal, { x: rightX - length / 2, y, z });
+    rightPin.rotation.z = Math.PI / 2;
+    cabinetGroup.add(rightPin);
+  }
 }
 
 function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, knobY, z = SCENE.lowerDoorZ }) {
@@ -534,6 +559,9 @@ function backPanelWithRectHole(width, height, thickness, holeX, holeY, holeW, ho
 
 function buildCabinet() {
   interactiveParts = [];
+  movableShelfGroups = [];
+  movableShelfProps = [];
+  utilityConflictGroup = null;
 
   const W = state.W / 1000;
   const H = state.H / 1000;
@@ -651,7 +679,10 @@ function buildCabinet() {
   );
 
   if (utility.interference) {
-    utilityGroup.add(
+    utilityConflictGroup = new THREE.Group();
+    utilityConflictGroup.name = 'utility-conflict';
+    utilityGroup.add(utilityConflictGroup);
+    utilityConflictGroup.add(
       box(utility.overlapX, utility.overlapY, utility.overlapZ, UTILITY_MAT.conflict, {
         x: utility.xCenter,
         y: utility.shelfY,
@@ -661,8 +692,8 @@ function buildCabinet() {
       }),
     );
 
-    // A thin red band on the box face; drawn on top so the 18 mm overlap is
-    // readable even when the shelf is physically in front of the box.
+    // A thin red band on the shelf front edge.  The closed right lower door
+    // hides it; opening the door reveals the exact 400 mm overlap.
     const marker = new THREE.Mesh(
       new THREE.PlaneGeometry(utility.overlapX, utility.overlapY + 0.012),
       new THREE.MeshBasicMaterial({
@@ -673,10 +704,8 @@ function buildCabinet() {
         depthWrite: false,
       }),
     );
-    // Put the marker on the shelf front edge; the closed right lower door
-    // hides it, and opening the door reveals the exact 400 mm overlap.
     marker.position.set(utility.xCenter, utility.shelfY, lowerD / 2 - t + 0.001);
-    utilityGroup.add(marker);
+    utilityConflictGroup.add(marker);
   }
 
   [x2, x3].forEach((x) => {
@@ -811,11 +840,34 @@ function buildCabinet() {
   );
 
   // Lower interior shelves: left/middle full-height pairs; right pair sits above the pet niche.
+  const rightLowerShelfY = petH + (lowerDoorH - petH) / 2;
+
   cabinetGroup.add(
     box(x3 - x2, t, lowerInteriorD, materials.wood, { x: c2, y: 300, z: lowerInteriorZ }),
     box(x3 - x2, t, lowerInteriorD, materials.wood, { x: c2, y: 600, z: lowerInteriorZ }),
-    box(rightInnerX - x3, t, lowerInteriorD, materials.wood, { x: (x3 + rightInnerX) / 2, y: petH + (lowerDoorH - petH) / 2, z: lowerInteriorZ }),
   );
+
+  // The right lower shelf is movable: it is the shelf that conflicts with the
+  // utility box.  Support pins stay visible when the shelf is taken out.
+  const rightLowerShelf = new THREE.Group();
+  rightLowerShelf.name = 'right-lower-removable-shelf';
+  rightLowerShelf.add(
+    box(rightInnerX - x3, t, lowerInteriorD, materials.wood, {
+      x: (x3 + rightInnerX) / 2,
+      y: rightLowerShelfY,
+      z: lowerInteriorZ,
+    }),
+  );
+  movableShelfGroups.push(rightLowerShelf);
+  cabinetGroup.add(rightLowerShelf);
+  addShelfPins({
+    leftX: x3,
+    rightX: rightInnerX,
+    shelfCenterY: rightLowerShelfY,
+    zCenter: lowerInteriorZ,
+    zSpan: lowerInteriorD - 0.14,
+    t,
+  });
 
   // Upper doors: bottom layer = 3 glass lift-up doors; top two layers = 3 pairs of side-opening white doors.
   const upperLayerH = upperH / 3;
@@ -1007,8 +1059,9 @@ function buildCabinet() {
   const lowerPlates = createPlateStack(4);
   lowerPlates.position.set(c2 - 0.15, 300 + t / 2 + 0.004, lowerInteriorZ);
   const lowerPot = createBasket(0.24, 0.16, 0.28, materials);
-  lowerPot.position.set(c3 + 0.12, petH + (lowerDoorH - petH) / 2 + t / 2 + 0.004, lowerInteriorZ);
+  lowerPot.position.set(c3 + 0.12, rightLowerShelfY + t / 2 + 0.004, lowerInteriorZ);
   propsGroup.add(lowerPlates, lowerPot);
+  movableShelfProps.push(lowerPot);
 
   propsGroup.visible = state.showProps;
 
@@ -1023,6 +1076,13 @@ function applyVisibility() {
   if (propsGroup) propsGroup.visible = state.showProps;
   if (dimensionGroup) dimensionGroup.visible = state.showDims;
   if (utilityGroup) utilityGroup.visible = state.showUtility;
+  movableShelfGroups.forEach((group) => {
+    group.visible = !state.shelfRemoved;
+  });
+  movableShelfProps.forEach((prop) => {
+    prop.visible = !state.shelfRemoved;
+  });
+  if (utilityConflictGroup) utilityConflictGroup.visible = !state.shelfRemoved;
 }
 
 function rebuild() {
@@ -1033,6 +1093,7 @@ function rebuild() {
 
   disposeGroup(cabinetGroup);
   utilityGroup = null;
+  utilityConflictGroup = null;
   buildCabinet();
 
   const W = state.W / 1000;
@@ -1148,6 +1209,12 @@ document.getElementById('reset-dimensions').addEventListener('click', () => {
   normalizeState();
   renderUI();
   scheduleRebuild();
+});
+
+document.getElementById('toggle-shelves').addEventListener('click', () => {
+  state.shelfRemoved = !state.shelfRemoved;
+  renderUI();
+  applyVisibility();
 });
 
 document.getElementById('open-all').addEventListener('click', () => setPartTargets(true));
