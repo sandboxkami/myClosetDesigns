@@ -42,9 +42,10 @@ const FRONT_BOTTOM = [200, 120, 130, 130, 170];
 const FRONT_UPPER = [100, 120, 168, 180, 230];
 const FRONT_DRAWER = 170;
 const FRONT_NICHE = 370;
-// Right 420 tower keeps its original 9-layer layout: the two bottom layers
-// are the through 200/120; the upper 7 are the original heights scaled to fit.
-const RIGHT_TOWER = [133, 180, 236, 164, 164, 472, 472];
+// Right 420 tower: the two bottom layers are the through 200/120; above them
+// are 9 layers: 130/130/175/230/160/160/160/260 plus N (remaining space).
+const RIGHT_FIXED = [130, 130, 175, 230, 160, 160, 160, 260];
+const RIGHT_FIXED_SUM = RIGHT_FIXED.reduce((sum, value) => sum + value, 0);
 
 const state = {
   ...DEFAULTS,
@@ -57,6 +58,7 @@ const state = {
   midW: 0,
   kneeH: 0,
   backHeights: [],
+  rightN: 0,
   midDoorW: 0,
   benchMaxW: 0,
 };
@@ -153,6 +155,10 @@ function normalizeState() {
   const backScale = Math.max(0.5, backAvail / BACK_RATIO_SUM);
   state.backHeights = BACK_RATIOS.map((value) => value * backScale);
 
+  // Right tower: above the through 200/120 bottom two, 9 layers with the last
+  // one taking the remaining space. Starts at 356 (200 + 18 + 120 + 18).
+  state.rightN = state.H - 356 - 8 * state.t - 18 - RIGHT_FIXED_SUM;
+
   state.midDoorW = (state.midW - 9) / 2;
 }
 
@@ -180,7 +186,7 @@ function updateReadouts() {
   document.getElementById('front-niche').textContent = `${FRONT_NICHE} mm`;
   document.getElementById('front-upper').textContent = `${FRONT_UPPER.join(' / ')} mm`;
   document.getElementById('right-heights').textContent =
-    '472 / 472 / 164 / 164 / 236 / 180 / 133 / 120 / 200 mm';
+    `${RIGHT_FIXED.join(' / ')} / ${format(state.rightN, 0)} mm`;
   document.getElementById('mid-door-width').textContent = `${format(state.midDoorW, 1)} mm`;
   document.getElementById('bench-size').textContent =
     `${format(state.benchW, 0)} × ${format(state.benchH, 0)} / ${format(state.benchPull, 0)}`;
@@ -638,11 +644,11 @@ function buildCabinet() {
   // the upper 7 keep the original tower order, scaled to fit.
   let ry = 0.356;
   const rightTowerCells = [];
-  RIGHT_TOWER.forEach((heightMm, index) => {
-    const height = heightMm / 1000;
+  const rightHeights = [...RIGHT_FIXED.map((value) => value / 1000), state.rightN / 1000];
+  rightHeights.forEach((height, index) => {
     rightTowerCells.push({ bottom: ry, top: ry + height });
     ry += height;
-    if (index < RIGHT_TOWER.length - 1) {
+    if (index < rightHeights.length - 1) {
       addRightShelf(ry);
       ry += t;
     }
@@ -798,7 +804,7 @@ function buildCabinet() {
 
   // Right 420 tower upper 7 layers: open shoes/boxes.
   rightTowerCells.forEach((cell, index) => {
-    if (index >= 5) {
+    if (index >= 7) {
       addShoeBoxRow(propsGroup, {
         xCenter: narrowCenter,
         y: cell.bottom + 0.002,
