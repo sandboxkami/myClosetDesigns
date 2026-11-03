@@ -530,7 +530,7 @@ function createRoundedPanel({ xLeft, xRight, zBack, zFront, yBottom, yTop, radiu
 
 // Back panel with a rectangular opening for the wall-mounted utility box.
 // The shape is built in XY and extruded through the 7 mm back panel.
-function backPanelWithRectHole(width, height, thickness, holeX, holeY, holeW, holeH, material, z) {
+function backPanelWithRectHole(width, height, thickness, holeX, holeY, holeW, holeH, material, z, x = 0) {
   const shape = new THREE.Shape();
   shape.moveTo(-width / 2, 0);
   shape.lineTo(width / 2, 0);
@@ -551,7 +551,7 @@ function backPanelWithRectHole(width, height, thickness, holeX, holeY, holeW, ho
     bevelEnabled: false,
   });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.z = z;
+  mesh.position.set(x, 0, z);
   mesh.castShadow = false;
   mesh.receiveShadow = true;
   return mesh;
@@ -633,6 +633,7 @@ function buildCabinet() {
       UTILITY.h / 1000 + (UTILITY.reveal * 2) / 1000,
       materials.wood,
       -lowerD / 2,
+      (x1 + rightInnerX) / 2,
     ),
     box(rightInnerX - x1, t, lowerBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: lowerBodyTop - t / 2, z: lowerBodyCenterZ }),
   );
