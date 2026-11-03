@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>餐边柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.3.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.4.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -16,14 +16,14 @@
         <h1>餐边柜</h1>
         <p class="subtitle">下柜深 400 固定 · 台面离地 1000 · 窄柜 2 门 · 左 3 抽屉 2:3:4 · 中/右 2:7 · 中柜半高隔板 · 右猫格加底板</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.3</span>
+          <span class="chip chip-accent">v1.4</span>
           <span class="chip">台面离地 1000</span>
           <span class="chip">下柜深 400 固定</span>
           <span class="chip">窄柜 2 门</span>
           <span class="chip">左抽 2:3:4</span>
           <span class="chip">中/右 2:7</span>
           <span class="chip">猫格加底板</span>
-          <span class="chip">右地柜层板可取下</span>
+          <span class="chip">右活动层板 y≈400</span>
         </div>
         <div id="utility-warning" class="warning" hidden></div>
       </header>
@@ -93,10 +93,10 @@
             <div class="control-head">
               <label for="range-petH">猫用品格高</label>
               <span class="control-number">
-                <input id="number-petH" data-number="petH" type="number" min="300" max="460" step="10" value="400" inputmode="numeric"> mm
+                <input id="number-petH" data-number="petH" type="number" min="300" max="400" step="10" value="400" inputmode="numeric"> mm
               </span>
             </div>
-            <input id="range-petH" data-range="petH" type="range" min="300" max="460" step="10" value="400">
+            <input id="range-petH" data-range="petH" type="range" min="300" max="400" step="10" value="400">
           </div>
 
           <div class="control-row compact">
@@ -123,7 +123,7 @@
           <div><span>窄柜宽</span><strong id="narrow-width">352 mm</strong></div>
           <div><span>弱电箱（宽×高×深）</span><strong id="utility-box">400 × 300 × 100 mm</strong></div>
           <div><span>弱电箱位置</span><strong id="utility-pos">底 400 / 右距角 250</strong></div>
-          <div><span>右地柜活动层板</span><strong id="movable-shelf">已装（y≈670）</strong></div>
+          <div><span>右地柜活动层板</span><strong id="movable-shelf">已装（板面 y≈400）</strong></div>
           <div class="computed-wide"><span>窄柜分层（自上而下）</span><strong id="narrow-layer-heights">375 / 375 / 620 / 500 / 500 mm</strong></div>
           <div class="computed-wide"><span>左抽屉（2:3:4）</span><strong id="left-drawer-heights">217.8 / 326.7 / 435.6 mm</strong></div>
           <div class="computed-wide"><span>中/右抽屉 : 柜体（2:7）</span><strong id="mid-drawer-cabinet">217.8 / 762.2 mm</strong></div>
@@ -163,10 +163,10 @@
           <li><strong>右侧主格</strong> 底部猫粮/猫用品开放格，门板高度不变；加回底板，猫碗放在底板上，不再落地。</li>
           <li><strong>最左窄柜</strong> 352 通高，5 层：中间层 + 上两层合并为 1 扇高门，下两层保留 1 扇门；共 2 扇白色左开门，拉手在右侧；合并门拉手约 1120 高。</li>
           <li><strong>弱电箱</strong> 400×300×100，箱底距地 400，右边沿距右墙角 250；在右地柜背板对应位置开 410×310 孔（四周 5mm 余量）。墙不建模，以柜体右边缘为右墙角。</li>
-          <li><strong>活动层板</strong> 与弱电箱重叠的右地柜层板仍为活动层板；点“取下活动层板”可手动取出，层板两侧支撑钉保留，再点“放回活动层板”装回。</li>
-          <li><strong>干涉检查</strong> 层板装回时与弱电箱重叠约 18mm；红色干涉带标出重叠范围，顶部显示警告。取下活动层板后警告和红带消失，弱电箱上方无层板干涉。点“弱电箱检查”会打开右地柜门并聚焦。</li>
+          <li><strong>活动层板</strong> 右地柜活动层板降至板面 <strong>y≈400</strong>，位于猫用品格上沿；点“取下活动层板”可手动取出，层板两侧支撑钉保留，再点“放回活动层板”装回。</li>
+          <li><strong>弱电箱检查</strong> 层板降至 400 后，不再与弱电箱（底 400）重叠，默认不显示干涉警告/红带；点“弱电箱检查”仍会打开右地柜门并聚焦箱体。</li>
         </ul>
-        <p class="hint">v1.3 将台面固定到离地 1000、下柜深固定 400；左地柜改为 3 抽 2:3:4，中/右按 2:7；中柜加半高隔板；右猫格加回底板；窄柜中间层与上两层合并为一扇门。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
+        <p class="hint">v1.4 将右地柜活动层板降至板面 400，位于猫格上沿并避让弱电箱；同时保留 v1.3 的台面 1000、下柜深 400、左抽 2:3:4、中/右 2:7、中柜半高隔板、右猫格底板和窄柜合并门。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
       </section>
 
       <footer class="panel-footer">
@@ -178,7 +178,7 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">餐边柜 v1.3 · 三维预览</span>
+        <span class="stage-title">餐边柜 v1.4 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2752 × 2400 × 400 mm</span>
       </div>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 可取下层板 / 弱电箱检查</div>
@@ -196,6 +196,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.3.0"></script>
+  <script type="module" src="./viewer.js?v=1.4.0"></script>
 </body>
 </html>

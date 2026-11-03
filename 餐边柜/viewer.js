@@ -35,6 +35,9 @@ const COUNTER_T = 0.02;
 const BACK_T = 0.007;
 const LEFT_DRAWER_RATIO = [2, 3, 4];
 const DRAWER_CABINET_RATIO = [2, 7];
+// Right lower movable shelf: its top surface is fixed at 400 above the floor,
+// just above the pet niche and below the utility box (bottom 400).
+const RIGHT_SHELF_TOP = 400;
 
 // Weak-current box on the wall behind the right lower cabinet.
 // Dimensions are fixed by the site: 400 wide x 300 high x 100 deep,
@@ -130,7 +133,7 @@ function normalizeState() {
   state.upperD = Math.min(state.upperD, state.lowerD - state.t);
   state.upperH = clamp(state.upperH, 600, 900);
   state.narrowW = clamp(state.narrowW, 250, 450);
-  state.petH = clamp(state.petH, 300, 500);
+  state.petH = clamp(state.petH, 300, RIGHT_SHELF_TOP);
   state.t = clamp(Math.round(state.t), 16, 25);
 
   // Counter top is fixed at 1000 above the floor; the open gap absorbs the
@@ -151,7 +154,7 @@ function normalizeState() {
   state.drawerH = DRAWER_CABINET_RATIO[0] * part;
   state.lowerDoorH = DRAWER_CABINET_RATIO[1] * part;
   state.leftDrawerHeights = LEFT_DRAWER_RATIO.map((ratio) => ratio * part);
-  state.petH = Math.min(state.petH, Math.max(300, Math.floor((state.lowerDoorH - 300) / 10) * 10));
+  state.petH = Math.min(state.petH, Math.max(300, Math.floor((state.lowerDoorH - 300) / 10) * 10), RIGHT_SHELF_TOP);
   state.upperDoorW = state.moduleW - 6;
   state.pairDoorW = state.moduleW / 2 - 6;
   state.petDoorH = state.lowerDoorH - state.petH;
@@ -171,7 +174,8 @@ function getUtilityInfo() {
   const frontZ = wallZ + UTILITY.d / 1000;
 
   // The only right-module shelf in the box's height range.
-  const shelfY = state.petH / 1000 + (state.lowerDoorH / 1000 - state.petH / 1000) / 2;
+  const shelfTop = RIGHT_SHELF_TOP / 1000;
+  const shelfY = shelfTop - t / 2;
   const shelfBack = -lowerD / 2 + BACK_T;
   const shelfFront = lowerD / 2 - t;
   const rightModuleLeft = right - moduleW;
@@ -191,6 +195,7 @@ function getUtilityInfo() {
     wallZ,
     frontZ,
     shelfY,
+    shelfTop,
     overlapX: Math.max(0, overlapX),
     overlapY: Math.max(0, overlapY),
     overlapZ: Math.max(0, overlapZ),
@@ -218,10 +223,9 @@ function updateReadouts() {
   document.getElementById('narrow-width').textContent = `${format(state.narrowW, 0)} mm`;
   document.getElementById('utility-box').textContent = '400 × 300 × 100 mm';
   document.getElementById('utility-pos').textContent = '底 400 / 右距角 250';
-  const rightShelfY = state.petH + (state.lowerDoorH - state.petH) / 2;
   document.getElementById('movable-shelf').textContent = state.shelfRemoved
     ? '已取下（支撑钉可见）'
-    : `已装（y≈${format(rightShelfY, 0)}）`;
+    : `已装（板面 y≈${format(RIGHT_SHELF_TOP, 0)}）`;
 
   const utility = getUtilityInfo();
   const utilityWarning = document.getElementById('utility-warning');
@@ -858,7 +862,8 @@ function buildCabinet() {
   // Lower interior shelves: middle gets one at half of its 7-part cavity;
   // the right shelf sits above the pet niche.
   const middleShelfY = lowerDoorH / 2;
-  const rightLowerShelfY = petH + (lowerDoorH - petH) / 2;
+  const rightLowerShelfTop = RIGHT_SHELF_TOP / 1000;
+  const rightLowerShelfY = rightLowerShelfTop - t / 2;
 
   cabinetGroup.add(
     box(x3 - x2, t, lowerInteriorD, materials.wood, { x: c2, y: middleShelfY, z: lowerInteriorZ }),
@@ -1081,7 +1086,7 @@ function buildCabinet() {
   const lowerPlates = createPlateStack(4);
   lowerPlates.position.set(c2 - 0.15, middleShelfY + t / 2 + 0.004, lowerInteriorZ);
   const lowerPot = createBasket(0.24, 0.16, 0.28, materials);
-  lowerPot.position.set(c3 + 0.12, rightLowerShelfY + t / 2 + 0.004, lowerInteriorZ);
+  lowerPot.position.set(c3 + 0.12, rightLowerShelfTop + 0.004, lowerInteriorZ);
   propsGroup.add(lowerPlates, lowerPot);
   movableShelfProps.push(lowerPot);
 
