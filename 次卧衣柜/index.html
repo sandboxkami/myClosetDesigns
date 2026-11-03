@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>次卧衣柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.2.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.3.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -14,13 +14,14 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">次卧 · 柜子定制</p>
         <h1>次卧衣柜</h1>
-        <p class="subtitle">2200 宽 × 2400 高固定 · 白色平板门 · 长衣双杆 / 树屋梯形门 · 拉手距地 1000</p>
+        <p class="subtitle">2200 宽 × 2400 高 × 600 深固定 · 白色平板门 · 短衣区底抽与中间抽屉同高 · 拉手距地 1000</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.2</span>
+          <span class="chip chip-accent">v1.3</span>
           <span class="chip">长衣双门对开</span>
           <span class="chip">树屋梯形门</span>
           <span class="chip">活动挂衣架</span>
-          <span class="chip">宽高固定 / 拉手 1000</span>
+          <span class="chip">宽高深固定</span>
+          <span class="chip">短衣底抽同中抽 / 拉手 1000</span>
         </div>
       </header>
 
@@ -28,16 +29,6 @@
         <div class="section-heading">
           <h2 id="dimensions-title">关键尺寸</h2>
           <span class="section-note">单位 mm</span>
-        </div>
-
-        <div class="control-row">
-          <div class="control-head">
-            <label for="range-D">总深</label>
-            <span class="control-number">
-              <input id="number-D" data-number="D" type="number" min="500" max="700" step="10" value="600" inputmode="numeric"> mm
-            </span>
-          </div>
-          <input id="range-D" data-range="D" type="range" min="500" max="700" step="10" value="600">
         </div>
 
         <div class="control-row">
@@ -100,7 +91,7 @@
             </div>
             <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
           </div>
-          <p class="micro-hint">背板默认 9 mm；门板与柜体板同厚。总宽 2200 / 总高 2400 已固定；右侧短衣区宽 = 2200 − 两侧板 − 左侧展示格 − 中区。</p>
+          <p class="micro-hint">背板默认 9 mm；门板与柜体板同厚。总宽 2200、总高 2400、总深 600 已固定；短衣区底抽与中间单抽同高，树屋开口下移、短衣门相应延长。</p>
         </details>
 
         <div class="computed">
@@ -109,6 +100,8 @@
           <div class="computed-wide"><span>分区宽度</span><strong id="partition-info">左 400 / 中 950 / 右 778 mm</strong></div>
           <div><span>活动挂衣架高</span><strong id="rod2-height">1200 mm</strong></div>
           <div><span>门拉手高度（展示/长衣 / 短衣）</span><strong id="handle-height">1000 / 1000 mm</strong></div>
+          <div><span>短衣区底抽高</span><strong id="short-drawer-height">202.5 mm</strong></div>
+          <div><span>短衣门底 / 拉手</span><strong id="short-door-info">645 / 1000 mm</strong></div>
         </div>
         <div id="height-warning" class="warning" hidden></div>
       </section>
@@ -135,11 +128,12 @@
           <li><strong>外观</strong> 白色平板门 + 木色内胆 + 小圆木拉手。</li>
           <li><strong>左侧</strong> 乐高 / 模型 / 故事书展示格；一扇通高白色平板门，取消玻璃门和拱形开口。</li>
           <li><strong>中区</strong> 长衣挂区两扇门从中间对开；固定上杆 + 高度可调的活动下杆（侧板滑槽），也可改为收纳盒；下方 2 个叠放抽屉。</li>
-          <li><strong>右区</strong> 短衣挂区 + 水平层板 + 树屋开口；两扇梯形门斜边形成树屋洞，门下沿不到底；孩子物品抽屉在下方。</li>
+          <li><strong>右区</strong> 短衣挂区 + 水平层板 + 树屋开口；短衣区底抽改为与中间单抽同高（约 202.5），树屋开口随之下移，两扇梯形门向下延长，门拉手回到正常高度。</li>
           <li><strong>顶柜</strong> 5 门：1 扇与展示格同宽；2/3、4/5 分别从中间向两边开。</li>
           <li><strong>拉手</strong> 展示柜、长衣区、短衣区门拉手距地 <strong>1000</strong>；短衣区梯形门拉手向内偏移约 200，避开树屋斜边。</li>
+          <li><strong>交互修复</strong> 切换“活动挂衣架/收纳盒”或调整活动杆高度时会重建柜体；现在重建前保存已开门/抽屉状态，重建后恢复，不再自动复位。</li>
         </ul>
-        <p class="hint">v1.2 固定总宽 2200、总高 2400，并把展示柜 / 长衣区 / 短衣区门拉手降到距地 1000；现场复尺后请编辑 <a href="../assets/md-viewer.html?file=../次卧衣柜/设计说明.md">设计说明.md</a>。</p>
+        <p class="hint">v1.3 固定总宽 2200 / 总高 2400 / 总深 600；短衣区底抽改为与中间单抽同高，树屋开口下移、短衣门延长、拉手 1000；并修复切换活动衣架/收纳盒时柜门自动复位的问题。</p>
       </section>
 
       <footer class="panel-footer">
@@ -151,7 +145,7 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">次卧衣柜 v1.2 · 三维预览</span>
+        <span class="stage-title">次卧衣柜 v1.3 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2200 × 2400 × 600 mm</span>
       </div>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门 / 抽屉开合</div>
@@ -169,6 +163,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.2.0"></script>
+  <script type="module" src="./viewer.js?v=1.3.0"></script>
 </body>
 </html>

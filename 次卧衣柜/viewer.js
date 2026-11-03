@@ -39,6 +39,9 @@ const state = {
   rod2Min: 0,
   rod2Max: 0,
   shortHandleY: 1000,
+  centerDrawerH: 0,
+  rightBottomShelfY: 0,
+  shortDoorBottom: 0,
 };
 
 const SCENE = {
@@ -52,6 +55,7 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const DOOR_HANDLE_Y = 1.0;
 const TRAPEZOID_HANDLE_INSET = 0.2;
 const round10 = (value) => Math.round(value / 10) * 10;
+const format = (value, digits = 0) => Number(value).toFixed(digits);
 
 const stage = document.getElementById('canvas-container');
 const loading = document.getElementById('loading');
@@ -112,11 +116,16 @@ function normalizeState() {
   state.rod2H = rodLo + Math.round((state.rod2H - rodLo) / 50) * 50;
   state.rod2H = clamp(state.rod2H, rodLo, rodHi);
 
-  // The trapezoid door's lower edge rises toward the centre; keep the short-
-  // clothes handle on the door.  At the default dimensions this is 1000 mm.
+  // The right bottom drawer takes the same height as one centre drawer.
+  // Its top and the lower treehouse shelf move down together, so the trapezoid
+  // doors can run lower and the handles can sit at a normal height.
+  state.centerDrawerH = (state.bottomH - 2 * state.t - 3 * 3) / 2;
+  state.rightBottomShelfY = 2 * state.t + 2 * 3 + state.centerDrawerH;
+
   const nicheH = Math.min(600, state.mainH * 0.42);
-  const nicheTop = state.bottomH + nicheH;
+  const nicheTop = state.rightBottomShelfY + nicheH;
   const roofRise = Math.min(200, nicheH * 0.34);
+  state.shortDoorBottom = nicheTop - roofRise;
   const halfDoorW = state.rightW / 2;
   const lowerAtHandle = nicheTop - (TRAPEZOID_HANDLE_INSET * 1000 / halfDoorW) * roofRise;
   state.shortHandleY = Math.min(
@@ -161,6 +170,8 @@ function updateReadouts() {
   document.getElementById('long-clear').textContent = `${state.longClear} mm`;
   document.getElementById('rod2-height').textContent = `${state.rod2H} mm`;
   document.getElementById('handle-height').textContent = `1000 / ${state.shortHandleY} mm`;
+  document.getElementById('short-drawer-height').textContent = `${format(state.centerDrawerH, 1)} mm`;
+  document.getElementById('short-door-info').textContent = `${format(state.shortDoorBottom, 0)} / ${state.shortHandleY} mm`;
   document.getElementById('partition-info').textContent =
     `左 ${state.leftW} / 中 ${state.centerW} / 右 ${state.rightW} mm`;
 
@@ -422,6 +433,8 @@ function buildCabinet() {
 
   const topShelfY = H - state.topH / 1000;
   const bottomShelfY = state.bottomH / 1000;
+  const rightBottomShelfY = state.rightBottomShelfY / 1000;
+  const centerDrawerH = state.centerDrawerH / 1000;
   const mainH = topShelfY - bottomShelfY;
   const leftInnerX = -halfW + t;
   const leftColumnCenterX = leftInnerX + state.leftW / 1000 / 2;
@@ -441,7 +454,7 @@ function buildCabinet() {
   const shelf2Y = bottomShelfY + (openH * 2) / 3;
 
   const nicheH = Math.min(0.6, mainH * 0.42);
-  const nicheTopY = bottomShelfY + nicheH;
+  const nicheTopY = rightBottomShelfY + nicheH;
   const roofRise = Math.min(0.2, nicheH * 0.34);
   const rightEaveY = nicheTopY - roofRise;
 
@@ -463,7 +476,16 @@ function buildCabinet() {
 
   cabinetGroup.add(
     box(W - 2 * t, t, interiorD, materials.wood, { y: topShelfY - t / 2, z: interiorZ }),
-    box(W - 2 * t, t, interiorD, materials.wood, { y: bottomShelfY - t / 2, z: interiorZ }),
+    box(rightStartX - (-halfW + t), t, interiorD, materials.wood, {
+      x: (-halfW + t + rightStartX) / 2,
+      y: bottomShelfY - t / 2,
+      z: interiorZ,
+    }),
+    box(rightW, t, interiorD, materials.wood, {
+      x: rightCenterX,
+      y: rightBottomShelfY - t / 2,
+      z: interiorZ,
+    }),
   );
 
   // Lower vertical partitions
@@ -643,8 +665,6 @@ function buildCabinet() {
   });
 
   // Center two drawers
-  const centerDrawerZone = bottomShelfY - 2 * t;
-  const centerDrawerH = (centerDrawerZone - 3 * gap) / 2;
   const centerBottom1 = t + gap;
   const centerBottom2 = centerBottom1 + centerDrawerH + gap;
   addDrawer({
@@ -667,7 +687,7 @@ function buildCabinet() {
     xCenter: rightCenterX,
     width: rightW - 2 * gap,
     yBottom: t + gap,
-    yTop: bottomShelfY - t - gap,
+    yTop: rightBottomShelfY - t - gap,
     label: '孩子物品抽屉',
   });
 
@@ -780,7 +800,7 @@ function buildCabinet() {
   const nicheBasketH = Math.min(0.3, Math.max(0.18, nicheH * 0.55));
   const nicheBasketD = Math.min(0.36, Math.max(0.22, interiorD - 0.1));
   const nicheBasket = createBasket(nicheBasketW, nicheBasketH, nicheBasketD, materials);
-  nicheBasket.position.set(rightCenterX, bottomShelfY, interiorZ);
+  nicheBasket.position.set(rightCenterX, rightBottomShelfY + 0.005, interiorZ);
   propsGroup.add(nicheBasket);
 
   const longGarments = [-0.26, 0, 0.26];
@@ -806,14 +826,34 @@ function buildCabinet() {
   updateRoom(room, { width: W, height: H, depth: D });
 }
 
+function applyPartTransform(part) {
+  if (part.type === 'door') {
+    part.group.rotation.y = part.hingeSign * part.open * part.angle;
+  } else {
+    part.group.position.z = part.open * part.travel;
+  }
+}
+
 function rebuild() {
   normalizeState();
   const direction = viewer.camera.position.clone().sub(viewer.controls.target);
   if (direction.lengthSq() < 1e-6) direction.set(0.34, 0.18, 1);
   direction.normalize();
 
+  const openStates = new Map(
+    interactiveParts.map((part) => [part.label, { open: part.open, target: part.target }]),
+  );
+
   disposeGroup(cabinetGroup);
   buildCabinet();
+
+  interactiveParts.forEach((part) => {
+    const saved = openStates.get(part.label);
+    if (!saved) return;
+    part.open = saved.open;
+    part.target = saved.target;
+    applyPartTransform(part);
+  });
 
   const W = state.W / 1000;
   const H = state.H / 1000;
@@ -955,11 +995,7 @@ function animate() {
   for (const part of interactiveParts) {
     if (Math.abs(part.open - part.target) > 0.0005) {
       part.open = damp(part.open, part.target, 8.5, delta);
-      if (part.type === 'door') {
-        part.group.rotation.y = part.hingeSign * part.open * part.angle;
-      } else {
-        part.group.position.z = part.open * part.travel;
-      }
+      applyPartTransform(part);
     }
   }
   viewer.controls.update();
