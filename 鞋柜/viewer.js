@@ -7,6 +7,7 @@ import {
   updateRoom,
   box,
   cylinder,
+  createBasket,
   createHangingGarment,
   createDimensions,
   disposeGroup,
@@ -23,7 +24,7 @@ const DEFAULTS = {
   benchH: 420,
   benchPull: 500,
   t: 18,
-  topGap: 30,
+  topGap: 0,
 };
 
 const LEFT_W = 408;
@@ -38,6 +39,10 @@ const MID_UPPER_RATIOS = [180, 160, 120, 100, 370];
 const MID_SHOE_RATIOS = [170, 170, 130, 100];
 const BACK_RATIOS = [340, 340, 220, 220, 220, 220, 150, 150, 150, 100];
 const BACK_RATIO_SUM = BACK_RATIOS.reduce((sum, value) => sum + value, 0);
+const FRONT_BOTTOM = [200, 120, 130, 130, 170];
+const FRONT_UPPER = [100, 120, 168, 180, 230];
+const FRONT_DRAWER = 170;
+const FRONT_NICHE = 370;
 
 const state = {
   ...DEFAULTS,
@@ -49,12 +54,6 @@ const state = {
   backPull: 1220,
   midW: 0,
   kneeH: 0,
-  midBottomH: 0,
-  midShoeH: 0,
-  midUpperH: 0,
-  midUpperParts: [],
-  midShoeParts: [],
-  narrowHeights: [],
   backHeights: [],
   midDoorW: 0,
   benchMaxW: 0,
@@ -123,7 +122,7 @@ function normalizeState() {
   state.D = clamp(state.D, 700, 900);
   state.backD = clamp(state.backD, 350, 450);
   state.t = clamp(Math.round(state.t), 16, 25);
-  state.topGap = clamp(state.topGap, 10, 60);
+  state.topGap = 0;
   state.benchH = clamp(state.benchH, 380, 460);
   state.benchPull = clamp(state.benchPull, 300, 600);
   state.benchMaxW = LEFT_W - 2 * state.t;
@@ -146,21 +145,9 @@ function normalizeState() {
   state.backW = state.midW + NARROW_W;
   state.backPull = state.backW;
 
-  state.kneeH = state.H - state.topGap - 3 * state.t - 400 - 980 - state.benchH;
+  state.kneeH = state.H - 3 * state.t - 400 - 980 - state.benchH;
 
-  const midFixed = state.topGap + 120 + 12 * state.t;
-  const midScale = Math.max(0.5, (state.H - midFixed) / 1920);
-  state.midBottomH = 420 * midScale;
-  state.midShoeH = 570 * midScale;
-  state.midUpperH = 930 * midScale;
-  state.midUpperParts = MID_UPPER_RATIOS.map((value) => value * (state.midUpperH / 930));
-  state.midShoeParts = MID_SHOE_RATIOS.map((value) => value * (state.midShoeH / 570));
-
-  const narrowAvail = state.H - state.topGap - 9 * state.t;
-  const narrowScale = Math.max(0.5, narrowAvail / NARROW_RATIO_SUM);
-  state.narrowHeights = NARROW_RATIOS.map((value) => value * narrowScale);
-
-  const backAvail = state.H - state.topGap - 11 * state.t;
+  const backAvail = state.H - 11 * state.t;
   const backScale = Math.max(0.5, backAvail / BACK_RATIO_SUM);
   state.backHeights = BACK_RATIOS.map((value) => value * backScale);
 
@@ -178,21 +165,21 @@ function updateReadouts() {
   document.getElementById('size-readout').textContent =
     `${Math.round(state.W)} × ${Math.round(state.H)} × ${Math.round(state.D)} mm`;
   document.getElementById('left-width').textContent = `${LEFT_W} mm`;
-  document.getElementById('mid-width').textContent = `${format(state.midW, 0)} mm`;
-  document.getElementById('narrow-width').textContent = `${NARROW_W} mm`;
+  document.getElementById('mid-width').textContent = `${format(state.midW, 0)} / ${NARROW_W} mm`;
   document.getElementById('hanging-depth').textContent = `${format(state.D, 0)} / ${format(state.D, 0)}（贯通）`;
   document.getElementById('width-layout').textContent =
     `${LEFT_W} / ${format(state.midW + NARROW_W, 0)} / ${format(state.backW, 0)}`;
   document.getElementById('left-back-width').textContent = `${format(LEFT_W + state.backW, 0)} mm`;
   document.getElementById('left-zones').textContent =
     `400 / 980 / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
-  document.getElementById('mid-zones').textContent =
-    `${format(state.midUpperH, 0)} / 120 / ${format(state.midShoeH, 0)} / ${format(state.midBottomH, 0)}`;
+  document.getElementById('front-bottom').textContent =
+    `${FRONT_BOTTOM.join(' / ')} mm`;
+  document.getElementById('front-drawer').textContent = `${FRONT_DRAWER} mm`;
+  document.getElementById('front-niche').textContent = `${FRONT_NICHE} mm`;
+  document.getElementById('front-upper').textContent = `${FRONT_UPPER.join(' / ')} mm`;
   document.getElementById('mid-door-width').textContent = `${format(state.midDoorW, 1)} mm`;
   document.getElementById('bench-size').textContent =
     `${format(state.benchW, 0)} × ${format(state.benchH, 0)} / ${format(state.benchPull, 0)}`;
-  document.getElementById('narrow-heights').textContent =
-    `${state.narrowHeights.map((value) => format(value, 0)).join(' / ')} mm`;
   document.getElementById('front-depth').textContent =
     `${format(state.frontD, 0)} / ${format(state.backD, 0)} mm`;
   document.getElementById('back-rack').textContent =
@@ -202,9 +189,7 @@ function updateReadouts() {
 
   const warnings = [];
   if (state.kneeH < 300) warnings.push(`坐凳上空 ${format(state.kneeH, 0)} mm < 300`);
-  if (state.midW < 740) warnings.push(`中段净宽 ${format(state.midW, 0)} mm < 740`);
-  if (state.midShoeParts[3] < 90) warnings.push(`中段最下层 ${format(state.midShoeParts[3], 0)} mm < 90`);
-  if (state.narrowHeights[8] < 100) warnings.push(`窄柜最下层 ${format(state.narrowHeights[8], 0)} mm < 100`);
+  if (state.midW < 740) warnings.push(`前柜中段净宽 ${format(state.midW, 0)} mm < 740`);
   if (state.frontD - state.t - 12 < 340) warnings.push(`前层净深 ${format(state.frontD - state.t - 12, 0)} mm < 340`);
   if (state.backD - state.t - 12 < 300) warnings.push(`后层净深 ${format(state.backD - state.t - 12, 0)} mm < 300`);
   if (state.backHeights[9] < 90) warnings.push(`后层最下层 ${format(state.backHeights[9], 0)} mm < 90`);
@@ -527,7 +512,6 @@ function buildCabinet() {
     box(t, H, D, materials.whiteCarcass, { x: x0 + t / 2, y: H / 2, z: 0 }),
     box(t, H, carcassD, materials.whiteCarcass, { x: x1 - t / 2, y: H / 2, z: carcassZ }),
     box(t, H, D, materials.whiteCarcass, { x: divider1X, y: H / 2, z: 0 }),
-    box(t, H, carcassD, materials.whiteCarcass, { x: divider2X, y: H / 2, z: carcassZ }),
     box(leftInner1 - x0, t, D, materials.whiteCarcass, {
       x: (x0 + leftInner1) / 2,
       y: topPanelBottom + t / 2,
@@ -553,13 +537,7 @@ function buildCabinet() {
 
   // No toe kick or bottom panel in the front row: the lowest layer is the floor.
 
-  // 30 mm top scribe/filler across the front.
-  cabinetGroup.add(
-    box(W, topGap, doorT, materials.whiteEdge, {
-      y: H - topGap / 2,
-      z: doorZ,
-    }),
-  );
+  // The cabinet runs to 2303 without a top gap; no separate top filler.
 
   // Left column: bag niche, hanging zone, knee space, bench.
   const benchTop = benchH;
@@ -586,132 +564,100 @@ function buildCabinet() {
 
   // Left cabinet is intentionally open: no doors on the 408-wide full-depth bay.
 
-  // Middle: bottom open bay (floor + plain fixed board), shoe shelves,
-  // 120 drawer, upper storage. No toe kick, no bottom panel, no pull-out.
-  const midBottomStart = 0;
-  const midBottomTop = state.midBottomH / 1000;
-  const midBottomShelfY = midBottomTop + t / 2;
-  const fixedBoardTop = clamp(state.midBottomH / 2000, 0.15, 0.3);
-
-  cabinetGroup.add(
-    box(midW, t, interiorD, materials.wood, { x: midCenter, y: midBottomShelfY, z: interiorZ }),
-  );
-
-  let cursorY = midBottomTop + t;
-  const shoeCells = [];
-  state.midShoeParts.forEach((heightMm, index) => {
-    const height = heightMm / 1000;
-    shoeCells.push({ bottom: cursorY, top: cursorY + height, height });
-    cursorY += height;
-    if (index < state.midShoeParts.length - 1) {
-      cabinetGroup.add(
-        box(midW, t, interiorD, materials.wood, { x: midCenter, y: cursorY + t / 2, z: interiorZ }),
-      );
-      cursorY += t;
-    }
-  });
-  const shoeTop = cursorY;
-
-  const drawerShelfY = shoeTop + t / 2;
-  cabinetGroup.add(
-    box(midW, t, interiorD, materials.wood, { x: midCenter, y: drawerShelfY, z: interiorZ }),
-  );
-  const drawerBottom = shoeTop + t;
-  const drawerTop = drawerBottom + 0.12;
-  const upperShelfY = drawerTop + t / 2;
-  cabinetGroup.add(
-    box(midW, t, interiorD, materials.wood, { x: midCenter, y: upperShelfY, z: interiorZ }),
-  );
-
-  const upperBottom = drawerTop + t;
-  let upperCursor = upperBottom;
-  const upperCells = [];
-  state.midUpperParts.forEach((heightMm, index) => {
-    const height = heightMm / 1000;
-    upperCells.push({ bottom: upperCursor, top: upperCursor + height, height });
-    upperCursor += height;
-    if (index < state.midUpperParts.length - 1) {
-      cabinetGroup.add(
-        box(midW, t, interiorD, materials.wood, { x: midCenter, y: upperCursor + t / 2, z: interiorZ }),
-      );
-      upperCursor += t;
-    }
-  });
-
-  // Middle lower pair of doors over the four shoe bays.
+  // Front bank: middle 800 + right 420 = 1220 net; the bottom two layers
+  // run through both; 170 drawer, 370 entry counter, upper 5.
+  const frontX0 = midInner0;
+  const frontX1 = narrowInner1;
+  const frontW = frontX1 - frontX0;
+  const frontCenterX = (frontX0 + frontX1) / 2;
   const midMeetingX = (midInner0 + midInner1) / 2;
-  addDoor({
-    xLeft: midInner0 + GAP,
-    xRight: midMeetingX - GAP / 2,
-    yBottom: midBottomTop - GAP / 2,
-    yTop: drawerBottom - GAP / 2,
-    hinge: 'left',
-    label: '中柜下门（左）',
-  });
-  addDoor({
-    xLeft: midMeetingX + GAP / 2,
-    xRight: midInner1 - GAP,
-    yBottom: midBottomTop - GAP / 2,
-    yTop: drawerBottom - GAP / 2,
-    hinge: 'right',
-    label: '中柜下门（右）',
-  });
 
-  // 120 drawer between the shoe area and the upper storage.
+  const addFullShelf = (y) =>
+    cabinetGroup.add(box(frontW, t, interiorD, materials.wood, {
+      x: frontCenterX, y: y + t / 2, z: interiorZ,
+    }));
+  const addSplitShelf = (y) =>
+    cabinetGroup.add(
+      box(midW, t, interiorD, materials.wood, { x: midCenter, y: y + t / 2, z: interiorZ }),
+      box(narrowW, t, interiorD, materials.wood, { x: narrowCenter, y: y + t / 2, z: interiorZ }),
+    );
+
+  let fy = 0;
+  const frontBottomCells = [];
+  FRONT_BOTTOM.forEach((heightMm, index) => {
+    const height = heightMm / 1000;
+    frontBottomCells.push({ bottom: fy, top: fy + height });
+    fy += height;
+    if (index < FRONT_BOTTOM.length - 1) {
+      if (index < 2) addFullShelf(fy);
+      else addSplitShelf(fy);
+      fy += t;
+    }
+  });
+  // Shelf above the 170 layer is the drawer bottom, split at the middle/right.
+  addSplitShelf(fy);
+  fy += t;
+  const drawerBottom = fy;
+  const drawerTop = drawerBottom + FRONT_DRAWER / 1000;
   addDrawer({
     xCenter: midCenter,
     width: midW - 0.006,
     yBottom: drawerBottom + GAP / 2,
     yTop: drawerTop - GAP / 2,
-    label: '中部抽屉 120',
+    label: '前柜抽屉 170',
   });
 
-  // Middle upper pair of doors.
+  // Entry counter: full-width surface above the drawer; 370 open niche above.
+  addFullShelf(drawerTop);
+  const nicheBottom = drawerTop + t;
+  const nicheTop = nicheBottom + FRONT_NICHE / 1000;
+  addFullShelf(nicheTop);
+  const upperBottom = nicheTop + t;
+
+  let uy = upperBottom;
+  const frontUpperCells = [];
+  FRONT_UPPER.forEach((heightMm, index) => {
+    const height = heightMm / 1000;
+    frontUpperCells.push({ bottom: uy, top: uy + height });
+    uy += height;
+    if (index < FRONT_UPPER.length - 1) {
+      addSplitShelf(uy);
+      uy += t;
+    }
+  });
+  const topPanelThickness = Math.max(0.012, H - uy);
+  cabinetGroup.add(box(frontW, topPanelThickness, interiorD, materials.wood, {
+    x: frontCenterX, y: uy + topPanelThickness / 2, z: interiorZ,
+  }));
+
+  // Middle upper 5 doors; right upper 5 open; no lower doors.
   addDoor({
     xLeft: midInner0 + GAP,
     xRight: midMeetingX - GAP / 2,
-    yBottom: drawerTop + GAP / 2,
-    yTop: topPanelTop - GAP,
+    yBottom: upperBottom + GAP / 2,
+    yTop: H - GAP,
     hinge: 'left',
-    label: '中柜上门（左）',
+    label: '前柜上门（左）',
   });
   addDoor({
     xLeft: midMeetingX + GAP / 2,
     xRight: midInner1 - GAP,
-    yBottom: drawerTop + GAP / 2,
-    yTop: topPanelTop - GAP,
+    yBottom: upperBottom + GAP / 2,
+    yTop: H - GAP,
     hinge: 'right',
-    label: '中柜上门（右）',
+    label: '前柜上门（右）',
   });
 
-  // Bottom two layers of the front row are plain: bare floor + one fixed board.
+  // Divider 2 only above the through bottom two layers and above the niche:
+  // 356-1010 for the upper-3 + drawer, 1416-2303 for the upper 5.
   cabinetGroup.add(
-    box(midW - 0.02, t, interiorD - 0.02, materials.wood, {
-      x: midCenter,
-      y: fixedBoardTop - t / 2,
-      z: interiorZ,
+    box(t, 1.010 - 0.356, carcassD, materials.whiteCarcass, {
+      x: divider2X, y: (0.356 + 1.010) / 2, z: carcassZ,
+    }),
+    box(t, H - 1.416, carcassD, materials.whiteCarcass, {
+      x: divider2X, y: (1.416 + H) / 2, z: carcassZ,
     }),
   );
-
-  // Narrow open tower: nine clear bays, two boot bays at top; bottom is floor.
-  let narrowCursor = 0;
-  const narrowCells = [];
-  // Ratios are stored top-to-bottom; build from the floor up.
-  [...state.narrowHeights].reverse().forEach((heightMm, index, list) => {
-    const height = heightMm / 1000;
-    narrowCells.push({ bottom: narrowCursor, top: narrowCursor + height, height });
-    narrowCursor += height;
-    if (index < list.length - 1) {
-      cabinetGroup.add(
-        box(narrowW, t, interiorD, materials.wood, {
-          x: narrowCenter,
-          y: narrowCursor + t / 2,
-          z: interiorZ,
-        }),
-      );
-      narrowCursor += t;
-    }
-  });
 
   // Pull-out bench: 300 wide, right-aligned against the middle divider.
   const benchCenterX = leftInner1 - benchW / 2;
@@ -793,78 +739,96 @@ function buildCabinet() {
     propsGroup.add(garment);
   }
 
-  upperCells.forEach((cell, index) => {
-    addShoeBoxRow(propsGroup, {
-      xCenter: midCenter,
-      y: cell.bottom + 0.002,
-      z: interiorZ + 0.035,
-      count: 3,
-      spacing: 0.25,
-    });
-  });
-
-  shoeCells.forEach((cell, index) => {
-    addShoeRow(propsGroup, {
-      xCenter: midCenter,
-      y: cell.bottom + 0.002,
-      z: interiorZ + 0.035,
-      count: 3,
-      type: index < 2 ? 'sneaker' : index === 2 ? 'heel' : 'slipper',
-      colorOffset: index * 2 + 1,
-      spacing: 0.25,
-    });
-  });
-
-  narrowCells.forEach((cell, index) => {
-    if (index >= narrowCells.length - 2) {
+  // Bottom five layers: bottom two run through the full 1220; upper three split.
+  frontBottomCells.forEach((cell, index) => {
+    if (index < 2) {
       addShoeRow(propsGroup, {
-        xCenter: narrowCenter,
-        y: cell.bottom + 0.002,
-        z: interiorZ + 0.03,
-        count: 1,
-        type: 'boot',
-        colorOffset: index + 1,
-        spacing: 0.2,
-      });
-    } else if (index >= narrowCells.length - 4) {
-      addShoeBoxRow(propsGroup, {
-        xCenter: narrowCenter,
+        xCenter: frontCenterX,
         y: cell.bottom + 0.002,
         z: interiorZ + 0.035,
-        count: 1,
+        count: 6,
+        type: index === 0 ? 'slipper' : 'sneaker',
+        colorOffset: index * 3,
+        spacing: 0.2,
       });
     } else {
       addShoeRow(propsGroup, {
+        xCenter: midCenter,
+        y: cell.bottom + 0.002,
+        z: interiorZ + 0.035,
+        count: 4,
+        type: index === 4 ? 'boot' : 'sneaker',
+        colorOffset: index * 2,
+        spacing: 0.2,
+      });
+      addShoeRow(propsGroup, {
         xCenter: narrowCenter,
         y: cell.bottom + 0.002,
         z: interiorZ + 0.03,
-        count: 1,
-        type: index % 2 === 0 ? 'sneaker' : 'heel',
-        colorOffset: index,
+        count: 2,
+        type: index === 4 ? 'boot' : 'heel',
+        colorOffset: index + 1,
         spacing: 0.2,
       });
     }
   });
 
-  addShoeRow(propsGroup, {
-    xCenter: midCenter,
-    y: midBottomStart + 0.002,
-    z: interiorZ + 0.035,
-    count: 2,
-    type: 'slipper',
-    colorOffset: 3,
-    spacing: 0.3,
+  // 370 entry niche: bag, tray, keys.
+  const nicheBag = createBag();
+  nicheBag.position.set(frontCenterX - 0.32, nicheBottom, interiorZ + 0.02);
+  propsGroup.add(nicheBag);
+
+  const tray = box(0.42, 0.018, 0.24, materials.woodDark, {
+    x: frontCenterX + 0.24,
+    y: nicheBottom + 0.02,
+    z: interiorZ + 0.06,
+  });
+  const trayRimA = box(0.42, 0.035, 0.018, materials.woodDark, {
+    x: frontCenterX + 0.24,
+    y: nicheBottom + 0.035,
+    z: interiorZ + 0.06 - 0.111,
+  });
+  const trayRimB = box(0.42, 0.035, 0.018, materials.woodDark, {
+    x: frontCenterX + 0.24,
+    y: nicheBottom + 0.035,
+    z: interiorZ + 0.06 + 0.111,
+  });
+  const keyA = box(0.08, 0.012, 0.025, materials.metal, {
+    x: frontCenterX + 0.12,
+    y: nicheBottom + 0.045,
+    z: interiorZ + 0.06,
+  });
+  const keyB = box(0.07, 0.012, 0.025, materials.metal, {
+    x: frontCenterX + 0.33,
+    y: nicheBottom + 0.045,
+    z: interiorZ + 0.06,
+  });
+  propsGroup.add(tray, trayRimA, trayRimB, keyA, keyB);
+
+  // Upper 5: middle behind doors, right open; shoe boxes.
+  frontUpperCells.forEach((cell) => {
+    addShoeBoxRow(propsGroup, {
+      xCenter: midCenter,
+      y: cell.bottom + 0.002,
+      z: interiorZ + 0.035,
+      count: 3,
+      spacing: 0.24,
+      scale: 0.8,
+    });
+    addShoeBoxRow(propsGroup, {
+      xCenter: narrowCenter,
+      y: cell.bottom + 0.002,
+      z: interiorZ + 0.035,
+      count: 1,
+      spacing: 0,
+      scale: 0.8,
+    });
   });
 
-  addShoeRow(propsGroup, {
-    xCenter: midCenter,
-    y: fixedBoardTop + 0.002,
-    z: interiorZ + 0.035,
-    count: 2,
-    type: 'sneaker',
-    colorOffset: 1,
-    spacing: 0.3,
-  });
+  // Right under-counter 170 slot: a basket.
+  const counterBasket = createBasket(0.28, 0.14, 0.3, materials);
+  counterBasket.position.set(narrowCenter, drawerBottom + 0.002, interiorZ + 0.02);
+  propsGroup.add(counterBasket);
 
   // Back layer: 1220 wide, exactly the front middle+right width, behind the
   // front 400 and against the flat wall. It slides out to the right.
