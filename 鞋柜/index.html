@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>鞋柜 · 三维预览 | 柜子定制</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body class="viewer-page">
+  <div class="app">
+    <aside class="panel">
+      <header class="panel-header">
+        <a class="back-link" href="../index.html">← 返回总入口</a>
+        <p class="eyebrow">鞋柜 · 柜子定制</p>
+        <h1>鞋柜</h1>
+        <p class="subtitle">1700 宽三段 · 抽拉换鞋凳 · 无拉手平板门 · 420 开放鞋塔</p>
+        <div class="chips">
+          <span class="chip chip-accent">v1.0</span>
+          <span class="chip">1700 × 2303 × 400</span>
+          <span class="chip">换鞋凳可拉出</span>
+          <span class="chip">活动层板</span>
+        </div>
+      </header>
+
+      <section class="controls" aria-labelledby="dimensions-title">
+        <div class="section-heading">
+          <h2 id="dimensions-title">关键尺寸</h2>
+          <span class="section-note">单位 mm</span>
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-W">总宽</label>
+            <span class="control-number">
+              <input id="number-W" data-number="W" type="number" min="1600" max="1800" step="1" value="1700" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-W" data-range="W" type="range" min="1600" max="1800" step="1" value="1700">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-H">总高</label>
+            <span class="control-number">
+              <input id="number-H" data-number="H" type="number" min="2100" max="2500" step="1" value="2303" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-H" data-range="H" type="range" min="2100" max="2500" step="1" value="2303">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-D">总深</label>
+            <span class="control-number">
+              <input id="number-D" data-number="D" type="number" min="350" max="450" step="1" value="400" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-D" data-range="D" type="range" min="350" max="450" step="1" value="400">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-benchW">换鞋凳宽</label>
+            <span class="control-number">
+              <input id="number-benchW" data-number="benchW" type="number" min="260" max="372" step="1" value="300" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-benchW" data-range="benchW" type="range" min="260" max="372" step="1" value="300">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-benchH">换鞋凳高</label>
+            <span class="control-number">
+              <input id="number-benchH" data-number="benchH" type="number" min="380" max="460" step="1" value="420" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-benchH" data-range="benchH" type="range" min="380" max="460" step="1" value="420">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-benchPull">换鞋凳前伸</label>
+            <span class="control-number">
+              <input id="number-benchPull" data-number="benchPull" type="number" min="300" max="600" step="10" value="500" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-benchPull" data-range="benchPull" type="range" min="300" max="600" step="10" value="500">
+        </div>
+
+        <details class="more-settings">
+          <summary>更多尺寸</summary>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-t">板厚</label>
+              <span class="control-number">
+                <input id="number-t" data-number="t" type="number" min="16" max="25" step="1" value="18" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
+          </div>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-toeKick">踢脚高</label>
+              <span class="control-number">
+                <input id="number-toeKick" data-number="toeKick" type="number" min="30" max="100" step="5" value="50" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-toeKick" data-range="toeKick" type="range" min="30" max="100" step="5" value="50">
+          </div>
+          <div class="control-row compact">
+            <div class="control-head">
+              <label for="range-topGap">顶部收口</label>
+              <span class="control-number">
+                <input id="number-topGap" data-number="topGap" type="number" min="10" max="60" step="5" value="30" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-topGap" data-range="topGap" type="range" min="10" max="60" step="5" value="30">
+          </div>
+          <p class="micro-hint">左 408 / 窄 420 固定，中段宽随总宽推导；中段与窄段层高按手稿比例随总高等比缩放。手稿右侧 800 双列鞋架不在本柜 1700 内。</p>
+        </details>
+
+        <div class="computed">
+          <div><span>左段净宽</span><strong id="left-width">408 mm</strong></div>
+          <div><span>中段净宽</span><strong id="mid-width">800 mm</strong></div>
+          <div><span>窄段净宽</span><strong id="narrow-width">420 mm</strong></div>
+          <div><span>左柜分区</span><strong id="left-zones">400 / 980 / 419 / 420</strong></div>
+          <div><span>中柜分区</span><strong id="mid-zones">914 / 120 / 560 / 413</strong></div>
+          <div><span>左门宽</span><strong id="left-door-width">402 mm</strong></div>
+          <div><span>中门宽</span><strong id="mid-door-width">395.5 mm</strong></div>
+          <div><span>换鞋凳</span><strong id="bench-size">300 × 420 / 500</strong></div>
+          <div class="computed-wide"><span>窄柜 9 层净高</span><strong id="narrow-heights">462 / 462 / 161 / 161 / 231 / 176 / 131 / 131 / 131 mm</strong></div>
+        </div>
+        <div id="height-warning" class="warning" hidden></div>
+      </section>
+
+      <section class="actions" aria-label="预览操作">
+        <div class="action-grid">
+          <button id="open-all" class="button button-primary" type="button">全部打开</button>
+          <button id="close-all" class="button" type="button">全部关闭</button>
+          <button id="reset-view" class="button" type="button">重置视角</button>
+          <button id="reset-dimensions" class="button button-ghost" type="button">恢复默认尺寸</button>
+        </div>
+        <div class="toggles">
+          <label><input id="show-dims" type="checkbox" checked> 显示尺寸</label>
+          <label><input id="show-props" type="checkbox" checked> 显示示例物品</label>
+          <label><input id="show-doors" type="checkbox" checked> 显示门板</label>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-title">
+        <div class="section-heading">
+          <h2 id="notes-title">设计要点</h2>
+        </div>
+        <ul>
+          <li><strong>总体</strong> 1700 × 2303 × 400；三段 408 + 800 + 420，含 4 块 18mm 竖板；与琴柜平（手稿 1200 + 500 左右）。</li>
+          <li><strong>左 408</strong> 包袋格 400 + 挂衣区 980 + 坐凳上空 + 抽拉换鞋凳 420；凳宽 300 贴内侧，前伸 500，无底带轮。</li>
+          <li><strong>中 800</strong> 上柜 5 层 + 120 抽屉 + 开放鞋区 4 层 + 底部抽拉鞋板；上部/下部平板门，下柜门覆盖鞋区。</li>
+          <li><strong>窄 420</strong> 开放鞋塔 9 层：上部 2 个 460 靴位，中部 2 个 160 鞋盒位，下部 5 个活动鞋层。</li>
+          <li><strong>门板</strong> 平板无拉手、无反弹器；门板延长留 3mm 缝，用指扣/门缝开合。手稿右侧 800 双列鞋架不在本柜范围。</li>
+        </ul>
+        <p class="hint">v1.0 按手稿三段 1700 宽建模；包袋格/挂衣区门板、换鞋凳内部做法和现场插座开孔可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
+      </section>
+
+      <footer class="panel-footer">
+        <span>HTML / CSS / JS + three.js</span>
+        <span>尺寸单位 mm</span>
+      </footer>
+    </aside>
+
+    <main class="stage" id="stage">
+      <div id="canvas-container" class="canvas-container"></div>
+      <div class="stage-topbar">
+        <span class="stage-title">鞋柜 v1.0 · 三维预览</span>
+        <span class="stage-meta" id="size-readout">1700 × 2303 × 400 mm</span>
+      </div>
+      <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门/抽屉/换鞋凳开合</div>
+      <div class="loading" id="loading">正在加载三维场景…</div>
+      <div class="tooltip" id="tooltip"></div>
+      <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
+    </main>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../assets/vendor/three/three.module.js",
+        "three/addons/": "../assets/vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>
