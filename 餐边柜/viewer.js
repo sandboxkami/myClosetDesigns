@@ -33,10 +33,16 @@ const ROUND_R = 0.05;
 const COUNTER_T = 0.02;
 const BACK_T = 0.007;
 
+// Weak-current box on the wall behind the right lower cabinet.
+// Dimensions are fixed by the site: 400 wide x 300 high x 100 deep,
+// bottom 400 above floor, right edge 250 from the right wall corner.
+const UTILITY = { w: 400, h: 300, d: 100, bottom: 400, rightOffset: 250, reveal: 5 };
+
 const state = {
   ...DEFAULTS,
   showDims: true,
   showProps: true,
+  showUtility: true,
   moduleW: 0,
   lowerH: 0,
   upperDoorW: 0,
@@ -73,7 +79,39 @@ viewer.scene.add(cabinetGroup);
 let interactiveParts = [];
 let propsGroup = null;
 let dimensionGroup = null;
+let utilityGroup = null;
 let firstBuild = true;
+
+const UTILITY_MAT = {
+  body: new THREE.MeshStandardMaterial({
+    color: 0xb8c2c6,
+    roughness: 0.55,
+    metalness: 0.18,
+    transparent: true,
+    opacity: 0.34,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  }),
+  face: new THREE.MeshStandardMaterial({
+    color: 0xdfe3e5,
+    roughness: 0.52,
+    metalness: 0.08,
+    transparent: true,
+    opacity: 0.62,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  }),
+  handle: new THREE.MeshStandardMaterial({ color: 0x768186, roughness: 0.4, metalness: 0.5 }),
+  edge: new THREE.LineBasicMaterial({ color: 0x4f5a5f }),
+  conflict: new THREE.MeshStandardMaterial({
+    color: 0xd94a3d,
+    roughness: 0.6,
+    transparent: true,
+    opacity: 0.55,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  }),
+};
 
 function normalizeState() {
   state.W = clamp(state.W, 2300, 3200);
@@ -108,6 +146,48 @@ function normalizeState() {
   state.petDoorH = state.lowerDoorH - state.petH;
 }
 
+function getUtilityInfo() {
+  const W = state.W / 1000;
+  const lowerD = state.lowerD / 1000;
+  const t = state.t / 1000;
+  const moduleW = state.moduleW / 1000;
+  const right = W / 2;
+  const boxRight = right - UTILITY.rightOffset / 1000;
+  const boxLeft = boxRight - UTILITY.w / 1000;
+  const boxBottom = UTILITY.bottom / 1000;
+  const boxTop = boxBottom + UTILITY.h / 1000;
+  const wallZ = -lowerD / 2 - 0.02;
+  const frontZ = wallZ + UTILITY.d / 1000;
+
+  // The only right-module shelf in the box's height range.
+  const shelfY = state.petH / 1000 + (state.lowerDoorH / 1000 - state.petH / 1000) / 2;
+  const shelfBack = -lowerD / 2 + BACK_T;
+  const shelfFront = lowerD / 2 - t;
+  const rightModuleLeft = right - moduleW;
+  const rightInnerX = right - ROUND_R;
+
+  const overlapX = Math.min(boxRight, rightInnerX) - Math.max(boxLeft, rightModuleLeft);
+  const overlapY = Math.min(boxTop, shelfY + t / 2) - Math.max(boxBottom, shelfY - t / 2);
+  const overlapZ = Math.min(frontZ, shelfFront) - Math.max(wallZ, shelfBack);
+
+  return {
+    xCenter: (boxLeft + boxRight) / 2,
+    xLeft: boxLeft,
+    xRight: boxRight,
+    yCenter: (boxBottom + boxTop) / 2,
+    yBottom: boxBottom,
+    yTop: boxTop,
+    wallZ,
+    frontZ,
+    shelfY,
+    overlapX: Math.max(0, overlapX),
+    overlapY: Math.max(0, overlapY),
+    overlapZ: Math.max(0, overlapZ),
+    interference: overlapX > 0.001 && overlapY > 0.001 && overlapZ > 0.001,
+    fitsModule: boxLeft - UTILITY.reveal / 1000 >= rightModuleLeft + t / 2 && boxRight <= rightInnerX,
+  };
+}
+
 function syncInputs() {
   document.querySelectorAll('[data-range], [data-number]').forEach((input) => {
     const key = input.dataset.range || input.dataset.number;
@@ -123,6 +203,22 @@ function updateReadouts() {
   document.getElementById('lower-door-height').textContent = `${format(state.lowerDoorH, 0)} / ${format(state.petDoorH, 0)} mm`;
   document.getElementById('pet-height').textContent = `${format(state.petH, 0)} mm`;
   document.getElementById('narrow-width').textContent = `${format(state.narrowW, 0)} mm`;
+  document.getElementById('utility-box').textContent = '400 × 300 × 100 mm';
+  document.getElementById('utility-pos').textContent = '底 400 / 右距角 250';
+
+  const utility = getUtilityInfo();
+  const utilityWarning = document.getElementById('utility-warning');
+  const utilityMessages = [];
+  if (utility.interference) {
+    utilityMessages.push(
+      `弱电箱与右地柜层板（y≈${format(utility.shelfY * 1000, 0)}）重叠 ${format(utility.overlapY * 1000, 0)} mm；需下移/取消层板，或改箱位/加深柜体`,
+    );
+  }
+  if (!utility.fitsModule) {
+    utilityMessages.push('弱电箱超出右主格范围，需调整柜宽或箱位');
+  }
+  utilityWarning.hidden = utilityMessages.length === 0;
+  utilityWarning.textContent = utilityMessages.length ? `${utilityMessages.join('；')}。` : '';
 
   const leftBottomDrawerH = state.lowerH - 20 - 4 * state.drawerH;
   document.getElementById('left-drawer-heights').textContent =
@@ -407,6 +503,35 @@ function createRoundedPanel({ xLeft, xRight, zBack, zFront, yBottom, yTop, radiu
   return mesh;
 }
 
+// Back panel with a rectangular opening for the wall-mounted utility box.
+// The shape is built in XY and extruded through the 7 mm back panel.
+function backPanelWithRectHole(width, height, thickness, holeX, holeY, holeW, holeH, material, z) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2, 0);
+  shape.lineTo(width / 2, 0);
+  shape.lineTo(width / 2, height);
+  shape.lineTo(-width / 2, height);
+  shape.closePath();
+
+  const hole = new THREE.Path();
+  hole.moveTo(holeX - holeW / 2, holeY - holeH / 2);
+  hole.lineTo(holeX - holeW / 2, holeY + holeH / 2);
+  hole.lineTo(holeX + holeW / 2, holeY + holeH / 2);
+  hole.lineTo(holeX + holeW / 2, holeY - holeH / 2);
+  hole.closePath();
+  shape.holes.push(hole);
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: false,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.z = z;
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 function buildCabinet() {
   interactiveParts = [];
 
@@ -457,6 +582,7 @@ function buildCabinet() {
   const c2 = (x2 + x3) / 2;
   const c3 = (x3 + x4) / 2;
   const rightInnerX = x4 - ROUND_R;
+  const utility = getUtilityInfo();
 
   SCENE.doorT = doorT;
   SCENE.lowerDoorZ = lowerDoorZ;
@@ -469,14 +595,89 @@ function buildCabinet() {
   // The right end is handled by the rounded end panel above; the middle open bay has no right side.
   cabinetGroup.add(
     box(t, upperTop, lowerBodyDepth, materials.whiteCarcass, { x: x1 + t / 2, y: upperTop / 2, z: lowerBodyCenterZ }),
-    box(rightInnerX - x1, lowerBodyTop, BACK_T, materials.wood, {
-      x: (x1 + rightInnerX) / 2,
-      y: lowerBodyTop / 2,
-      z: -lowerD / 2 + BACK_T / 2,
-      cast: false,
-    }),
+    backPanelWithRectHole(
+      rightInnerX - x1,
+      lowerBodyTop,
+      BACK_T,
+      utility.xCenter - (x1 + rightInnerX) / 2,
+      utility.yCenter,
+      UTILITY.w / 1000 + (UTILITY.reveal * 2) / 1000,
+      UTILITY.h / 1000 + (UTILITY.reveal * 2) / 1000,
+      materials.wood,
+      -lowerD / 2,
+    ),
     box(rightInnerX - x1, t, lowerBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: lowerBodyTop - t / 2, z: lowerBodyCenterZ }),
   );
+
+  // Wall-mounted weak-current box, shown as a translucent inspection volume so
+  // the shelf that passes through it remains visible.  A red volume marks the
+  // exact overlap with the right lower shelf.
+  utilityGroup = new THREE.Group();
+  utilityGroup.name = 'utility-box';
+  cabinetGroup.add(utilityGroup);
+
+  const utilityCenterZ = (utility.wallZ + utility.frontZ) / 2;
+  utilityGroup.add(
+    box(UTILITY.w / 1000, UTILITY.h / 1000, UTILITY.d / 1000, UTILITY_MAT.body, {
+      x: utility.xCenter,
+      y: utility.yCenter,
+      z: utilityCenterZ,
+      cast: false,
+      receive: false,
+    }),
+  );
+  const utilityEdges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(UTILITY.w / 1000, UTILITY.h / 1000, UTILITY.d / 1000)),
+    UTILITY_MAT.edge,
+  );
+  utilityEdges.position.set(utility.xCenter, utility.yCenter, utilityCenterZ);
+  utilityGroup.add(utilityEdges);
+
+  utilityGroup.add(
+    box(UTILITY.w / 1000, UTILITY.h / 1000, 0.012, UTILITY_MAT.face, {
+      x: utility.xCenter,
+      y: utility.yCenter,
+      z: utility.frontZ + 0.006,
+      cast: false,
+      receive: false,
+    }),
+    box(0.06, 0.012, 0.008, UTILITY_MAT.handle, {
+      x: utility.xRight - 0.05,
+      y: utility.yCenter,
+      z: utility.frontZ + 0.016,
+      cast: false,
+      receive: false,
+    }),
+  );
+
+  if (utility.interference) {
+    utilityGroup.add(
+      box(utility.overlapX, utility.overlapY, utility.overlapZ, UTILITY_MAT.conflict, {
+        x: utility.xCenter,
+        y: utility.shelfY,
+        z: (Math.max(utility.wallZ, -lowerD / 2 + BACK_T) + Math.min(utility.frontZ, lowerD / 2 - t)) / 2,
+        cast: false,
+        receive: false,
+      }),
+    );
+
+    // A thin red band on the box face; drawn on top so the 18 mm overlap is
+    // readable even when the shelf is physically in front of the box.
+    const marker = new THREE.Mesh(
+      new THREE.PlaneGeometry(utility.overlapX, utility.overlapY + 0.012),
+      new THREE.MeshBasicMaterial({
+        color: 0xd94a3d,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    );
+    // Put the marker on the shelf front edge; the closed right lower door
+    // hides it, and opening the door reveals the exact 400 mm overlap.
+    marker.position.set(utility.xCenter, utility.shelfY, lowerD / 2 - t + 0.001);
+    utilityGroup.add(marker);
+  }
 
   [x2, x3].forEach((x) => {
     cabinetGroup.add(
@@ -821,6 +1022,7 @@ function buildCabinet() {
 function applyVisibility() {
   if (propsGroup) propsGroup.visible = state.showProps;
   if (dimensionGroup) dimensionGroup.visible = state.showDims;
+  if (utilityGroup) utilityGroup.visible = state.showUtility;
 }
 
 function rebuild() {
@@ -830,6 +1032,7 @@ function rebuild() {
   direction.normalize();
 
   disposeGroup(cabinetGroup);
+  utilityGroup = null;
   buildCabinet();
 
   const W = state.W / 1000;
@@ -959,6 +1162,25 @@ document.getElementById('show-dims').addEventListener('change', (event) => {
 document.getElementById('show-props').addEventListener('change', (event) => {
   state.showProps = event.target.checked;
   applyVisibility();
+});
+
+document.getElementById('show-utility').addEventListener('change', (event) => {
+  state.showUtility = event.target.checked;
+  applyVisibility();
+});
+
+document.getElementById('check-utility').addEventListener('click', () => {
+  state.showUtility = true;
+  const toggle = document.getElementById('show-utility');
+  if (toggle) toggle.checked = true;
+  interactiveParts.forEach((part) => {
+    if (part.label && part.label.includes('右地柜门')) part.target = 1;
+  });
+  applyVisibility();
+  const utility = getUtilityInfo();
+  viewer.controls.target.set(utility.xCenter, utility.yCenter, 0);
+  viewer.camera.position.set(utility.xCenter + 0.75, utility.yCenter + 0.35, 1.8);
+  viewer.controls.update();
 });
 
 const clock = new THREE.Clock();
