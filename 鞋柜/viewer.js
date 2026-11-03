@@ -193,7 +193,7 @@ function updateReadouts() {
   document.getElementById('front-depth').textContent =
     `${format(state.frontD, 0)} / ${format(state.backD, 0)} mm`;
   document.getElementById('back-rack').textContent =
-    `${format(state.backW, 0)} × ${format(state.H, 0)} / 抽拉 ${format(state.backPull, 0)}`;
+    `${format(state.backW, 0)} × ${format(state.H, 0)} / 抽拉 ${format(state.backPull, 0)} / 中竖板`;
   document.getElementById('back-heights').textContent =
     `${state.backHeights.map((value) => format(value, 0)).join(' / ')} mm`;
 
@@ -836,7 +836,9 @@ function buildCabinet() {
   const rackCenterZ = -backD / 2;
   const backInteriorZ = -backD / 2 + BACK_T;
   const backInteriorD = backD - 2 * BACK_T;
-  const rackInnerW = backW - 2 * t;
+  const rackHalfW = (backW - 3 * t) / 2;
+  const rackLeftCenter = rackLeft + t + rackHalfW / 2;
+  const rackRightCenter = rackCenterX + t / 2 + rackHalfW / 2;
 
   const rackGroup = new THREE.Group();
   rackGroup.name = 'back-rack';
@@ -858,6 +860,11 @@ function buildCabinet() {
       y: H - topGap / 2,
       z: rackCenterZ,
     }),
+    box(t, H, backD, materials.whiteCarcass, {
+      x: rackCenterX,
+      y: H / 2,
+      z: rackCenterZ,
+    }),
   );
 
   let rackCursor = t;
@@ -868,8 +875,13 @@ function buildCabinet() {
     rackCursor += height;
     if (index < list.length - 1) {
       rackGroup.add(
-        box(rackInnerW, t, backInteriorD, materials.whiteCarcass, {
-          x: rackCenterX,
+        box(rackHalfW, t, backInteriorD, materials.whiteCarcass, {
+          x: rackLeftCenter,
+          y: rackCursor + t / 2,
+          z: backInteriorZ,
+        }),
+        box(rackHalfW, t, backInteriorD, materials.whiteCarcass, {
+          x: rackRightCenter,
           y: rackCursor + t / 2,
           z: backInteriorZ,
         }),
@@ -880,54 +892,25 @@ function buildCabinet() {
 
   rackPropsGroup = new THREE.Group();
   rackGroup.add(rackPropsGroup);
-  const rackCount = 5;
   const rackShoeScale = 0.72;
-  const rackShoeSpacing = 0.23;
+  const rackShoeSpacing = 0.2;
   const rackBoxScale = 0.66;
 
   rackCells.forEach((cell, index) => {
+    const y = cell.bottom + 0.002;
+    const z = backInteriorZ + 0.02;
     if (index === rackCells.length - 1) {
-      addShoeBoxRow(rackPropsGroup, {
-        xCenter: rackCenterX,
-        y: cell.bottom + 0.002,
-        z: backInteriorZ + 0.02,
-        count: 4,
-        spacing: 0.16,
-        scale: rackBoxScale,
-      });
+      addShoeBoxRow(rackPropsGroup, { xCenter: rackLeftCenter, y, z, count: 2, spacing: 0.16, scale: rackBoxScale });
+      addShoeBoxRow(rackPropsGroup, { xCenter: rackRightCenter, y, z, count: 2, spacing: 0.16, scale: rackBoxScale });
     } else if (index === rackCells.length - 2) {
-      addShoeRow(rackPropsGroup, {
-        xCenter: rackCenterX,
-        y: cell.bottom + 0.002,
-        z: backInteriorZ + 0.02,
-        count: 2,
-        type: 'boot',
-        colorOffset: 2,
-        spacing: 0.3,
-        scale: 0.8,
-      });
+      addShoeRow(rackPropsGroup, { xCenter: rackLeftCenter, y, z, count: 1, type: 'boot', colorOffset: 2, spacing: 0, scale: 0.8 });
+      addShoeRow(rackPropsGroup, { xCenter: rackRightCenter, y, z, count: 1, type: 'boot', colorOffset: 3, spacing: 0, scale: 0.8 });
     } else if (index >= 4) {
-      addShoeRow(rackPropsGroup, {
-        xCenter: rackCenterX,
-        y: cell.bottom + 0.002,
-        z: backInteriorZ + 0.02,
-        count: rackCount,
-        type: index % 2 === 0 ? 'heel' : 'sneaker',
-        colorOffset: index + 1,
-        spacing: rackShoeSpacing,
-        scale: rackShoeScale,
-      });
+      addShoeRow(rackPropsGroup, { xCenter: rackLeftCenter, y, z, count: 2, type: index % 2 === 0 ? 'heel' : 'sneaker', colorOffset: index + 1, spacing: rackShoeSpacing, scale: rackShoeScale });
+      addShoeRow(rackPropsGroup, { xCenter: rackRightCenter, y, z, count: 2, type: index % 2 === 0 ? 'sneaker' : 'heel', colorOffset: index + 3, spacing: rackShoeSpacing, scale: rackShoeScale });
     } else {
-      addShoeRow(rackPropsGroup, {
-        xCenter: rackCenterX,
-        y: cell.bottom + 0.002,
-        z: backInteriorZ + 0.02,
-        count: 4,
-        type: 'slipper',
-        colorOffset: index + 3,
-        spacing: rackShoeSpacing,
-        scale: rackShoeScale,
-      });
+      addShoeRow(rackPropsGroup, { xCenter: rackLeftCenter, y, z, count: 2, type: 'slipper', colorOffset: index + 3, spacing: rackShoeSpacing, scale: rackShoeScale });
+      addShoeRow(rackPropsGroup, { xCenter: rackRightCenter, y, z, count: 2, type: 'slipper', colorOffset: index + 5, spacing: rackShoeSpacing, scale: rackShoeScale });
     }
   });
 
