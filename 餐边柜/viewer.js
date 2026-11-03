@@ -14,15 +14,15 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
+const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000 });
+
 const DEFAULTS = {
   W: 2752,
   H: 2400,
-  lowerD: 400,
+  lowerD: FIXED.lowerD,
   upperD: 350,
   upperH: 750,
-  gapH: 500,
   narrowW: 352,
-  drawerH: 160,
   petH: 400,
   t: 18,
   shelfRemoved: false,
@@ -33,6 +33,8 @@ const TOP_GAP = 0.03;
 const ROUND_R = 0.05;
 const COUNTER_T = 0.02;
 const BACK_T = 0.007;
+const LEFT_DRAWER_RATIO = [2, 3, 4];
+const DRAWER_CABINET_RATIO = [2, 7];
 
 // Weak-current box on the wall behind the right lower cabinet.
 // Dimensions are fixed by the site: 400 wide x 300 high x 100 deep,
@@ -46,6 +48,9 @@ const state = {
   showUtility: true,
   moduleW: 0,
   lowerH: 0,
+  gapH: 0,
+  drawerH: 0,
+  leftDrawerHeights: [],
   upperDoorW: 0,
   pairDoorW: 0,
   lowerDoorH: 0,
@@ -120,33 +125,35 @@ const UTILITY_MAT = {
 function normalizeState() {
   state.W = clamp(state.W, 2300, 3200);
   state.H = clamp(state.H, 2200, 2600);
-  state.lowerD = clamp(state.lowerD, 350, 500);
+  state.lowerD = FIXED.lowerD;
   state.upperD = clamp(state.upperD, 300, 400);
   state.upperD = Math.min(state.upperD, state.lowerD - state.t);
   state.upperH = clamp(state.upperH, 600, 900);
-  state.gapH = clamp(state.gapH, 400, 600);
   state.narrowW = clamp(state.narrowW, 250, 450);
-  state.drawerH = clamp(state.drawerH, 140, 200);
   state.petH = clamp(state.petH, 300, 500);
   state.t = clamp(Math.round(state.t), 16, 25);
 
-  const minLower = 850;
-  const maxUpperGap = state.H - TOP_GAP * 1000 - minLower;
-  if (state.upperH + state.gapH > maxUpperGap) {
-    let excess = state.upperH + state.gapH - maxUpperGap;
-    const fromGap = Math.min(excess, state.gapH - 400);
-    state.gapH -= fromGap;
-    excess -= fromGap;
-    if (excess > 0) state.upperH = Math.max(600, state.upperH - excess);
+  // Counter top is fixed at 1000 above the floor; the open gap absorbs the
+  // remaining height after the fixed lower cabinet and the adjustable upper.
+  state.lowerH = FIXED.lowerH;
+  state.gapH = state.H - TOP_GAP * 1000 - state.lowerH - state.upperH;
+  if (state.gapH < 400) {
+    state.upperH = Math.max(600, state.H - TOP_GAP * 1000 - state.lowerH - 400);
+    state.gapH = state.H - TOP_GAP * 1000 - state.lowerH - state.upperH;
   }
 
   state.moduleW = (state.W - state.narrowW) / 3;
-  state.lowerH = state.H - TOP_GAP * 1000 - state.upperH - state.gapH;
-  const maxPet = state.lowerH - 20 - state.drawerH - 300;
-  state.petH = Math.min(state.petH, Math.max(300, maxPet));
+
+  // Lower body: 9 equal parts. Left = 2:3:4; middle/right = top drawer 2,
+  // cabinet 7, so the top drawer bottom aligns across all three modules.
+  const lowerBodyH = state.lowerH - COUNTER_T * 1000;
+  const part = lowerBodyH / 9;
+  state.drawerH = DRAWER_CABINET_RATIO[0] * part;
+  state.lowerDoorH = DRAWER_CABINET_RATIO[1] * part;
+  state.leftDrawerHeights = LEFT_DRAWER_RATIO.map((ratio) => ratio * part);
+  state.petH = Math.min(state.petH, Math.max(300, Math.floor((state.lowerDoorH - 300) / 10) * 10));
   state.upperDoorW = state.moduleW - 6;
   state.pairDoorW = state.moduleW / 2 - 6;
-  state.lowerDoorH = state.lowerH - 20 - state.drawerH;
   state.petDoorH = state.lowerDoorH - state.petH;
 }
 
@@ -203,6 +210,8 @@ function updateReadouts() {
   document.getElementById('size-readout').textContent = `${Math.round(state.W)} × ${Math.round(state.H)} × ${Math.round(state.lowerD)} mm`;
   document.getElementById('module-width').textContent = `${format(state.moduleW, 1)} mm`;
   document.getElementById('lower-height').textContent = `${format(state.lowerH, 0)} mm`;
+  document.getElementById('gap-height').textContent = `${format(state.gapH, 0)} mm`;
+  document.getElementById('cabinet-depths').textContent = `${format(state.lowerD, 0)} / ${format(state.upperD, 0)} mm`;
   document.getElementById('upper-door-width').textContent = `${format(state.upperDoorW, 1)} / ${format(state.pairDoorW, 1)} mm`;
   document.getElementById('lower-door-height').textContent = `${format(state.lowerDoorH, 0)} / ${format(state.petDoorH, 0)} mm`;
   document.getElementById('pet-height').textContent = `${format(state.petH, 0)} mm`;
@@ -219,7 +228,7 @@ function updateReadouts() {
   const utilityMessages = [];
   if (!state.shelfRemoved && utility.interference) {
     utilityMessages.push(
-      `弱电箱与右地柜层板（y≈${format(utility.shelfY * 1000, 0)}）重叠 ${format(utility.overlapY * 1000, 0)} mm；需下移/取消层板，或改箱位/加深柜体`,
+      `弱电箱与右地柜层板（y≈${format(utility.shelfY * 1000, 0)}）重叠 ${format(utility.overlapY * 1000, 0)} mm；需下移/取消层板，或改箱位`,
     );
   }
   if (!utility.fitsModule) {
@@ -228,19 +237,19 @@ function updateReadouts() {
   utilityWarning.hidden = utilityMessages.length === 0;
   utilityWarning.textContent = utilityMessages.length ? `${utilityMessages.join('；')}。` : '';
 
-  const leftBottomDrawerH = state.lowerH - 20 - 4 * state.drawerH;
   document.getElementById('left-drawer-heights').textContent =
-    `${format(state.drawerH, 0)} / ${format(state.drawerH, 0)} / ${format(state.drawerH * 2, 0)} / ${format(leftBottomDrawerH, 0)} mm`;
+    `${state.leftDrawerHeights.map((value) => format(value, 1)).join(' / ')} mm`;
+  document.getElementById('mid-drawer-cabinet').textContent =
+    `${format(state.drawerH, 1)} / ${format(state.lowerDoorH, 1)} mm`;
   document.getElementById('narrow-layer-heights').textContent =
     `${format(state.upperH / 2, 0)} / ${format(state.upperH / 2, 0)} / ${format(state.gapH, 0)} / ${format(state.lowerH / 2, 0)} / ${format(state.lowerH / 2, 0)} mm`;
 
   const warnings = [];
-  if (state.lowerH < 900) warnings.push(`下柜高 ${format(state.lowerH, 0)} mm < 900`);
   if (state.moduleW < 650) warnings.push(`主格宽 ${format(state.moduleW, 0)} mm < 650`);
   if (state.petDoorH < 300) warnings.push(`右侧猫用品格上门高 ${format(state.petDoorH, 0)} mm < 300`);
   if (state.upperH < 600) warnings.push(`上柜高 ${format(state.upperH, 0)} mm < 600`);
   if (state.gapH < 400) warnings.push(`开放高 ${format(state.gapH, 0)} mm < 400`);
-  if (leftBottomDrawerH < 150) warnings.push(`左地柜最下抽屉高 ${format(leftBottomDrawerH, 0)} mm < 150`);
+  if (state.leftDrawerHeights[2] < 150) warnings.push(`左地柜最下抽屉高 ${format(state.leftDrawerHeights[2], 0)} mm < 150`);
 
   const warning = document.getElementById('height-warning');
   warning.hidden = warnings.length === 0;
@@ -715,10 +724,12 @@ function buildCabinet() {
     );
   });
 
-  // Bottom panels for left/middle bays; right main bay is the pet niche (no bottom).
+  // Bottom panels for all three lower bays. The right bay keeps its pet niche
+  // doors/opening unchanged, but the bowls now sit on a raised bottom panel.
   cabinetGroup.add(
     box(x2 - x1, t, lowerBodyDepth, materials.whiteCarcass, { x: (x1 + x2) / 2, y: t / 2, z: lowerBodyCenterZ }),
     box(x3 - x2, t, lowerBodyDepth, materials.whiteCarcass, { x: (x2 + x3) / 2, y: t / 2, z: lowerBodyCenterZ }),
+    box(rightInnerX - x3, t, lowerBodyDepth, materials.whiteCarcass, { x: (x3 + rightInnerX) / 2, y: t / 2, z: lowerBodyCenterZ }),
   );
 
   // Upper main carcass (x1..x4); left side is the continuous side panel, right side is the rounded end.
@@ -809,21 +820,25 @@ function buildCabinet() {
       box(narrowW, t, lowerInteriorD, materials.wood, { x: cN, y, z: lowerInteriorZ }),
     );
   });
-  // 3 doors: layers 1-2, layer 3, layers 4-5; all hinged left with handles on the right.
-  [
-    { yBottom: upperBottom + GAP, yTop: upperTop - GAP, label: '窄柜门 1（上两层）' },
-    { yBottom: lowerH + GAP, yTop: upperBottom - GAP, label: '窄柜门 2（中间层）' },
-    { yBottom: GAP, yTop: lowerH - GAP, label: '窄柜门 3（下两层）' },
-  ].forEach(({ yBottom, yTop, label }) => {
-    addDoor({
-      xLeft: x0 + GAP,
-      xRight: x1 - GAP,
-      yBottom,
-      yTop,
-      hinge: 'left',
-      label,
-      knobY: (yBottom + yTop) / 2,
-    });
+  // 2 doors: the middle layer and the upper two layers share one tall door;
+  // the lower two layers keep the bottom door. Both hinge left, handles right.
+  addDoor({
+    xLeft: x0 + GAP,
+    xRight: x1 - GAP,
+    yBottom: lowerH + GAP,
+    yTop: upperTop - GAP,
+    hinge: 'left',
+    label: '窄柜门 1（中间层 + 上两层）',
+    knobY: lowerH + 0.12,
+  });
+  addDoor({
+    xLeft: x0 + GAP,
+    xRight: x1 - GAP,
+    yBottom: GAP,
+    yTop: lowerH - GAP,
+    hinge: 'left',
+    label: '窄柜门 2（下两层）',
+    knobY: lowerH / 2,
   });
 
   // Counter over the 3 main modules (x1..x4); its right front corner follows the end radius.
@@ -840,12 +855,13 @@ function buildCabinet() {
     }),
   );
 
-  // Lower interior shelves: left/middle full-height pairs; right pair sits above the pet niche.
+  // Lower interior shelves: middle gets one at half of its 7-part cavity;
+  // the right shelf sits above the pet niche.
+  const middleShelfY = lowerDoorH / 2;
   const rightLowerShelfY = petH + (lowerDoorH - petH) / 2;
 
   cabinetGroup.add(
-    box(x3 - x2, t, lowerInteriorD, materials.wood, { x: c2, y: 300, z: lowerInteriorZ }),
-    box(x3 - x2, t, lowerInteriorD, materials.wood, { x: c2, y: 600, z: lowerInteriorZ }),
+    box(x3 - x2, t, lowerInteriorD, materials.wood, { x: c2, y: middleShelfY, z: lowerInteriorZ }),
   );
 
   // The right lower shelf is movable: it is the shelf that conflicts with the
@@ -950,12 +966,17 @@ function buildCabinet() {
     });
   });
 
-  const leftDrawerSpecs = [
-    { yTop: drawerTop, yBottom: drawerTop - drawerH, label: '左地柜抽屉 1' },
-    { yTop: drawerTop - drawerH, yBottom: drawerTop - 2 * drawerH, label: '左地柜抽屉 2' },
-    { yTop: drawerTop - 2 * drawerH, yBottom: drawerTop - 4 * drawerH, label: '左地柜抽屉 3（双高）' },
-    { yTop: drawerTop - 4 * drawerH, yBottom: 0, label: '左地柜抽屉 4（余高）' },
-  ];
+  let leftCursor = drawerTop;
+  const leftDrawerSpecs = state.leftDrawerHeights.map((heightMm, index) => {
+    const height = heightMm / 1000;
+    const spec = {
+      yTop: leftCursor,
+      yBottom: leftCursor - height,
+      label: `左地柜抽屉 ${index + 1}（${LEFT_DRAWER_RATIO[index]} 份）`,
+    };
+    leftCursor -= height;
+    return spec;
+  });
   leftDrawerSpecs.forEach(({ yTop, yBottom, label }) => {
     addDrawer({
       xCenter: c1,
@@ -1041,9 +1062,9 @@ function buildCabinet() {
     }
   });
 
-  // Pet bowls in the open right niche
+  // Pet bowls in the open right niche, standing on the restored bottom panel.
   const petBowl = createPetBowl();
-  petBowl.position.set(c3, 0.004, lowerInteriorZ + 0.05);
+  petBowl.position.set(c3, t + 0.004, lowerInteriorZ + 0.05);
   propsGroup.add(petBowl);
 
   // Counter props: kettle and cups
@@ -1058,7 +1079,7 @@ function buildCabinet() {
 
   // Lower interior props (visible when doors open)
   const lowerPlates = createPlateStack(4);
-  lowerPlates.position.set(c2 - 0.15, 300 + t / 2 + 0.004, lowerInteriorZ);
+  lowerPlates.position.set(c2 - 0.15, middleShelfY + t / 2 + 0.004, lowerInteriorZ);
   const lowerPot = createBasket(0.24, 0.16, 0.28, materials);
   lowerPot.position.set(c3 + 0.12, rightLowerShelfY + t / 2 + 0.004, lowerInteriorZ);
   propsGroup.add(lowerPlates, lowerPot);
@@ -1086,16 +1107,38 @@ function applyVisibility() {
   if (utilityConflictGroup) utilityConflictGroup.visible = !state.shelfRemoved;
 }
 
+function applyPartTransform(part) {
+  if (part.type === 'door') {
+    part.group.rotation.y = part.hingeSign * part.open * part.angle;
+  } else if (part.type === 'liftDoor') {
+    part.group.rotation.x = -part.open * part.angle;
+  } else if (part.type === 'drawer') {
+    part.group.position.z = part.open * part.travel;
+  }
+}
+
 function rebuild() {
   normalizeState();
   const direction = viewer.camera.position.clone().sub(viewer.controls.target);
   if (direction.lengthSq() < 1e-6) direction.set(0.02, 0.12, 1);
   direction.normalize();
 
+  const openStates = new Map(
+    interactiveParts.map((part) => [part.label, { open: part.open, target: part.target }]),
+  );
+
   disposeGroup(cabinetGroup);
   utilityGroup = null;
   utilityConflictGroup = null;
   buildCabinet();
+
+  interactiveParts.forEach((part) => {
+    const saved = openStates.get(part.label);
+    if (!saved) return;
+    part.open = saved.open;
+    part.target = saved.target;
+    applyPartTransform(part);
+  });
 
   const W = state.W / 1000;
   const H = state.H / 1000;
@@ -1258,13 +1301,7 @@ function animate() {
   for (const part of interactiveParts) {
     if (Math.abs(part.open - part.target) > 0.0005) {
       part.open = damp(part.open, part.target, 8.5, delta);
-      if (part.type === 'door') {
-        part.group.rotation.y = part.hingeSign * part.open * part.angle;
-      } else if (part.type === 'liftDoor') {
-        part.group.rotation.x = -part.open * part.angle;
-      } else if (part.type === 'drawer') {
-        part.group.position.z = part.open * part.travel;
-      }
+      applyPartTransform(part);
     }
   }
   viewer.controls.update();
