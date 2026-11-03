@@ -17,7 +17,7 @@ import {
 } from '../assets/js/viewer-core.js';
 
 const DEFAULTS = {
-  W: 2400,
+  W: 2200,
   H: 2400,
   D: 600,
   topH: 450,
@@ -38,6 +38,7 @@ const state = {
   longClear: 0,
   rod2Min: 0,
   rod2Max: 0,
+  shortHandleY: 1000,
 };
 
 const SCENE = {
@@ -48,6 +49,8 @@ const SCENE = {
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const DOOR_HANDLE_Y = 1.0;
+const TRAPEZOID_HANDLE_INSET = 0.2;
 const round10 = (value) => Math.round(value / 10) * 10;
 
 const stage = document.getElementById('canvas-container');
@@ -108,6 +111,18 @@ function normalizeState() {
   state.rod2H = clamp(Number(state.rod2H), rodLo, rodHi);
   state.rod2H = rodLo + Math.round((state.rod2H - rodLo) / 50) * 50;
   state.rod2H = clamp(state.rod2H, rodLo, rodHi);
+
+  // The trapezoid door's lower edge rises toward the centre; keep the short-
+  // clothes handle on the door.  At the default dimensions this is 1000 mm.
+  const nicheH = Math.min(600, state.mainH * 0.42);
+  const nicheTop = state.bottomH + nicheH;
+  const roofRise = Math.min(200, nicheH * 0.34);
+  const halfDoorW = state.rightW / 2;
+  const lowerAtHandle = nicheTop - (TRAPEZOID_HANDLE_INSET * 1000 / halfDoorW) * roofRise;
+  state.shortHandleY = Math.min(
+    state.H - state.topH - 50,
+    Math.max(1000, Math.round(lowerAtHandle + 40)),
+  );
 }
 
 function setInputMin(key, value) {
@@ -145,6 +160,7 @@ function updateReadouts() {
   document.getElementById('right-width').textContent = `${state.rightW} mm`;
   document.getElementById('long-clear').textContent = `${state.longClear} mm`;
   document.getElementById('rod2-height').textContent = `${state.rod2H} mm`;
+  document.getElementById('handle-height').textContent = `1000 / ${state.shortHandleY} mm`;
   document.getElementById('partition-info').textContent =
     `左 ${state.leftW} / 中 ${state.centerW} / 右 ${state.rightW} mm`;
 
@@ -184,7 +200,7 @@ function createKnob() {
   return group;
 }
 
-function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, trapezoid = null, knobY }) {
+function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, trapezoid = null, knobY, knobInset = 0.06 }) {
   const doorW = xRight - xLeft;
   const doorH = yTop - yBottom;
   const group = new THREE.Group();
@@ -216,7 +232,7 @@ function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, trapezoid = null,
   group.add(panel);
 
   const knob = createKnob();
-  const knobX = hinge === 'left' ? doorW - 0.06 : -(doorW - 0.06);
+  const knobX = hinge === 'left' ? doorW - knobInset : -(doorW - knobInset);
   knob.position.set(knobX, knobY, SCENE.doorT / 2);
   group.add(knob);
 
@@ -503,7 +519,7 @@ function buildCabinet() {
     yTop: topShelfY - gap,
     hinge: 'left',
     label: '左侧展示格柜门',
-    knobY: bottomShelfY + 0.9,
+    knobY: DOOR_HANDLE_Y,
   });
 
   // Top doors: five doors aligned with the lower zones.
@@ -573,7 +589,7 @@ function buildCabinet() {
     yTop: topShelfY - gap,
     hinge: 'left',
     label: '长衣区左门',
-    knobY: bottomShelfY + 0.9,
+    knobY: DOOR_HANDLE_Y,
   });
   addDoor({
     xLeft: centerCenterX + gap / 2,
@@ -582,7 +598,7 @@ function buildCabinet() {
     yTop: topShelfY - gap,
     hinge: 'right',
     label: '长衣区右门',
-    knobY: bottomShelfY + 0.9,
+    knobY: DOOR_HANDLE_Y,
   });
 
   // Right bay: two trapezoid doors. Their sloped lower edges form the
@@ -599,7 +615,8 @@ function buildCabinet() {
       rise: roofRise,
       side: 'left',
     },
-    knobY: nicheTopY + 0.3,
+    knobY: state.shortHandleY / 1000,
+    knobInset: TRAPEZOID_HANDLE_INSET,
   });
   addDoor({
     xLeft: rightDoorSplitX + gap / 2,
@@ -612,7 +629,8 @@ function buildCabinet() {
       rise: roofRise,
       side: 'right',
     },
-    knobY: nicheTopY + 0.3,
+    knobY: state.shortHandleY / 1000,
+    knobInset: TRAPEZOID_HANDLE_INSET,
   });
 
   // Left bottom drawer
