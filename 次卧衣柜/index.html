@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>次卧衣柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.3.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.4.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -14,16 +14,65 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">次卧 · 柜子定制</p>
         <h1>次卧衣柜</h1>
-        <p class="subtitle">2200 宽 × 2400 高 × 600 深固定 · 白色平板门 · 短衣区底抽与中间抽屉同高 · 拉手距地 1000</p>
+        <p class="subtitle">2200 宽 × 2400 高 × 600 深固定 · 白色平板门 · 短衣区底抽与中间抽屉同高 · 拉手距地 1000 · 双块决策看板 + 手动分步巡游</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.3</span>
+          <span class="chip chip-accent">v1.4</span>
           <span class="chip">长衣双门对开</span>
           <span class="chip">树屋梯形门</span>
           <span class="chip">活动挂衣架</span>
           <span class="chip">宽高深固定</span>
           <span class="chip">短衣底抽同中抽 / 拉手 1000</span>
+          <span class="chip">双块决策看板</span>
+          <span class="chip">手动分步巡游</span>
+          <span class="chip">尺寸标注线</span>
         </div>
       </header>
+
+      <section class="decision-board" aria-label="设计决策看板">
+        <article class="decision-card is-fixed">
+          <div class="decision-head">
+            <span class="decision-dot"></span>
+            <h2>已确认固定</h2>
+            <span class="decision-count">8 项</span>
+          </div>
+          <div class="decision-grid">
+            <div class="decision-item"><span class="decision-label">总宽</span><span class="decision-value">2200 mm</span></div>
+            <div class="decision-item"><span class="decision-label">总高</span><span class="decision-value">2400 mm</span></div>
+            <div class="decision-item"><span class="decision-label">总深</span><span class="decision-value">600 mm</span></div>
+            <div class="decision-item"><span class="decision-label">三区</span><span class="decision-value">左 400 / 中 950 / 右 778</span></div>
+            <div class="decision-item"><span class="decision-label">外门</span><span class="decision-value">10 扇（顶柜 5 + 下部 5）</span></div>
+            <div class="decision-item"><span class="decision-label">中区长衣</span><span class="decision-value">固定上杆 + 活动下杆</span></div>
+            <div class="decision-item"><span class="decision-label">右侧树屋</span><span class="decision-value">梯形双门 + 全宽开口</span></div>
+            <div class="decision-item"><span class="decision-label">拉手</span><span class="decision-value">展示/长衣/短衣 1000</span></div>
+          </div>
+          <p class="decision-hint">外形 2200 × 2400 × 600 固定；左/中宽、顶柜高、底抽高、活动杆高可调。</p>
+        </article>
+
+        <article class="decision-card is-open">
+          <div class="decision-head">
+            <span class="decision-dot"></span>
+            <h2>待确认关键</h2>
+            <span class="decision-count">13 项 · 可调 / 联动</span>
+          </div>
+          <div class="decision-grid">
+            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">顶柜高</span><span class="decision-value" id="decision-topH">450 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">底抽高</span><span class="decision-value" id="decision-bottomH">450 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-leftW"><span class="decision-label">左侧展示格宽</span><span class="decision-value" id="decision-leftW">400 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-centerW"><span class="decision-label">中区长衣区宽</span><span class="decision-value" id="decision-centerW">950 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-rod2H"><span class="decision-label">活动挂衣架高</span><span class="decision-value" id="decision-rod2H">1200 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-t"><span class="decision-label">柜体板厚</span><span class="decision-value" id="decision-t">18 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-centerW"><span class="decision-label">右侧短衣区宽</span><span class="decision-value" id="decision-rightW">778 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">主柜净高</span><span class="decision-value" id="decision-mainH">1500 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">长衣净高</span><span class="decision-value" id="decision-longClear">1420 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣底抽高</span><span class="decision-value" id="decision-centerDrawerH">202.5 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">右底搁板高</span><span class="decision-value" id="decision-rightBottomShelfY">244.5 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣门底</span><span class="decision-value" id="decision-shortDoorBottom">644.5 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣拉手</span><span class="decision-value" id="decision-shortHandleY">1000 mm</span><span class="decision-flag is-linked">联动</span></button>
+          </div>
+          <p class="decision-hint">点击“可调 / 联动”项，跳到下方对应的调节项；联动项由上游尺寸推导。</p>
+        </article>
+      </section>
+
 
       <section class="controls" aria-labelledby="dimensions-title">
         <div class="section-heading">
@@ -133,7 +182,7 @@
           <li><strong>拉手</strong> 展示柜、长衣区、短衣区门拉手距地 <strong>1000</strong>；短衣区梯形门拉手与其他门一致，距门缝约 60。</li>
           <li><strong>交互修复</strong> 切换“活动挂衣架/收纳盒”或调整活动杆高度时会重建柜体；现在重建前保存已开门/抽屉状态，重建后恢复，不再自动复位。</li>
         </ul>
-        <p class="hint">v1.3 固定总宽 2200 / 总高 2400 / 总深 600；短衣区底抽改为与中间单抽同高，树屋开口下移、短衣门延长、拉手 1000；并修复切换活动衣架/收纳盒时柜门自动复位的问题。</p>
+        <p class="hint">v1.4 新增双块决策看板与“关键约束聚焦”手动分步巡游：9 处关键尺寸/比例/结构逐点拉近，用“上一步 / 下一步 / 结束浏览”自己控制节奏，不再自动计时、不锁定面板；尺寸用延伸线 + 尺寸线 + 斜刻度标注，标签落在标注线上。v1.3 的 2200×2400×600 固定、短衣底抽同中抽、树屋开口下移、拉手 1000 均保留。</p>
       </section>
 
       <footer class="panel-footer">
@@ -145,12 +194,40 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">次卧衣柜 v1.3 · 三维预览</span>
+        <span class="stage-title">次卧衣柜 v1.4 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2200 × 2400 × 600 mm</span>
       </div>
+      <button id="start-tour" class="tour-start" type="button">
+        <span class="tour-start-icon">◎</span>
+        <span class="tour-start-copy">
+          <strong>关键约束聚焦</strong>
+          <small>9 处 · 手动浏览 · 可随时结束</small>
+        </span>
+      </button>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门 / 抽屉开合</div>
       <div class="loading" id="loading">正在加载三维场景…</div>
       <div class="tooltip" id="tooltip"></div>
+      <div id="focus-tour" class="focus-tour" hidden aria-live="polite">
+        <div class="focus-tour-head">
+          <span class="focus-tour-kicker">关键设计约束聚焦</span>
+          <span class="focus-tour-progress" id="tour-progress">1 / 9</span>
+        </div>
+        <div class="focus-tour-body">
+          <div class="focus-tour-copy">
+            <h2 id="tour-title">整体外形</h2>
+            <p id="tour-desc">总宽、总高、总深是当前方案的总体控制尺寸。</p>
+            <span class="focus-tour-part" id="tour-part">部件：整体外形</span>
+          </div>
+          <strong class="focus-tour-value" id="tour-value">2200 × 2400 × 600</strong>
+        </div>
+        <div class="focus-tour-track"><span id="tour-bar"></span></div>
+        <div class="focus-tour-actions" role="group" aria-label="巡游浏览控制">
+          <button id="tour-prev" class="tour-nav" type="button" disabled>← 上一步</button>
+          <button id="tour-next" class="tour-nav is-primary" type="button">下一步 →</button>
+          <button id="tour-end" class="tour-nav is-ghost" type="button">结束浏览</button>
+        </div>
+        <p class="focus-tour-hint">手动浏览 · ← → 切换 · Esc 结束</p>
+      </div>
       <noscript><div class="no-script">需要启用 JavaScript 才能查看三维预览。</div></noscript>
     </main>
   </div>
@@ -163,6 +240,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.3.1"></script>
+  <script type="module" src="./viewer.js?v=1.4.0"></script>
 </body>
 </html>
