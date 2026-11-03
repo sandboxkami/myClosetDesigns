@@ -1188,3 +1188,240 @@ button.decision-item:focus-visible {
     grid-column: auto;
   }
 }
+
+/* Key-constraint guided tour */
+.tour-start {
+  position: absolute;
+  top: 74px;
+  right: 24px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 15px;
+  border: 1px solid rgba(168, 100, 69, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.94);
+  color: var(--accent-dark);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.tour-start:hover {
+  background: var(--accent);
+  color: #fffaf5;
+  transform: translateY(-1px);
+}
+
+.tour-start:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
+.tour-start-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.tour-start-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  line-height: 1.1;
+}
+
+.tour-start-copy strong {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.tour-start-copy small {
+  color: var(--soft);
+  font-size: 9px;
+}
+
+.tour-start:hover .tour-start-copy small {
+  color: rgba(255, 250, 245, 0.75);
+}
+
+.panel.is-touring {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.focus-tour {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  z-index: 6;
+  width: min(740px, calc(100% - 48px));
+  padding: 16px 20px 12px;
+  border: 1px solid rgba(255, 183, 112, 0.45);
+  border-radius: 18px;
+  background: rgba(36, 29, 23, 0.92);
+  box-shadow: 0 24px 60px rgba(24, 17, 11, 0.3);
+  color: #fffaf4;
+  backdrop-filter: blur(12px);
+  transform: translateX(-50%);
+}
+
+.focus-tour-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #f2b878;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.focus-tour-progress {
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 196, 132, 0.35);
+  border-radius: 999px;
+  color: #ffd6a3;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-tour-body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  margin-top: 7px;
+}
+
+.focus-tour-copy {
+  min-width: 0;
+}
+
+.focus-tour-copy h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.1vw, 27px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.focus-tour-copy p {
+  margin: 6px 0 0;
+  color: #d8cbbd;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.focus-tour-part {
+  display: inline-block;
+  margin-top: 7px;
+  color: #f2b878;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.focus-tour-value {
+  flex: 0 0 auto;
+  color: #ffd6a3;
+  font-size: clamp(18px, 2.2vw, 25px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.focus-tour-track {
+  height: 3px;
+  margin-top: 13px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.focus-tour-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff9f52, #ffd6a3);
+}
+
+.focus-tour-hint {
+  margin: 7px 0 0;
+  color: rgba(255, 250, 244, 0.55);
+  font-size: 9px;
+  text-align: right;
+}
+
+.focus-dim-label,
+.focus-part-label,
+.focus-ratio-label {
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(30, 20, 12, 0.22);
+  animation: focusPulse 1.25s ease-in-out infinite;
+}
+
+.focus-dim-label {
+  border: 1px solid rgba(255, 183, 112, 0.72);
+  background: rgba(42, 32, 23, 0.93);
+  color: #ffe0b8;
+}
+
+.focus-part-label {
+  border-radius: 7px;
+  background: #ffc27d;
+  color: #3a291a;
+  font-size: 10.5px;
+}
+
+.focus-ratio-label {
+  background: #ffe0b8;
+  color: #4a321d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@keyframes focusPulse {
+  0%, 100% { opacity: 0.62; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 720px) {
+  .tour-start {
+    top: 62px;
+    right: 12px;
+    padding: 8px 12px;
+  }
+
+  .tour-start-copy small {
+    display: none;
+  }
+
+  .focus-tour {
+    bottom: 14px;
+    width: calc(100% - 24px);
+    padding: 12px 14px 10px;
+    border-radius: 14px;
+  }
+
+  .focus-tour-body {
+    gap: 10px;
+  }
+
+  .focus-tour-copy p {
+    font-size: 10.5px;
+  }
+
+  .focus-tour-value {
+    font-size: 17px;
+  }
+}
