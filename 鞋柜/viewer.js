@@ -17,10 +17,8 @@ import {
 const DEFAULTS = {
   W: 1700,
   H: 2303,
-  D: 750,
-  backD: 350,
-  backW: 420,
-  backPull: 420,
+  D: 800,
+  backD: 400,
   benchW: 300,
   benchH: 420,
   benchPull: 500,
@@ -47,6 +45,8 @@ const state = {
   showProps: true,
   showDoors: true,
   frontD: 400,
+  backW: 1220,
+  backPull: 1220,
   midW: 0,
   kneeH: 0,
   midBottomH: 0,
@@ -56,7 +56,6 @@ const state = {
   midShoeParts: [],
   narrowHeights: [],
   backHeights: [],
-  leftDoorW: 0,
   midDoorW: 0,
   benchMaxW: 0,
 };
@@ -121,16 +120,14 @@ let firstBuild = true;
 function normalizeState() {
   state.W = clamp(state.W, 1600, 1800);
   state.H = clamp(state.H, 2100, 2500);
-  state.D = clamp(state.D, 650, 850);
-  state.backD = clamp(state.backD, 300, 400);
+  state.D = clamp(state.D, 700, 900);
+  state.backD = clamp(state.backD, 350, 450);
   state.t = clamp(Math.round(state.t), 16, 25);
   state.topGap = clamp(state.topGap, 10, 60);
   state.benchH = clamp(state.benchH, 380, 460);
   state.benchPull = clamp(state.benchPull, 300, 600);
   state.benchMaxW = LEFT_W - 2 * state.t;
   state.benchW = clamp(state.benchW, 260, state.benchMaxW);
-  state.backW = clamp(state.backW, 300, NARROW_W);
-  state.backPull = clamp(state.backPull, 300, 600);
 
   state.frontD = state.D - state.backD;
   if (state.frontD < 350) {
@@ -141,11 +138,13 @@ function normalizeState() {
     state.frontD = 500;
     state.backD = state.D - state.frontD;
   }
-  state.backD = clamp(state.backD, 300, 400);
+  state.backD = clamp(state.backD, 350, 450);
   state.frontD = state.D - state.backD;
 
   state.midW = clamp(state.W - LEFT_W - NARROW_W - 4 * state.t, 700, 900);
   state.W = LEFT_W + state.midW + NARROW_W + 4 * state.t;
+  state.backW = state.midW + NARROW_W;
+  state.backPull = state.backW;
 
   state.kneeH = state.H - state.topGap - 3 * state.t - 400 - 980 - state.benchH;
 
@@ -165,7 +164,6 @@ function normalizeState() {
   const backScale = Math.max(0.5, backAvail / BACK_RATIO_SUM);
   state.backHeights = BACK_RATIOS.map((value) => value * backScale);
 
-  state.leftDoorW = LEFT_W - 6;
   state.midDoorW = (state.midW - 9) / 2;
 }
 
@@ -182,12 +180,14 @@ function updateReadouts() {
   document.getElementById('left-width').textContent = `${LEFT_W} mm`;
   document.getElementById('mid-width').textContent = `${format(state.midW, 0)} mm`;
   document.getElementById('narrow-width').textContent = `${NARROW_W} mm`;
-  document.getElementById('hanging-depth').textContent = `${format(state.D, 0)} mm（贯通）`;
+  document.getElementById('hanging-depth').textContent = `${format(state.D, 0)} / ${format(state.D, 0)}（贯通）`;
+  document.getElementById('width-layout').textContent =
+    `${LEFT_W} / ${format(state.midW + NARROW_W, 0)} / ${format(state.backW, 0)}`;
+  document.getElementById('left-back-width').textContent = `${format(LEFT_W + state.backW, 0)} mm`;
   document.getElementById('left-zones').textContent =
     `400 / 980 / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
   document.getElementById('mid-zones').textContent =
     `${format(state.midUpperH, 0)} / 120 / ${format(state.midShoeH, 0)} / ${format(state.midBottomH, 0)}`;
-  document.getElementById('left-door-width').textContent = `${format(state.leftDoorW, 1)} mm`;
   document.getElementById('mid-door-width').textContent = `${format(state.midDoorW, 1)} mm`;
   document.getElementById('bench-size').textContent =
     `${format(state.benchW, 0)} × ${format(state.benchH, 0)} / ${format(state.benchPull, 0)}`;
@@ -480,14 +480,15 @@ function buildCabinet() {
   const benchPull = state.benchPull / 1000;
 
   const doorT = t;
-  const bodyFront = frontD / 2 - doorT;
+  const frontCenterZ = backD / 2;
+  const bodyFront = frontD / 2 - doorT + frontCenterZ;
   const carcassD = frontD - doorT;
-  const carcassZ = -doorT / 2;
+  const carcassZ = -doorT / 2 + frontCenterZ;
   const interiorD = frontD - doorT - BACK_T;
-  const interiorZ = (BACK_T - doorT) / 2;
+  const interiorZ = (BACK_T - doorT) / 2 + frontCenterZ;
   const leftInteriorD = D - BACK_T;
-  const leftInteriorZ = -backD / 2 + BACK_T / 2;
-  const doorZ = frontD / 2 - doorT / 2;
+  const leftInteriorZ = BACK_T / 2;
+  const doorZ = frontD / 2 - doorT / 2 + frontCenterZ;
   const topPanelTop = H - topGap;
   const topPanelBottom = topPanelTop - t;
 
@@ -520,8 +521,8 @@ function buildCabinet() {
   doorsGroup.name = 'doors';
   cabinetGroup.add(doorsGroup);
 
-  // Carcass: left column and divider 1 run the full 750 depth; middle/narrow
-  // front layer is 400 deep, with the flat back at -0.55 closing the cabinet.
+  // Carcass: the 408 left cabinet runs the full 800 depth; the 1220 front
+  // middle/right is 400 deep, with the 1220 back shoe rack behind it.
   cabinetGroup.add(
     box(t, H, D, materials.whiteCarcass, { x: x0 + t / 2, y: H / 2, z: 0 }),
     box(t, H, carcassD, materials.whiteCarcass, { x: x1 - t / 2, y: H / 2, z: carcassZ }),
@@ -545,7 +546,7 @@ function buildCabinet() {
     box(narrowInner1 - leftInner1, H, BACK_T, materials.wood, {
       x: (leftInner1 + narrowInner1) / 2,
       y: H / 2,
-      z: -frontD / 2 + BACK_T / 2,
+      z: frontCenterZ - frontD / 2 + BACK_T / 2,
       cast: false,
     }),
   );
@@ -583,24 +584,7 @@ function buildCabinet() {
   rod.rotation.z = Math.PI / 2;
   cabinetGroup.add(rod);
 
-  // Left two doors: upper bag niche, lower hanging zone. They meet over the bag shelf.
-  const leftDoorMeetingY = bagShelfY;
-  addDoor({
-    xLeft: leftInner0 + GAP,
-    xRight: leftInner1 - GAP,
-    yBottom: leftDoorMeetingY + GAP / 2,
-    yTop: topPanelTop - GAP,
-    hinge: 'left',
-    label: '左柜上门（包袋格）',
-  });
-  addDoor({
-    xLeft: leftInner0 + GAP,
-    xRight: leftInner1 - GAP,
-    yBottom: kneeTop - GAP / 2,
-    yTop: leftDoorMeetingY - GAP / 2,
-    hinge: 'left',
-    label: '左柜下门（挂衣区）',
-  });
+  // Left cabinet is intentionally open: no doors on the 408-wide full-depth bay.
 
   // Middle: bottom open bay (floor + plain fixed board), shoe shelves,
   // 120 drawer, upper storage. No toe kick, no bottom panel, no pull-out.
@@ -882,14 +866,14 @@ function buildCabinet() {
     spacing: 0.3,
   });
 
-  // Back layer: a back rack the same width as the front narrow tower,
-  // behind it and against the flat wall. It slides out to the right (side pull).
-  const rackRight = W / 2;
-  const rackLeft = W / 2 - backW;
-  const rackCenterX = W / 2 - backW / 2;
-  const rackBackZ = -frontD / 2 - backD;
-  const rackCenterZ = -frontD / 2 - backD / 2;
-  const backInteriorZ = -frontD / 2 - backD / 2 + BACK_T;
+  // Back layer: 1220 wide, exactly the front middle+right width, behind the
+  // front 400 and against the flat wall. It slides out to the right.
+  const rackLeft = midInner0;
+  const rackRight = midInner0 + backW;
+  const rackCenterX = (rackLeft + rackRight) / 2;
+  const rackBackZ = -backD;
+  const rackCenterZ = -backD / 2;
+  const backInteriorZ = -backD / 2 + BACK_T;
   const backInteriorD = backD - 2 * BACK_T;
   const rackInnerW = backW - 2 * t;
 
@@ -935,10 +919,10 @@ function buildCabinet() {
 
   rackPropsGroup = new THREE.Group();
   rackGroup.add(rackPropsGroup);
-  const rackCount = state.backW >= 340 ? 2 : 1;
-  const rackShoeScale = state.backW >= 340 ? 0.72 : 0.8;
-  const rackShoeSpacing = state.backW >= 340 ? 0.15 : 0;
-  const rackBoxScale = state.backW >= 340 ? 0.66 : 0.8;
+  const rackCount = 5;
+  const rackShoeScale = 0.72;
+  const rackShoeSpacing = 0.23;
+  const rackBoxScale = 0.66;
 
   rackCells.forEach((cell, index) => {
     if (index === rackCells.length - 1) {
@@ -946,7 +930,7 @@ function buildCabinet() {
         xCenter: rackCenterX,
         y: cell.bottom + 0.002,
         z: backInteriorZ + 0.02,
-        count: rackCount,
+        count: 4,
         spacing: 0.16,
         scale: rackBoxScale,
       });
@@ -955,10 +939,10 @@ function buildCabinet() {
         xCenter: rackCenterX,
         y: cell.bottom + 0.002,
         z: backInteriorZ + 0.02,
-        count: 1,
+        count: 2,
         type: 'boot',
         colorOffset: 2,
-        spacing: 0,
+        spacing: 0.3,
         scale: 0.8,
       });
     } else if (index >= 4) {
@@ -977,7 +961,7 @@ function buildCabinet() {
         xCenter: rackCenterX,
         y: cell.bottom + 0.002,
         z: backInteriorZ + 0.02,
-        count: rackCount,
+        count: 4,
         type: 'slipper',
         colorOffset: index + 3,
         spacing: rackShoeSpacing,
@@ -986,20 +970,20 @@ function buildCabinet() {
     }
   });
 
-  const rackHandleZ = -frontD / 2 - 0.06;
+  const rackHandleZ = -0.06;
   rackGroup.add(
     box(0.02, 0.12, 0.03, materials.metal, {
-      x: W / 2 + 0.01,
+      x: rackRight + 0.01,
       y: 1.0,
       z: rackHandleZ,
     }),
     box(0.012, 0.02, 0.02, materials.metal, {
-      x: W / 2 + 0.003,
+      x: rackRight + 0.003,
       y: 0.94,
       z: rackHandleZ,
     }),
     box(0.012, 0.02, 0.02, materials.metal, {
-      x: W / 2 + 0.003,
+      x: rackRight + 0.003,
       y: 1.06,
       z: rackHandleZ,
     }),
@@ -1020,11 +1004,9 @@ function buildCabinet() {
   interactiveParts.push(rackPart);
 
   dimensionGroup = createDimensions({ width: W, height: H, depth: D }, materials);
-  dimensionGroup.position.z = -backD / 2;
   cabinetGroup.add(dimensionGroup);
 
   updateRoom(room, { width: W, height: H, depth: D });
-  room.contactShadow.position.z = -backD / 2;
   applyVisibility();
 }
 
@@ -1043,10 +1025,6 @@ function fitCabinet(direction) {
     direction,
     margin: 1.32,
   });
-  const zShift = -state.backD / 2000;
-  viewer.camera.position.z += zShift;
-  viewer.controls.target.z += zShift;
-  viewer.controls.update();
 }
 
 function rebuild() {
