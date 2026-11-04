@@ -26,8 +26,8 @@ const DEFAULTS = {
   D: FIXED.D,
   topRowH: 400,
   drawerH: 200,
-  leftTopH: 796,
-  leftPantsH: 700,
+  leftTopH: 821,
+  leftPantsH: 675,
   leftBottomH: 832,
   shortH: 1000,
   narrowW: 399.2,
@@ -156,10 +156,10 @@ function normalizeState() {
 
   // Bay 1 is dimension-driven: lower hanging clear height is fixed at 832;
   // the double pants rods sit 650 above the lower shelf, and the movable shelf
-  // sits 50 above the rod top, leaving a 700 pants compartment. The upper
+  // sits 25 above the rod top, leaving a 675 pants compartment. The upper
   // hanging clear height is whatever remains after board thickness.
   state.leftBottomH = 832;
-  state.leftPantsH = 700;
+  state.leftPantsH = 675;
   state.leftTopH = state.H - state.leftBottomH - state.leftPantsH - 4 * state.t;
 
   state.largeW = (state.W - 6 * state.t - state.narrowW) / 4;
@@ -1250,9 +1250,9 @@ function buildFocusStops() {
     {
       id: 'bay1-pants-shelf',
       part: '第 1 格活动层板',
-      title: '活动层板：下沿距裤杆上沿 50',
-      value: '50',
-      desc: '活动层板下边沿在双层裤杆上边沿上方 50。',
+      title: '活动层板：下沿距裤杆上沿 25',
+      value: '25',
+      desc: '活动层板下边沿在双层裤杆上边沿上方 25。',
       boxes: [
         focusBox(L.bay1L, L.bay1R, L.leftShelf2C - L.t / 2, L.leftShelf2C + L.t / 2,
           L.interiorZ - L.interiorD / 2, L.interiorZ + L.interiorD / 2),
@@ -1266,7 +1266,7 @@ function buildFocusStops() {
           start: [L.bay1R, L.pantsRodY + L.rodR, door],
           end: [L.bay1R, L.leftShelf2C - L.t / 2, door],
           offset: [0.14, 0, 0.02],
-          label: '50',
+          label: '25',
           tick: 0.01,
         },
       ],
