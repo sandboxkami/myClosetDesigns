@@ -17,14 +17,14 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
-const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000 });
+const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000, gapH: 500 });
 
 const DEFAULTS = {
   W: 2752,
   H: 2400,
   lowerD: FIXED.lowerD,
-  upperD: 350,
-  upperH: 750,
+  glassSetback: 170,
+  upperSetback: 100,
   narrowW: 352,
   petH: 400,
   t: 18,
@@ -54,7 +54,10 @@ const state = {
   showUtility: true,
   moduleW: 0,
   lowerH: 0,
+  upperH: 0,
   gapH: 0,
+  glassD: 0,
+  upperD: 0,
   drawerH: 0,
   leftDrawerHeights: [],
   upperDoorW: 0,
@@ -67,8 +70,10 @@ const SCENE = {
   doorT: 0.018,
   lowerDoorZ: 0.191,
   upperDoorZ: 0.141,
+  glassDoorZ: 0.11,
   lowerFront: 0.2,
   upperFront: 0.15,
+  glassFront: 0.08,
   lowerD: 0.4,
 };
 
@@ -194,20 +199,24 @@ function normalizeState() {
   state.backT = clamp(Math.round(state.backT), 5, 12);
   state.counterT = clamp(Math.round(state.counterT), 15, 30);
   state.endRadius = clamp(Math.round(state.endRadius / 5) * 5, 20, 80);
-  state.upperD = clamp(state.upperD, 300, 400);
-  state.upperD = Math.min(state.upperD, state.lowerD - state.t);
-  state.upperH = clamp(state.upperH, 600, 900);
-  state.narrowW = clamp(state.narrowW, 250, 450);
-  state.petH = clamp(state.petH, 300, RIGHT_SHELF_TOP);
-
-  // Counter top is fixed at 1000 above the floor; the open gap absorbs the
-  // remaining height after the fixed lower cabinet and the adjustable upper.
-  state.lowerH = FIXED.lowerH;
-  state.gapH = state.H - TOP_GAP * 1000 - state.lowerH - state.upperH;
-  if (state.gapH < 400) {
-    state.upperH = Math.max(600, state.H - TOP_GAP * 1000 - state.lowerH - 400);
-    state.gapH = state.H - TOP_GAP * 1000 - state.lowerH - state.upperH;
+  // Upper cabinet is split into two setbacks relative to the lower cabinet:
+  // the glass lift-door tier is recessed more than the pair-door tier above.
+  state.glassSetback = clamp(Math.round(state.glassSetback / 5) * 5, 80, 200);
+  state.upperSetback = clamp(Math.round(state.upperSetback / 5) * 5, 40, 180);
+  if (state.upperSetback > state.glassSetback - 30) {
+    state.upperSetback = Math.max(40, state.glassSetback - 30);
   }
+  state.glassD = state.lowerD - state.glassSetback;
+  state.upperD = state.lowerD - state.upperSetback;
+
+  state.narrowW = clamp(state.narrowW, 250, 450);
+  state.petH = clamp(state.petH, 380, RIGHT_SHELF_TOP);
+
+  // Counter top and the open gap are fixed; the upper cabinet height is
+  // derived from the overall height and updates with the total-height input.
+  state.lowerH = FIXED.lowerH;
+  state.gapH = FIXED.gapH;
+  state.upperH = state.H - TOP_GAP * 1000 - state.lowerH - state.gapH;
 
   state.moduleW = (state.W - state.narrowW) / 3;
 
@@ -218,7 +227,7 @@ function normalizeState() {
   state.drawerH = DRAWER_CABINET_RATIO[0] * part;
   state.lowerDoorH = DRAWER_CABINET_RATIO[1] * part;
   state.leftDrawerHeights = LEFT_DRAWER_RATIO.map((ratio) => ratio * part);
-  state.petH = Math.min(state.petH, Math.max(300, Math.floor((state.lowerDoorH - 300) / 10) * 10), RIGHT_SHELF_TOP);
+  state.petH = Math.min(state.petH, Math.max(380, Math.floor((state.lowerDoorH - 300) / 10) * 10), RIGHT_SHELF_TOP);
   state.upperDoorW = state.moduleW - 6;
   state.pairDoorW = state.moduleW / 2 - 6;
   state.petDoorH = state.lowerDoorH - state.petH;
@@ -282,10 +291,13 @@ function updateReadouts() {
   document.getElementById('module-width').textContent = `${format(state.moduleW, 1)} mm`;
   document.getElementById('lower-height').textContent = `${format(state.lowerH, 0)} mm`;
   document.getElementById('gap-height').textContent = `${format(state.gapH, 0)} mm`;
-  document.getElementById('cabinet-depths').textContent = `${format(state.lowerD, 0)} / ${format(state.upperD, 0)} mm`;
+  document.getElementById('upper-height').textContent = `${format(state.upperH, 0)} mm`;
+  document.getElementById('cabinet-depths').textContent = `${format(state.lowerD, 0)} / ${format(state.upperD, 0)} / ${format(state.glassD, 0)} mm`;
+  document.getElementById('upper-setbacks').textContent = `${format(state.glassSetback, 0)} / ${format(state.upperSetback, 0)} mm`;
   document.getElementById('upper-door-width').textContent = `${format(state.upperDoorW, 1)} / ${format(state.pairDoorW, 1)} mm`;
   document.getElementById('lower-door-height').textContent = `${format(state.lowerDoorH, 0)} / ${format(state.petDoorH, 0)} mm`;
   document.getElementById('pet-height').textContent = `${format(state.petH, 0)} mm`;
+  document.getElementById('pet-clear').textContent = `${format(RIGHT_SHELF_TOP - state.t, 0)} mm（无底板）`;
   document.getElementById('narrow-width').textContent = `${format(state.narrowW, 0)} mm`;
   document.getElementById('utility-box').textContent = '400 × 300 × 100 mm';
   document.getElementById('utility-pos').textContent = '底 400 / 右距角 250';
@@ -318,8 +330,8 @@ function updateReadouts() {
   document.getElementById('decision-W').textContent = `${format(state.W, 0)} mm`;
   document.getElementById('decision-H').textContent = `${format(state.H, 0)} mm`;
   document.getElementById('decision-upperH').textContent = `${format(state.upperH, 0)} mm`;
-  document.getElementById('decision-gapH').textContent = `${format(state.gapH, 0)} mm`;
-  document.getElementById('decision-upperD').textContent = `${format(state.upperD, 0)} mm`;
+  document.getElementById('decision-glassSetback').textContent = `${format(state.glassSetback, 0)} mm`;
+  document.getElementById('decision-upperSetback').textContent = `${format(state.upperSetback, 0)} mm`;
   document.getElementById('decision-narrowW').textContent = `${format(state.narrowW, 1)} mm`;
   document.getElementById('decision-moduleW').textContent = `${format(state.moduleW, 1)} mm`;
   document.getElementById('decision-petH').textContent = `${format(state.petH, 0)} mm`;
@@ -334,7 +346,9 @@ function updateReadouts() {
   if (state.moduleW < 650) warnings.push(`主格宽 ${format(state.moduleW, 0)} mm < 650`);
   if (state.petDoorH < 300) warnings.push(`右侧猫用品格上门高 ${format(state.petDoorH, 0)} mm < 300`);
   if (state.upperH < 600) warnings.push(`上柜高 ${format(state.upperH, 0)} mm < 600`);
-  if (state.gapH < 400) warnings.push(`开放高 ${format(state.gapH, 0)} mm < 400`);
+  if (state.petH < RIGHT_SHELF_TOP - state.t) {
+    warnings.push(`猫格门洞 ${format(state.petH, 0)} mm < 板下净高 ${format(RIGHT_SHELF_TOP - state.t, 0)} mm，370 自动喂食器可能放不进`);
+  }
   if (state.leftDrawerHeights[2] < 150) warnings.push(`左地柜最下抽屉高 ${format(state.leftDrawerHeights[2], 0)} mm < 150`);
 
   const warning = document.getElementById('height-warning');
@@ -428,7 +442,7 @@ function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, knobY, z = SCENE.
 
 function addLiftDoor({ xCenter, width, height, top, label }) {
   const group = new THREE.Group();
-  group.position.set(xCenter, top, SCENE.upperDoorZ);
+  group.position.set(xCenter, top, SCENE.glassDoorZ);
 
   const panel = new THREE.Group();
   const frame = 0.04;
@@ -582,6 +596,16 @@ function createPetBowl() {
   return group;
 }
 
+function createAutoFeeder(height = 0.37) {
+  const group = new THREE.Group();
+  const bodyHeight = height - 0.03;
+  const body = box(0.24, bodyHeight, 0.22, materials.whiteEdge, { y: bodyHeight / 2 });
+  const lid = box(0.24, 0.03, 0.22, materials.woodDark, { y: bodyHeight + 0.015 });
+  const bowl = cylinder(0.075, 0.035, materials.metal, { y: 0.0175, z: 0.08 });
+  group.add(body, lid, bowl);
+  return group;
+}
+
 function createKettle() {
   const group = new THREE.Group();
   const body = cylinder(0.075, 0.13, materials.whiteEdge, { y: 0.065 });
@@ -661,9 +685,12 @@ function buildCabinet() {
   const W = state.W / 1000;
   const H = state.H / 1000;
   const lowerD = state.lowerD / 1000;
+  const glassD = state.glassD / 1000;
   const upperD = state.upperD / 1000;
   const upperH = state.upperH / 1000;
   const gapH = state.gapH / 1000;
+  const glassSetback = state.glassSetback / 1000;
+  const upperSetback = state.upperSetback / 1000;
   const narrowW = state.narrowW / 1000;
   const drawerH = state.drawerH / 1000;
   const petH = state.petH / 1000;
@@ -683,18 +710,27 @@ function buildCabinet() {
   const lowerInteriorD = lowerD - doorT - backT;
   const lowerInteriorZ = (-lowerD / 2 + backT + lowerBodyFront) / 2;
 
+  const glassFront = -lowerD / 2 + glassD;
   const upperFront = -lowerD / 2 + upperD;
+  const glassBodyFront = glassFront - doorT;
   const upperBodyFront = upperFront - doorT;
+  const glassBodyDepth = glassD - doorT;
   const upperBodyDepth = upperD - doorT;
+  const glassBodyCenterZ = (-lowerD / 2 + glassBodyFront) / 2;
   const upperBodyCenterZ = (-lowerD / 2 + upperBodyFront) / 2;
+  const glassInteriorD = glassD - doorT - backT;
   const upperInteriorD = upperD - doorT - backT;
+  const glassInteriorZ = (-lowerD / 2 + backT + glassBodyFront) / 2;
   const upperInteriorZ = (-lowerD / 2 + backT + upperBodyFront) / 2;
+  const glassDoorZ = glassFront - doorT / 2;
   const upperDoorZ = upperFront - doorT / 2;
   const lowerDoorZ = lowerFront - doorT / 2;
 
   const lowerBodyTop = lowerH - counterT;
   const upperBottom = lowerH + gapH;
   const upperTop = H - TOP_GAP;
+  const upperLayerH = upperH / 3;
+  const upperSplitY = upperBottom + upperLayerH;
   const drawerTop = lowerBodyTop;
   const drawerBottom = drawerTop - drawerH;
 
@@ -712,8 +748,10 @@ function buildCabinet() {
 
   SCENE.doorT = doorT;
   SCENE.lowerDoorZ = lowerDoorZ;
+  SCENE.glassDoorZ = glassDoorZ;
   SCENE.upperDoorZ = upperDoorZ;
   SCENE.lowerFront = lowerFront;
+  SCENE.glassFront = glassFront;
   SCENE.upperFront = upperFront;
   SCENE.lowerD = lowerD;
 
@@ -813,18 +851,18 @@ function buildCabinet() {
     );
   });
 
-  // Bottom panels for all three lower bays. The right bay keeps its pet niche
-  // doors/opening unchanged, but the bowls now sit on a raised bottom panel.
+  // Bottom panels for the left and middle lower bays only. The right pet
+  // niche has no bottom panel: the floor is the bottom, leaving 382 mm clear
+  // under the 400 mm movable shelf for a 370 mm automatic feeder.
   cabinetGroup.add(
     box(x2 - x1, t, lowerBodyDepth, materials.whiteCarcass, { x: (x1 + x2) / 2, y: t / 2, z: lowerBodyCenterZ }),
     box(x3 - x2, t, lowerBodyDepth, materials.whiteCarcass, { x: (x2 + x3) / 2, y: t / 2, z: lowerBodyCenterZ }),
-    box(rightInnerX - x3, t, lowerBodyDepth, materials.whiteCarcass, { x: (x3 + rightInnerX) / 2, y: t / 2, z: lowerBodyCenterZ }),
   );
 
   // Upper main carcass (x1..x4); left side is the continuous side panel, right side is the rounded end.
   cabinetGroup.add(
     box(rightInnerX - x1, t, upperBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: upperTop - t / 2, z: upperBodyCenterZ }),
-    box(rightInnerX - x1, t, upperBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: upperBottom + t / 2, z: upperBodyCenterZ }),
+    box(rightInnerX - x1, t, glassBodyDepth, materials.whiteCarcass, { x: (x1 + rightInnerX) / 2, y: upperBottom + t / 2, z: glassBodyCenterZ }),
     box(rightInnerX - x1, upperH, backT, materials.wood, {
       x: (x1 + rightInnerX) / 2,
       y: (upperBottom + upperTop) / 2,
@@ -835,7 +873,16 @@ function buildCabinet() {
 
   [x2, x3].forEach((x) => {
     cabinetGroup.add(
-      box(t, upperH, upperBodyDepth, materials.wood, { x, y: (upperBottom + upperTop) / 2, z: upperBodyCenterZ }),
+      box(t, upperLayerH, glassBodyDepth, materials.wood, {
+        x,
+        y: (upperBottom + upperSplitY) / 2,
+        z: glassBodyCenterZ,
+      }),
+      box(t, upperH - upperLayerH, upperBodyDepth, materials.wood, {
+        x,
+        y: (upperSplitY + upperTop) / 2,
+        z: upperBodyCenterZ,
+      }),
     );
   });
 
@@ -856,8 +903,18 @@ function buildCabinet() {
       xLeft: rightInnerX,
       xRight: x4,
       zBack: -lowerD / 2,
-      zFront: upperFront,
+      zFront: glassFront,
       yBottom: upperBottom,
+      yTop: upperSplitY,
+      radius: endRadius,
+      material: materials.whiteCarcass,
+    }),
+    createRoundedPanel({
+      xLeft: rightInnerX,
+      xRight: x4,
+      zBack: -lowerD / 2,
+      zFront: upperFront,
+      yBottom: upperSplitY,
       yTop: upperTop,
       radius: endRadius,
       material: materials.whiteCarcass,
@@ -868,7 +925,7 @@ function buildCabinet() {
   cabinetGroup.add(
     box(rightInnerX - x1, t, upperInteriorD, materials.wood, {
       x: (x1 + rightInnerX) / 2,
-      y: upperBottom + upperH / 3,
+      y: upperSplitY,
       z: upperInteriorZ,
     }),
   );
@@ -977,18 +1034,20 @@ function buildCabinet() {
   });
 
   // Upper doors: bottom layer = 3 glass lift-up doors; top two layers = 3 pairs of side-opening white doors.
-  const upperLayerH = upperH / 3;
   [c1, c2, c3].forEach((center, index) => {
     const moduleLeft = x1 + index * moduleW;
     const isRightEnd = index === 2;
     const moduleRight = isRightEnd ? rightInnerX : moduleLeft + moduleW;
     const pairCenter = isRightEnd ? (moduleLeft + moduleRight) / 2 : center;
 
+    // The glass tier sits behind the deeper pair-door tier: stop its top
+    // below the step shelf so the lift door can swing without hitting it.
+    const liftTop = upperSplitY - t / 2 - 0.003;
     addLiftDoor({
       xCenter: isRightEnd ? pairCenter : center,
       width: (isRightEnd ? rightInnerX - moduleLeft : moduleW) - 6 * 0.001,
-      height: upperLayerH - 6 * 0.001,
-      top: upperBottom + upperLayerH - 3 * 0.001,
+      height: liftTop - upperBottom - 0.003,
+      top: liftTop,
       label: `上柜下层玻璃上翻门 ${index + 1}`,
     });
 
@@ -1001,7 +1060,7 @@ function buildCabinet() {
       yTop: pairTop,
       hinge: 'left',
       label: `上柜对开门 ${index + 1} 左`,
-      knobY: (pairBottom + pairTop) / 2,
+      knobY: pairBottom + 0.08,
       z: SCENE.upperDoorZ,
     });
     addDoor({
@@ -1011,7 +1070,7 @@ function buildCabinet() {
       yTop: pairTop,
       hinge: 'right',
       label: `上柜对开门 ${index + 1} 右`,
-      knobY: (pairBottom + pairTop) / 2,
+      knobY: pairBottom + 0.08,
       z: SCENE.upperDoorZ,
     });
   });
@@ -1083,47 +1142,51 @@ function buildCabinet() {
   propsGroup.name = 'props';
   cabinetGroup.add(propsGroup);
 
-  const upperShelf1 = upperBottom + upperH / 3;
+  const upperShelf1 = upperSplitY;
   const upperShelf2 = upperBottom + (upperH * 2) / 3;
   const upperMiddleShelf = upperBottom + (upperH * 5) / 9;
+  const glassPropY = upperBottom + t + 0.004;
+  const stepPropY = upperShelf1 + t / 2 + 0.004;
+  const upperPropY = upperShelf2 + t / 2 + 0.004;
+  const middlePropY = upperMiddleShelf + t / 2 + 0.004;
 
   // Upper left: tea / wine / cups
   [-0.22, -0.05, 0.12].forEach((offset, index) => {
     const bottle = createBottle(0.2 + index * 0.02, index + 1);
-    bottle.position.set(c1 + offset, upperBottom + 0.004, upperInteriorZ - 0.02);
+    bottle.position.set(c1 + offset, glassPropY, glassInteriorZ - 0.02);
     propsGroup.add(bottle);
   });
   const cupsLeft = createCup();
-  cupsLeft.position.set(c1 + 0.24, upperBottom + 0.004, upperInteriorZ);
+  cupsLeft.position.set(c1 + 0.24, glassPropY, glassInteriorZ);
   propsGroup.add(cupsLeft);
   const cupsLeft2 = createCup(0.07);
-  cupsLeft2.position.set(c1 + 0.12, upperShelf1 + 0.004, upperInteriorZ);
+  cupsLeft2.position.set(c1 + 0.12, stepPropY, upperInteriorZ);
   propsGroup.add(cupsLeft2);
   const bottleLeft2 = createBottle(0.18, 3);
-  bottleLeft2.position.set(c1 - 0.18, upperShelf1 + 0.004, upperInteriorZ);
+  bottleLeft2.position.set(c1 - 0.18, stepPropY, upperInteriorZ);
   propsGroup.add(bottleLeft2);
 
   // Upper middle: plates and bowls
   const plates1 = createPlateStack(5);
-  plates1.position.set(c2 - 0.15, upperBottom + 0.004, upperInteriorZ);
+  plates1.position.set(c2 - 0.15, glassPropY, glassInteriorZ);
   const plates2 = createPlateStack(4);
-  plates2.position.set(c2 + 0.18, upperBottom + 0.004, upperInteriorZ);
+  plates2.position.set(c2 + 0.18, glassPropY, glassInteriorZ);
   const plates3 = createPlateStack(3);
-  plates3.position.set(c2 - 0.05, upperShelf1 + 0.004, upperInteriorZ);
+  plates3.position.set(c2 - 0.05, stepPropY, upperInteriorZ);
   propsGroup.add(plates1, plates2, plates3);
   const cupsMid = createCup();
-  cupsMid.position.set(c2 + 0.25, upperMiddleShelf + 0.004, upperInteriorZ);
+  cupsMid.position.set(c2 + 0.25, middlePropY, upperInteriorZ);
   propsGroup.add(cupsMid);
 
   // Upper right: tissue / cleaning
   const tissue1 = createTissueBox();
-  tissue1.position.set(c3 - 0.18, upperBottom + 0.004, upperInteriorZ);
+  tissue1.position.set(c3 - 0.18, glassPropY, glassInteriorZ);
   const tissue2 = createTissueBox();
-  tissue2.position.set(c3 + 0.18, upperShelf1 + 0.004, upperInteriorZ);
+  tissue2.position.set(c3 + 0.18, stepPropY, upperInteriorZ);
   const cleaner1 = createBottle(0.22, 1);
-  cleaner1.position.set(c3 + 0.12, upperBottom + 0.004, upperInteriorZ);
+  cleaner1.position.set(c3 + 0.12, glassPropY, glassInteriorZ);
   const cleaner2 = createBottle(0.17, 2);
-  cleaner2.position.set(c3 - 0.02, upperShelf2 + 0.004, upperInteriorZ);
+  cleaner2.position.set(c3 - 0.02, upperPropY, upperInteriorZ);
   propsGroup.add(tissue1, tissue2, cleaner1, cleaner2);
 
   // Left tall closed column: one set of props per layer, sitting on the shelf tops.
@@ -1152,10 +1215,14 @@ function buildCabinet() {
     }
   });
 
-  // Pet bowls in the open right niche, standing on the restored bottom panel.
+  // Pet bowls and a 370 mm automatic-feeder reference prop sit on the floor
+  // in the right niche; the bottom panel has been removed.
   const petBowl = createPetBowl();
-  petBowl.position.set(c3, t + 0.004, lowerInteriorZ + 0.05);
+  petBowl.position.set(c3 + 0.2, 0.004, lowerInteriorZ + 0.05);
   propsGroup.add(petBowl);
+  const feeder = createAutoFeeder(0.37);
+  feeder.position.set(c3 - 0.18, 0.004, lowerInteriorZ + 0.04);
+  propsGroup.add(feeder);
 
   // Counter props: kettle and cups
   const kettle = createKettle();
@@ -1184,7 +1251,10 @@ function buildCabinet() {
     W,
     H,
     lowerD,
+    glassD,
     upperD,
+    glassSetback,
+    upperSetback,
     t,
     lowerH,
     upperH,
@@ -1207,15 +1277,23 @@ function buildCabinet() {
     rightInnerX,
     frontZ: lowerFront,
     lowerDoorZ,
+    glassDoorZ,
     upperDoorZ,
+    glassFront,
+    upperFront,
     lowerBodyFront,
     lowerBodyDepth,
     lowerInteriorD,
     lowerInteriorZ,
+    glassBodyFront,
+    glassBodyDepth,
+    glassInteriorD,
+    glassInteriorZ,
     upperBodyFront,
     upperBodyDepth,
     upperInteriorD,
     upperInteriorZ,
+    upperSplitY,
     drawerH,
     drawerTop,
     drawerBottom,
@@ -1276,8 +1354,9 @@ function buildFocusStops() {
   const L = layout;
   const front = L.frontZ;
   const door = L.lowerDoorZ;
+  const glassDoor = L.glassDoorZ;
   const upperDoor = L.upperDoorZ;
-  const upperFront = -L.lowerD / 2 + L.upperD;
+  const glassFront = L.glassFront;
   const drawTop = L.drawerTop;
   const drawBottom = L.drawerBottom;
   const leftDrawerSpecs = [];
@@ -1303,7 +1382,7 @@ function buildFocusStops() {
       part: '整体外形',
       title: '整体外形',
       value: `${focusMm(L.W)} × ${focusMm(L.H)} × ${focusMm(L.lowerD)}`,
-      desc: '总长、总高和下柜深是当前方案的总体控制尺寸；上柜比下柜后退 50 mm。',
+      desc: `总长、总高和下柜深是总体控制尺寸；上柜分段后缩：下层玻璃门 ${focusNum(L.glassSetback)}、上层柜 ${focusNum(L.upperSetback)}。`,
       boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, -L.lowerD / 2, L.lowerD / 2, false)],
       dims: [
         {
@@ -1466,14 +1545,14 @@ function buildFocusStops() {
       id: 'right-shelf',
       part: '右地柜 / 猫格',
       openParts: ['右地柜门 左', '右地柜门 右'],
-      title: '右活动层板 / 猫格底板',
-      value: `400 / 18`,
-      desc: '活动层板板面 400，与弱电箱底相切；猫碗放在加回的底板上，不再落地。',
+      title: '右活动层板 400 / 猫格无底板',
+      value: `板面 ${focusNum(L.rightShelfTop)} / 净高 ${focusNum(L.rightShelfTop - L.t)}`,
+      desc: `活动层板板面 ${focusNum(L.rightShelfTop)}，与弱电箱底相切；猫用品格取消底板，地面直接放 370 高自动喂食器，板下净高 ${focusNum(L.rightShelfTop - L.t)}。`,
       boxes: [
         focusBox(L.x3, L.rightInnerX, L.rightShelfTop - L.t, L.rightShelfTop,
           L.lowerInteriorZ - L.lowerInteriorD / 2, L.lowerInteriorZ + L.lowerInteriorD / 2),
-        focusBox(L.x3, L.rightInnerX, 0, L.t,
-          L.lowerInteriorZ - L.lowerInteriorD / 2, L.lowerInteriorZ + L.lowerInteriorD / 2),
+        focusBox(L.x3, L.rightInnerX, 0, L.rightShelfTop - L.t,
+          L.lowerInteriorZ - L.lowerInteriorD / 2, L.lowerInteriorZ + L.lowerInteriorD / 2, false),
       ],
       dims: [
         {
@@ -1485,15 +1564,16 @@ function buildFocusStops() {
         },
         {
           start: [L.x3, 0, front],
-          end: [L.x3, L.t, front],
+          end: [L.x3, L.rightShelfTop - L.t, front],
           offset: [-0.14, 0, 0.02],
-          label: `底板 ${focusNum(L.t)}`,
+          label: `净高 ${focusNum(L.rightShelfTop - L.t)}`,
           labelClass: 'focus-ratio-label',
-          tick: 0.012,
+          tick: 0.02,
         },
       ],
       labels: [
-        focusLabel('活动层板 / 猫格底板', rightCenterX, L.rightShelfTop + 0.12, front + 0.05, 'part'),
+        focusLabel('无底板 / 自动喂食器 370 落地', rightCenterX, 0.2, front + 0.05, 'part'),
+        focusLabel('活动层板 400', rightCenterX, L.rightShelfTop + 0.12, front + 0.05, 'part'),
       ],
       lines: [],
       dir: [0.5, 0.15, 1],
@@ -1504,7 +1584,7 @@ function buildFocusStops() {
       part: '最左窄柜门',
       title: '窄柜门合并',
       value: '2 扇',
-      desc: '中间层 + 上两层合并为一扇高门（约 1370）；下两层单独一扇；合并门拉手约 1120。',
+      desc: '中间层 + 上两层合并为一扇高门（约 1370）；下两层单独一扇。拉手按现场安装确定高度，图中只示意在便于开启的位置。',
       boxes: [
         focusBox(L.x0, L.x1, L.lowerH, L.upperTop, door - 0.002, door + 0.018),
         focusBox(L.x0, L.x1, 0, L.lowerH, door - 0.002, door + 0.018),
@@ -1532,13 +1612,6 @@ function buildFocusStops() {
           tick: 0.025,
         },
       ],
-      leaders: [
-        {
-          point: [L.x1 - 0.04, L.lowerH + 0.12, door],
-          labelPoint: [L.x1 + 0.18, L.lowerH + 0.24, door + 0.08],
-          label: `拉手 ${focusNum(L.lowerH + 0.12)}`,
-        },
-      ],
       labels: [
         focusLabel('窄柜门 2 扇', narrowCenterX, L.upperTop - 0.12, front + 0.04, 'part'),
       ],
@@ -1549,11 +1622,12 @@ function buildFocusStops() {
     {
       id: 'upper-open',
       part: '上柜 / 中间开放',
-      title: '上柜高 / 中间开放高',
-      value: `750 / 620`,
-      desc: '上柜高 750；中间开放 620，由总高、台面 1000 和上柜高推导。',
+      title: '上柜分段后缩 / 开放 500',
+      value: `${focusNum(L.upperH)} / ${focusNum(L.gapH)} / ${focusNum(L.glassSetback)}·${focusNum(L.upperSetback)}`,
+      desc: `上柜高 ${focusNum(L.upperH)}（总高 ${focusNum(L.H)} − 顶缝 30 − 台面 1000 − 开放 ${focusNum(L.gapH)}）；下层玻璃门后缩 ${focusNum(L.glassSetback)}（深 ${focusNum(L.glassD)}），上层柜后缩 ${focusNum(L.upperSetback)}（深 ${focusNum(L.upperD)}）。`,
       boxes: [
-        focusBox(L.x1, L.rightInnerX, L.upperBottom, L.upperTop, upperDoor - 0.002, upperDoor + 0.018),
+        focusBox(L.x1, L.rightInnerX, L.upperBottom, L.upperSplitY, glassDoor - 0.002, glassDoor + 0.018),
+        focusBox(L.x1, L.rightInnerX, L.upperSplitY, L.upperTop, upperDoor - 0.002, upperDoor + 0.018),
         focusBox(L.x1, L.rightInnerX, L.lowerH, L.upperBottom, front - 0.008, front + 0.024),
       ],
       dims: [
@@ -1572,8 +1646,20 @@ function buildFocusStops() {
           tick: 0.03,
         },
       ],
+      leaders: [
+        {
+          point: [L.rightInnerX, L.upperBottom + 0.12, glassFront],
+          labelPoint: [L.rightInnerX + 0.34, L.upperBottom + 0.24, glassFront + 0.06],
+          label: `下层后缩 ${focusNum(L.glassSetback)}（深 ${focusNum(L.glassD)}）`,
+        },
+        {
+          point: [L.rightInnerX, L.upperTop - 0.14, L.upperFront],
+          labelPoint: [L.rightInnerX + 0.34, L.upperTop - 0.02, L.upperFront + 0.06],
+          label: `上层后缩 ${focusNum(L.upperSetback)}（深 ${focusNum(L.upperD)}）`,
+        },
+      ],
       labels: [
-        focusLabel('上柜 / 中间开放', mainCenterX, L.upperTop + 0.1, front + 0.04, 'part'),
+        focusLabel('上柜分段后缩', mainCenterX, L.upperTop + 0.1, front + 0.04, 'part'),
       ],
       lines: [],
       dir: [0.22, 0.12, 1],
@@ -2083,7 +2169,7 @@ document.getElementById('reset-view').addEventListener('click', resetView);
 
 document.getElementById('show-dims').addEventListener('change', (event) => {
   state.showDims = event.target.checked;
-  if (dimensionGroup) dimensionGroup.visible = state.showDims;
+  setDimensionLabelsVisible(state.showDims);
 });
 
 document.getElementById('show-props').addEventListener('change', (event) => {

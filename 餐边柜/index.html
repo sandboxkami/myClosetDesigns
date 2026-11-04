@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>餐边柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.7.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.8.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -14,15 +14,17 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">餐边柜 · 柜子定制</p>
         <h1>餐边柜</h1>
-        <p class="subtitle">下柜深 400 固定 · 台面离地 1000 · 窄柜 2 门 · 左 3 抽屉 2:3:4 · 中/右 2:7 · 中柜半高隔板 · 右猫格加底板</p>
+        <p class="subtitle">下柜深 400 固定 · 台面离地 1000 · 中间开放 500 固定 · 上柜分段后缩 · 窄柜 2 门 · 左 3 抽屉 2:3:4 · 中/右 2:7 · 猫格无底板</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.7</span>
+          <span class="chip chip-accent">v1.8</span>
           <span class="chip">台面离地 1000</span>
           <span class="chip">下柜深 400 固定</span>
           <span class="chip">窄柜 2 门</span>
           <span class="chip">左抽 2:3:4</span>
           <span class="chip">中/右 2:7</span>
-          <span class="chip">猫格加底板</span>
+          <span class="chip">开放格 500 固定</span>
+          <span class="chip">上柜后缩 170 / 100</span>
+          <span class="chip">猫格无底板</span>
           <span class="chip">右活动层板 y≈400</span>
           <span class="chip">双块决策看板</span>
           <span class="chip">关键约束手动巡游</span>
@@ -45,7 +47,7 @@
             <div class="decision-item"><span class="decision-label">左抽比例</span><span class="decision-value">2 : 3 : 4</span></div>
             <div class="decision-item"><span class="decision-label">中/右 抽:柜</span><span class="decision-value">2 : 7</span></div>
             <div class="decision-item"><span class="decision-label">中柜隔板</span><span class="decision-value">1 / 2 高</span></div>
-            <div class="decision-item"><span class="decision-label">右猫格底板</span><span class="decision-value">18 mm</span></div>
+            <div class="decision-item"><span class="decision-label">中间开放</span><span class="decision-value">500 mm</span></div>
             <div class="decision-item"><span class="decision-label">窄柜门</span><span class="decision-value">2 扇（中+上合并）</span></div>
           </div>
         </article>
@@ -59,9 +61,9 @@
           <div class="decision-grid">
             <button class="decision-item" type="button" data-target="number-W"><span class="decision-label">总长</span><span class="decision-value" id="decision-W">2752 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-H"><span class="decision-label">总高</span><span class="decision-value" id="decision-H">2400 mm</span><span class="decision-flag">可调</span></button>
-            <button class="decision-item" type="button" data-target="number-upperH"><span class="decision-label">上柜高</span><span class="decision-value" id="decision-upperH">750 mm</span><span class="decision-flag">可调</span></button>
-            <button class="decision-item" type="button" data-target="number-upperH"><span class="decision-label">中间开放高</span><span class="decision-value" id="decision-gapH">620 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-upperD"><span class="decision-label">上柜深</span><span class="decision-value" id="decision-upperD">350 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-H"><span class="decision-label">上柜高</span><span class="decision-value" id="decision-upperH">870 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-glassSetback"><span class="decision-label">下层玻璃门后缩</span><span class="decision-value" id="decision-glassSetback">170 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-upperSetback"><span class="decision-label">上层柜后缩</span><span class="decision-value" id="decision-upperSetback">100 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-narrowW"><span class="decision-label">窄柜宽</span><span class="decision-value" id="decision-narrowW">352 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-narrowW"><span class="decision-label">主格宽</span><span class="decision-value" id="decision-moduleW">800 mm</span><span class="decision-flag is-linked">联动</span></button>
             <button class="decision-item" type="button" data-target="number-petH"><span class="decision-label">猫用品格高</span><span class="decision-value" id="decision-petH">400 mm</span><span class="decision-flag">可调</span></button>
@@ -70,7 +72,7 @@
             <button class="decision-item" type="button" data-target="number-counterT"><span class="decision-label">台面厚</span><span class="decision-value" id="decision-counterT">20 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-endRadius"><span class="decision-label">右端圆角</span><span class="decision-value" id="decision-endRadius">R50</span><span class="decision-flag">可调</span></button>
           </div>
-          <p class="decision-hint">点击“可调 / 联动”项，跳到下方对应的调节项；联动项由上游尺寸推导。</p>
+          <p class="decision-hint">点击“可调 / 联动”项，跳到下方对应的调节项；上柜高由总高、固定开放 500 和台面 1000 推导，主格宽由总长和窄柜宽推导。</p>
         </article>
       </section>
 
@@ -100,30 +102,30 @@
           <input id="range-H" data-range="H" type="range" min="2200" max="2600" step="10" value="2400">
         </div>
 
-        <p class="micro-hint fixed-size-note">台面离地 <strong>1000</strong> mm、下柜深 <strong>400</strong> mm 固定；上柜深、上柜高、窄柜宽、猫用品格高、板厚可调。</p>
+        <p class="micro-hint fixed-size-note">台面离地 <strong>1000</strong> mm、下柜深 <strong>400</strong> mm、中间开放高 <strong>500</strong> mm 固定；上柜两层后缩、窄柜宽、猫用品格高、板厚可调。</p>
 
         <div class="control-row">
           <div class="control-head">
-            <label for="range-upperD">上柜深</label>
+            <label for="range-glassSetback">下层玻璃门后缩</label>
             <span class="control-number">
-              <input id="number-upperD" data-number="upperD" type="number" min="300" max="400" step="10" value="350" inputmode="numeric"> mm
+              <input id="number-glassSetback" data-number="glassSetback" type="number" min="80" max="200" step="5" value="170" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-upperD" data-range="upperD" type="range" min="300" max="400" step="10" value="350">
+          <input id="range-glassSetback" data-range="glassSetback" type="range" min="80" max="200" step="5" value="170">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-upperSetback">上层柜后缩</label>
+            <span class="control-number">
+              <input id="number-upperSetback" data-number="upperSetback" type="number" min="40" max="180" step="5" value="100" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-upperSetback" data-range="upperSetback" type="range" min="40" max="180" step="5" value="100">
         </div>
 
         <details class="more-settings">
           <summary>更多尺寸</summary>
-
-          <div class="control-row compact">
-            <div class="control-head">
-              <label for="range-upperH">上柜高</label>
-              <span class="control-number">
-                <input id="number-upperH" data-number="upperH" type="number" min="600" max="900" step="10" value="750" inputmode="numeric"> mm
-              </span>
-            </div>
-            <input id="range-upperH" data-range="upperH" type="range" min="600" max="900" step="10" value="750">
-          </div>
 
           <div class="control-row compact">
             <div class="control-head">
@@ -139,10 +141,10 @@
             <div class="control-head">
               <label for="range-petH">猫用品格高</label>
               <span class="control-number">
-                <input id="number-petH" data-number="petH" type="number" min="300" max="400" step="10" value="400" inputmode="numeric"> mm
+                <input id="number-petH" data-number="petH" type="number" min="380" max="400" step="10" value="400" inputmode="numeric"> mm
               </span>
             </div>
-            <input id="range-petH" data-range="petH" type="range" min="300" max="400" step="10" value="400">
+            <input id="range-petH" data-range="petH" type="range" min="380" max="400" step="10" value="400">
           </div>
 
           <div class="control-row compact">
@@ -185,22 +187,25 @@
             <input id="range-endRadius" data-range="endRadius" type="range" min="20" max="80" step="5" value="50">
           </div>
 
-          <p class="micro-hint">总长 = 最左窄柜 + 3 个主格。下柜固定 1000 高（台面离地 1000），中间开放高 = 总高 − 30 顶缝 − 1000 − 上柜高。下柜 9 等分：左抽 2:3:4；中/右抽屉:柜体 2:7，三格上抽底边对齐。背板厚、台面厚和右端圆角先按可调工艺参数处理，确认后再固定。</p>
+          <p class="micro-hint">总长 = 最左窄柜 + 3 个主格。下柜固定 1000 高（台面离地 1000），中间开放固定 500；上柜高 = 总高 − 30 顶缝 − 1000 − 500。上柜下层玻璃门相对地柜后缩 170（深 230），上层柜后缩 100（深 300）；两层后缩暂时可调，确认后再固定。下柜 9 等分：左抽 2:3:4；中/右抽屉:柜体 2:7，三格上抽底边对齐。猫用品格高限制 380–400；右猫格无底板，地面到活动层板下沿净高 382，370 高自动喂食器可直接放入。</p>
         </details>
 
         <div class="computed">
           <div><span>主格宽</span><strong id="module-width">800.0 mm</strong></div>
           <div><span>台面离地 / 下柜高</span><strong id="lower-height">1000 mm</strong></div>
-          <div><span>中间开放高</span><strong id="gap-height">620 mm</strong></div>
-          <div><span>下柜深 / 上柜深</span><strong id="cabinet-depths">400 / 350 mm</strong></div>
+          <div><span>中间开放高（固定）</span><strong id="gap-height">500 mm</strong></div>
+          <div><span>上柜高（推导）</span><strong id="upper-height">870 mm</strong></div>
+          <div><span>下柜深 / 上层柜深 / 玻璃层深</span><strong id="cabinet-depths">400 / 300 / 230 mm</strong></div>
+          <div><span>上柜后缩（玻璃 / 上层）</span><strong id="upper-setbacks">170 / 100 mm</strong></div>
           <div><span>上柜门宽（常规上翻 / 对开）</span><strong id="upper-door-width">794.0 / 394.0 mm</strong></div>
           <div><span>中/右门高（全高 / 右猫格）</span><strong id="lower-door-height">762 / 362 mm</strong></div>
-          <div><span>猫用品格高</span><strong id="pet-height">400 mm</strong></div>
+          <div><span>猫用品格门洞高</span><strong id="pet-height">400 mm</strong></div>
+          <div><span>猫格板下净高（无底板）</span><strong id="pet-clear">382 mm（无底板）</strong></div>
           <div><span>窄柜宽</span><strong id="narrow-width">352 mm</strong></div>
           <div><span>弱电箱（宽×高×深）</span><strong id="utility-box">400 × 300 × 100 mm</strong></div>
           <div><span>弱电箱位置</span><strong id="utility-pos">底 400 / 右距角 250</strong></div>
           <div><span>右地柜活动层板</span><strong id="movable-shelf">已装（板面 y≈400）</strong></div>
-          <div class="computed-wide"><span>窄柜分层（自上而下）</span><strong id="narrow-layer-heights">375 / 375 / 620 / 500 / 500 mm</strong></div>
+          <div class="computed-wide"><span>窄柜分层（自上而下）</span><strong id="narrow-layer-heights">435 / 435 / 500 / 500 / 500 mm</strong></div>
           <div class="computed-wide"><span>左抽屉（2:3:4）</span><strong id="left-drawer-heights">217.8 / 326.7 / 435.6 mm</strong></div>
           <div class="computed-wide"><span>中/右抽屉 : 柜体（2:7）</span><strong id="mid-drawer-cabinet">217.8 / 762.2 mm</strong></div>
           <div class="computed-wide"><span>右端圆角</span><strong id="end-radius">R50（最右门 / 抽屉 / 上翻门内缩 50）</strong></div>
@@ -229,20 +234,20 @@
           <h2 id="notes-title">设计要点</h2>
         </div>
         <ul>
-          <li><strong>外形</strong> 2752 长 × 2400 高（含顶部 30 缝）× 下柜深 400；最左 352 窄柜 + 3 × 800 主格；上柜深 350。</li>
+          <li><strong>外形</strong> 2752 长 × 2400 高（含顶部 30 缝）× 下柜深 400；最左 352 窄柜 + 3 × 800 主格；上柜分段后缩：下层玻璃门深 230（后缩 170），上层柜深 300（后缩 100）。</li>
           <li><strong>右端</strong> 上柜、下柜外角 R50 圆弧收边；最右门/抽屉/玻璃上翻门内缩 50；中间开放格右侧不设侧板。</li>
-          <li><strong>高度</strong> 台面离地 1000 / 下柜 1000 / 中间开放 620 / 上柜 750；顶部留 30。</li>
-          <li><strong>上柜</strong> 三层：最下层 3 扇玻璃上翻门；上两层 3 对白色左右对开门；上柜2内部层板下移，形成 2:1。</li>
+          <li><strong>高度</strong> 台面离地 1000 / 下柜 1000 / 中间开放 500（固定）/ 上柜 870；顶部留 30。</li>
+          <li><strong>上柜</strong> 三层：最下层 3 扇玻璃上翻门，相对地柜后缩 170；上两层 3 对白色左右对开门，相对地柜后缩 100；把手放在对开门下沿附近，便于开启，实际高度由施工方按现场确定。</li>
           <li><strong>左地柜</strong> 3 个抽屉，高度比 2:3:4；下柜体 9 等分，默认约 217.8 / 326.7 / 435.6。</li>
           <li><strong>中/右地柜</strong> 顶部抽屉 : 下方柜体 = 2:7（默认约 217.8 / 762.2），与左地柜上抽底边对齐；两组左右对开门。</li>
           <li><strong>中地柜内部</strong> 在 7 份柜体的一半处加一块通宽横隔板，形成上下两格。</li>
-          <li><strong>右侧主格</strong> 底部猫粮/猫用品开放格，门板高度不变；加回底板，猫碗放在底板上，不再落地。</li>
-          <li><strong>最左窄柜</strong> 352 通高，5 层：中间层 + 上两层合并为 1 扇高门，下两层保留 1 扇门；共 2 扇白色左开门，拉手在右侧；合并门拉手约 1120 高。</li>
+          <li><strong>右侧主格</strong> 底部猫粮/猫用品开放格<strong>取消底板</strong>，地面直接放 370 高自动喂食器；活动层板板面 400，板下净高 382，比加底板时多 18。</li>
+          <li><strong>最左窄柜</strong> 352 通高，5 层：中间层 + 上两层合并为 1 扇高门，下两层保留 1 扇门；共 2 扇白色左开门，拉手在右侧；拉手高度按现场安装确定，图中只示意在便于开启的位置。</li>
           <li><strong>弱电箱</strong> 400×300×100，箱底距地 400，右边沿距右墙角 250；在右地柜背板对应位置开 410×310 孔（四周 5mm 余量）。墙不建模，以柜体右边缘为右墙角。</li>
-          <li><strong>活动层板</strong> 右地柜活动层板降至板面 <strong>y≈400</strong>，位于猫用品格上沿；点“取下活动层板”可手动取出，层板两侧支撑钉保留，再点“放回活动层板”装回。</li>
+          <li><strong>活动层板</strong> 右地柜活动层板板面 <strong>y≈400</strong>，是猫用品格上沿；点“取下活动层板”可手动取出，层板两侧支撑钉保留，再点“放回活动层板”装回。猫格无底板，喂食器/猫碗落地。</li>
           <li><strong>弱电箱检查</strong> 层板降至 400 后，不再与弱电箱（底 400）重叠，默认不显示干涉警告/红带；点“弱电箱检查”仍会打开右地柜门并聚焦箱体。</li>
         </ul>
-        <p class="hint">v1.7 把“关键约束聚焦”改为手动分步浏览：点击舞台右上按钮后，用“上一步 / 下一步 / 结束浏览”自己控制 9 处关键约束，不再自动计时、不再锁定面板；尺寸改用标注线（延伸线 + 尺寸线 + 斜刻度）画出，尺寸标签直接落在标注线上。双块决策看板、背板/台面/圆角可调等保持 v1.5–v1.6。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
+        <p class="hint">v1.8 固定中间开放高 500，上柜改为两段后缩（下层玻璃门 170、上层柜 100，暂时可调），上柜对开门把手下移，右猫格取消底板以放入 370 高自动喂食器；决策看板和 9 处巡游同步更新。巡游仍为手动分步，尺寸用标注线画出。尺寸和待确认项见 <a href="../assets/md-viewer.html?file=../餐边柜/设计说明.md">设计说明.md</a>。</p>
       </section>
 
       <footer class="panel-footer">
@@ -254,7 +259,7 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">餐边柜 v1.7 · 三维预览</span>
+        <span class="stage-title">餐边柜 v1.8 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2752 × 2400 × 400 mm</span>
       </div>
       <button id="start-tour" class="tour-start" type="button">
@@ -275,7 +280,7 @@
         <div class="focus-tour-body">
           <div class="focus-tour-copy">
             <h2 id="tour-title">整体外形</h2>
-            <p id="tour-desc">总长、总高、下柜深是当前方案的总体控制尺寸。</p>
+            <p id="tour-desc">总长、总高、下柜深是总体控制尺寸；上柜分段后缩。</p>
             <span class="focus-tour-part" id="tour-part">部件：整体外形</span>
           </div>
           <strong class="focus-tour-value" id="tour-value">2752 × 2400 × 400</strong>
@@ -300,6 +305,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.7.0"></script>
+  <script type="module" src="./viewer.js?v=1.8.0"></script>
 </body>
 </html>
