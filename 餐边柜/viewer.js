@@ -17,14 +17,14 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
-const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000, gapH: 500, narrowW: 500, petH: 380 });
+const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000, gapH: 500, narrowW: 500, petH: 380, glassRetreat: 170, upperRetreat: 100 });
 
 const DEFAULTS = {
   W: 2752,
   H: 2400,
   lowerD: FIXED.lowerD,
-  glassSetback: 170,
-  upperSetback: 100,
+  glassRetreat: FIXED.glassRetreat,
+  upperRetreat: FIXED.upperRetreat,
   narrowW: FIXED.narrowW,
   petH: FIXED.petH,
   t: 18,
@@ -199,15 +199,12 @@ function normalizeState() {
   state.backT = clamp(Math.round(state.backT), 5, 12);
   state.counterT = clamp(Math.round(state.counterT), 15, 30);
   state.endRadius = clamp(Math.round(state.endRadius / 5) * 5, 20, 80);
-  // Upper cabinet is split into two setbacks relative to the lower cabinet:
+  // Upper cabinet has two fixed front retreats relative to the lower cabinet:
   // the glass lift-door tier is recessed more than the pair-door tier above.
-  state.glassSetback = clamp(Math.round(state.glassSetback / 5) * 5, 80, 200);
-  state.upperSetback = clamp(Math.round(state.upperSetback / 5) * 5, 40, 180);
-  if (state.upperSetback > state.glassSetback - 30) {
-    state.upperSetback = Math.max(40, state.glassSetback - 30);
-  }
-  state.glassD = state.lowerD - state.glassSetback;
-  state.upperD = state.lowerD - state.upperSetback;
+  state.glassRetreat = FIXED.glassRetreat;
+  state.upperRetreat = FIXED.upperRetreat;
+  state.glassD = state.lowerD - state.glassRetreat;
+  state.upperD = state.lowerD - state.upperRetreat;
 
   state.narrowW = FIXED.narrowW;
   state.petH = FIXED.petH;
@@ -292,7 +289,7 @@ function updateReadouts() {
   document.getElementById('gap-height').textContent = `${format(state.gapH, 0)} mm`;
   document.getElementById('upper-height').textContent = `${format(state.upperH, 0)} mm`;
   document.getElementById('cabinet-depths').textContent = `${format(state.lowerD, 0)} / ${format(state.upperD, 0)} / ${format(state.glassD, 0)} mm`;
-  document.getElementById('upper-setbacks').textContent = `${format(state.glassSetback, 0)} / ${format(state.upperSetback, 0)} mm`;
+  document.getElementById('upper-retreats').textContent = `${format(state.glassRetreat, 0)} / ${format(state.upperRetreat, 0)} mm`;
   document.getElementById('upper-door-width').textContent = `${format(state.upperDoorW, 1)} / ${format(state.pairDoorW, 1)} mm`;
   document.getElementById('lower-door-height').textContent = `${format(state.lowerDoorH, 0)} / ${format(state.petDoorH, 0)} mm`;
   document.getElementById('pet-height').textContent = `${format(state.petH, 0)} mm`;
@@ -329,8 +326,6 @@ function updateReadouts() {
   document.getElementById('decision-W').textContent = `${format(state.W, 0)} mm`;
   document.getElementById('decision-H').textContent = `${format(state.H, 0)} mm`;
   document.getElementById('decision-upperH').textContent = `${format(state.upperH, 0)} mm`;
-  document.getElementById('decision-glassSetback').textContent = `${format(state.glassSetback, 0)} mm`;
-  document.getElementById('decision-upperSetback').textContent = `${format(state.upperSetback, 0)} mm`;
   document.getElementById('decision-moduleW').textContent = `${format(state.moduleW, 1)} mm`;
   document.getElementById('decision-t').textContent = `${format(state.t, 0)} mm`;
   document.getElementById('decision-backT').textContent = `${format(state.backT, 0)} mm`;
@@ -683,8 +678,8 @@ function buildCabinet() {
   const upperD = state.upperD / 1000;
   const upperH = state.upperH / 1000;
   const gapH = state.gapH / 1000;
-  const glassSetback = state.glassSetback / 1000;
-  const upperSetback = state.upperSetback / 1000;
+  const glassRetreat = state.glassRetreat / 1000;
+  const upperRetreat = state.upperRetreat / 1000;
   const narrowW = state.narrowW / 1000;
   const drawerH = state.drawerH / 1000;
   const petH = state.petH / 1000;
@@ -1250,8 +1245,8 @@ function buildCabinet() {
     lowerD,
     glassD,
     upperD,
-    glassSetback,
-    upperSetback,
+    glassRetreat,
+    upperRetreat,
     t,
     lowerH,
     upperH,
@@ -1385,7 +1380,7 @@ function buildFocusStops() {
       part: '整体外形',
       title: '整体外形',
       value: `${focusMm(L.W)} × ${focusMm(L.H)} × ${focusMm(L.lowerD)}`,
-      desc: `总长、总高和下柜深是总体控制尺寸；上柜分段后缩：下层玻璃门 ${focusNum(L.glassSetback)}、上层柜 ${focusNum(L.upperSetback)}。`,
+      desc: `总长、总高和下柜深是总体控制尺寸；上柜分段前退：下层玻璃门 ${focusNum(L.glassRetreat)}、上层柜 ${focusNum(L.upperRetreat)}。`,
       boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, -L.lowerD / 2, L.lowerD / 2, false)],
       dims: [
         {
@@ -1648,9 +1643,9 @@ function buildFocusStops() {
     {
       id: 'upper-open',
       part: '上柜 / 中间开放',
-      title: '上柜分段后缩 / 开放 500',
-      value: `${focusNum(L.upperH)} / ${focusNum(L.gapH)} / ${focusNum(L.glassSetback)}·${focusNum(L.upperSetback)}`,
-      desc: `上柜总高 ${focusNum(L.upperH)}（总高 ${focusNum(L.H)} − 顶缝 30 − 台面 1000 − 开放 ${focusNum(L.gapH)}）；玻璃门高 ${focusNum(L.glassDoorHeight)}、上方柜 ${focusNum(L.upperSectionHeight)}；下层玻璃门后缩 ${focusNum(L.glassSetback)}（深 ${focusNum(L.glassD)}），上层柜后缩 ${focusNum(L.upperSetback)}（深 ${focusNum(L.upperD)}）。`,
+      title: '上柜分段前退 / 开放 500',
+      value: `${focusNum(L.upperH)} / ${focusNum(L.gapH)} / ${focusNum(L.glassRetreat)}·${focusNum(L.upperRetreat)}`,
+      desc: `上柜总高 ${focusNum(L.upperH)}（总高 ${focusNum(L.H)} − 顶缝 30 − 台面 1000 − 开放 ${focusNum(L.gapH)}）；玻璃门高 ${focusNum(L.glassDoorHeight)}、上方柜 ${focusNum(L.upperSectionHeight)}；下层玻璃门前退 ${focusNum(L.glassRetreat)}（深 ${focusNum(L.glassD)}），上层柜前退 ${focusNum(L.upperRetreat)}（深 ${focusNum(L.upperD)}）。`,
       boxes: [
         focusBox(L.x1, L.rightInnerX, L.upperBottom, L.upperSplitY, glassDoor - 0.002, glassDoor + 0.018),
         focusBox(L.x1, L.rightInnerX, L.upperSplitY, L.upperTop, upperDoor - 0.002, upperDoor + 0.018),
@@ -1683,16 +1678,16 @@ function buildFocusStops() {
         {
           point: [L.rightInnerX, L.upperBottom + 0.12, glassFront],
           labelPoint: [L.rightInnerX + 0.34, L.upperBottom + 0.24, glassFront + 0.06],
-          label: `下层后缩 ${focusNum(L.glassSetback)}（深 ${focusNum(L.glassD)}）`,
+          label: `下层前退 ${focusNum(L.glassRetreat)}（深 ${focusNum(L.glassD)}）`,
         },
         {
           point: [L.rightInnerX, L.upperTop - 0.14, L.upperFront],
           labelPoint: [L.rightInnerX + 0.34, L.upperTop - 0.02, L.upperFront + 0.06],
-          label: `上层后缩 ${focusNum(L.upperSetback)}（深 ${focusNum(L.upperD)}）`,
+          label: `上层前退 ${focusNum(L.upperRetreat)}（深 ${focusNum(L.upperD)}）`,
         },
       ],
       labels: [
-        focusLabel('上柜分段后缩', mainCenterX, L.upperTop + 0.1, front + 0.04, 'part'),
+        focusLabel('上柜分段前退', mainCenterX, L.upperTop + 0.1, front + 0.04, 'part'),
       ],
       lines: [],
       dir: [0.22, 0.12, 1],
