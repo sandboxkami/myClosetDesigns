@@ -26,8 +26,9 @@ const DEFAULTS = {
   D: FIXED.D,
   topRowH: 400,
   drawerH: 200,
-  leftTopH: 832,
-  leftPantsH: 664,
+  leftTopH: 796,
+  leftPantsH: 700,
+  leftBottomH: 832,
   shortH: 1000,
   narrowW: 399.2,
   t: 18,
@@ -40,7 +41,6 @@ const state = {
   showDims: true,
   showProps: true,
   largeW: 0,
-  leftBottomH: 0,
   longH2: 0,
   longH3: 0,
   shelfH4: 0,
@@ -58,6 +58,7 @@ const SCENE = {
 };
 
 const GAP = 0.003;
+const ROD_R = 0.0125;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const round1 = (value) => Math.round(value * 10) / 10;
 const format = (value, digits = 0) => Number(value).toFixed(digits);
@@ -149,24 +150,19 @@ function normalizeState() {
   state.D = FIXED.D;
   state.topRowH = clamp(state.topRowH, 300, 500);
   state.drawerH = clamp(state.drawerH, 180, 250);
-  state.leftTopH = clamp(state.leftTopH, 600, 1000);
-  state.leftPantsH = clamp(state.leftPantsH, 500, 800);
   state.shortH = clamp(state.shortH, 800, 1200);
   state.narrowW = clamp(state.narrowW, 300, 500);
   state.t = clamp(Math.round(state.t), 16, 25);
 
-  const minBottom = 300;
-  const maxLeftCombined = state.H - 4 * state.t - minBottom;
-  if (state.leftTopH + state.leftPantsH > maxLeftCombined) {
-    let excess = state.leftTopH + state.leftPantsH - maxLeftCombined;
-    const fromPants = Math.min(excess, state.leftPantsH - 500);
-    state.leftPantsH -= fromPants;
-    excess -= fromPants;
-    if (excess > 0) state.leftTopH = Math.max(600, state.leftTopH - excess);
-  }
+  // Bay 1 is dimension-driven: lower hanging clear height is fixed at 832;
+  // the double pants rods sit 650 above the lower shelf, and the movable shelf
+  // sits 50 above the rod top, leaving a 700 pants compartment. The upper
+  // hanging clear height is whatever remains after board thickness.
+  state.leftBottomH = 832;
+  state.leftPantsH = 700;
+  state.leftTopH = state.H - state.leftBottomH - state.leftPantsH - 4 * state.t;
 
   state.largeW = (state.W - 6 * state.t - state.narrowW) / 4;
-  state.leftBottomH = state.H - state.leftTopH - state.leftPantsH - 4 * state.t;
   state.longH2 = state.H - state.topRowH - 2 * state.drawerH - 5 * state.t;
   state.longH3 = state.H - state.topRowH - 3 * state.drawerH - 6 * state.t;
   state.shelfH4 = (state.H - state.shortH - 5 * state.t) / 3;
@@ -175,22 +171,11 @@ function normalizeState() {
   state.doorW = state.largeW / 2 - 1.5 * 3;
 }
 
-function setInputMax(key, value) {
-  document.querySelectorAll(`[data-range="${key}"], [data-number="${key}"]`).forEach((input) => {
-    input.max = value;
-  });
-}
-
 function syncInputs() {
   document.querySelectorAll('[data-range], [data-number]').forEach((input) => {
     const key = input.dataset.range || input.dataset.number;
     if (key in state) input.value = state[key];
   });
-
-  const leftTopMax = Math.max(600, Math.min(1000, state.H - state.leftPantsH - 4 * state.t - 300));
-  const leftPantsMax = Math.max(500, Math.min(800, state.H - state.leftTopH - 4 * state.t - 300));
-  setInputMax('leftTopH', leftTopMax);
-  setInputMax('leftPantsH', leftPantsMax);
 }
 
 function updateReadouts() {
@@ -198,28 +183,32 @@ function updateReadouts() {
 
   // Decision board, block 2: unfixed key dimensions.
   document.getElementById('decision-topRowH').textContent = `${format(state.topRowH, 0)} mm`;
-  document.getElementById('decision-leftTopH').textContent = `${format(state.leftTopH, 0)} mm`;
-  document.getElementById('decision-leftPantsH').textContent = `${format(state.leftPantsH, 0)} mm`;
   document.getElementById('decision-shortH').textContent = `${format(state.shortH, 0)} mm`;
   document.getElementById('decision-drawerH').textContent = `${format(state.drawerH, 0)} mm`;
   document.getElementById('decision-narrowW').textContent = `${format(state.narrowW, 1)} mm`;
   document.getElementById('decision-t').textContent = `${format(state.t, 0)} mm`;
   document.getElementById('decision-largeW').textContent = `${format(state.largeW, 1)} mm`;
-  document.getElementById('decision-leftBottomH').textContent = `${format(state.leftBottomH, 0)} mm`;
   document.getElementById('decision-longH2').textContent = `${format(state.longH2, 0)} mm`;
   document.getElementById('decision-longH3').textContent = `${format(state.longH3, 0)} mm`;
   document.getElementById('decision-shelfH4').textContent = `${format(state.shelfH4, 1)} / ${format(state.shelfH4Upper, 1)} mm`;
   document.getElementById('decision-doorW').textContent = `${format(state.doorW, 1)} mm`;
 
+  const bay1SplitY = state.t + state.leftBottomH + state.t + state.leftPantsH + state.t / 2;
+  const bay23SplitY = state.H - state.t - state.topRowH - state.t / 2;
+  const bay4SplitY = state.H - state.t - state.shortH - state.t / 2;
+
   document.getElementById('door-width').textContent = `${format(state.doorW, 1)} mm`;
   document.getElementById('left-bottom').textContent = `${format(state.leftBottomH, 0)} mm`;
+  document.getElementById('left-pants').textContent = `${format(state.leftPantsH, 0)} mm`;
+  document.getElementById('left-upper').textContent = `${format(state.leftTopH, 0)} mm`;
   document.getElementById('long-2').textContent = `${format(state.longH2, 0)} mm`;
   document.getElementById('long-3').textContent = `${format(state.longH3, 0)} mm`;
   document.getElementById('shelf-4').textContent = `${format(state.shelfH4, 1)} / ${format(state.shelfH4Upper, 1)} mm`;
   document.getElementById('narrow-hang').textContent = `${format(state.narrowHangH, 0)} mm`;
+  document.getElementById('door-splits').textContent =
+    `第 1 格 ${format(bay1SplitY, 0)} / 第 2·3 格 ${format(bay23SplitY, 0)} / 第 4 格 ${format(bay4SplitY, 0)} mm`;
 
   const warnings = [];
-  if (state.leftBottomH < 500) warnings.push(`左侧下挂 ${format(state.leftBottomH, 0)} mm < 500`);
   if (state.longH2 < 1200) warnings.push(`第 2 格长衣 ${format(state.longH2, 0)} mm < 1200`);
   if (state.longH3 < 900) warnings.push(`第 3 格长衣 ${format(state.longH3, 0)} mm < 900`);
   if (state.shelfH4 < 250) warnings.push(`第 4 格下层 ${format(state.shelfH4, 0)} mm < 250`);
@@ -238,7 +227,7 @@ function renderUI() {
   if (shelfButton) shelfButton.textContent = state.shelfRemoved ? '放回活动层板' : '取下活动层板';
   const dividerButton = document.getElementById('toggle-drawer-dividers');
   if (dividerButton) {
-    dividerButton.textContent = state.drawerDividersOn ? '隐藏活动隔板' : '显示活动隔板';
+    dividerButton.textContent = state.drawerDividersOn ? '隐藏抽屉隔板' : '显示抽屉隔板';
   }
 }
 
@@ -559,15 +548,19 @@ function buildCabinet() {
     );
   });
 
-  // Bay 1: long hanging / double pants rack / long hanging
+  // Bay 1: long hanging / double pants rack / long hanging.
+  // Fixed chain: lower shelf clear 832, pants rods 650 above the lower shelf,
+  // movable shelf 50 above the rod top. Rods are 25mm diameter.
   const leftShelf1C = t + leftBottomH + t / 2;
-  const leftShelf2C = t + leftBottomH + t + leftPantsH + t / 2;
-  const leftBottomRodY = t + leftBottomH - 0.08;
-  const leftTopRodY = H - t - 0.08;
+  const leftShelf2C = leftShelf1C + t + leftPantsH;
   const leftMiddleBottom = leftShelf1C + t / 2;
   const leftMiddleTop = leftShelf2C - t / 2;
-  const pantsRodY = leftMiddleTop - 0.08;
-  const pantsZOffsets = [-0.13, 0.13];
+  const pantsRodTop = leftMiddleBottom + 0.650;
+  const pantsRodY = pantsRodTop - ROD_R;
+  const leftBottomRodY = (leftShelf1C - t / 2) - 0.050 - ROD_R;
+  const leftTopRodY = (H - t) - 0.050 - ROD_R;
+  const pantsRodZBack = -D / 2 + backT + 0.130;
+  const pantsRodZFront = D / 2 - doorT - 0.160;
 
   cabinetGroup.add(
     box(largeW, t, interiorD, materials.wood, { x: bay1C, y: leftShelf1C, z: interiorZ }),
@@ -592,9 +585,8 @@ function buildCabinet() {
 
   addRod(bay1C, leftBottomRodY, interiorZ, largeW - 0.06);
   addRod(bay1C, leftTopRodY, interiorZ, largeW - 0.06);
-  pantsZOffsets.forEach((zOffset) => {
-    addRod(bay1C, pantsRodY, interiorZ + zOffset, largeW - 0.06);
-  });
+  addRod(bay1C, pantsRodY, pantsRodZBack, largeW - 0.06);
+  addRod(bay1C, pantsRodY, pantsRodZFront, largeW - 0.06);
 
   // Bay 2: top row + long hanging + 2 drawers
   const bay2TopShelfC = H - t - topRowH - t / 2;
@@ -616,7 +608,7 @@ function buildCabinet() {
       yBottom,
       yTop: yBottom + drawerH,
       label: `第 2 格抽屉 ${i + 1}`,
-      dividers: i === 1 ? 2 : 0,
+      dividers: 1,
     });
     bay2Drawers.push({
       index: i,
@@ -625,7 +617,7 @@ function buildCabinet() {
       yBottom,
       yTop: yBottom + drawerH,
       label: `第 2 格抽屉 ${i + 1}`,
-      dividers: i === 1 ? 2 : 0,
+      dividers: 1,
     });
   }
 
@@ -649,7 +641,7 @@ function buildCabinet() {
       yBottom,
       yTop: yBottom + drawerH,
       label: `第 3 格抽屉 ${i + 1}`,
-      dividers: i === 2 ? 2 : 0,
+      dividers: 1,
     });
     bay3Drawers.push({
       index: i,
@@ -658,7 +650,7 @@ function buildCabinet() {
       yBottom,
       yTop: yBottom + drawerH,
       label: `第 3 格抽屉 ${i + 1}`,
-      dividers: i === 2 ? 2 : 0,
+      dividers: 1,
     });
   }
 
@@ -711,46 +703,57 @@ function buildCabinet() {
   addRod(bay5C, bay5LongRodY, interiorZ, narrowW - 0.06);
 
   // Doors: 4 pairs over bays 1-4; bay 5 stays open.
-  // Bays 2/3 stop above the drawer bank so the drawer fronts stay exposed and flush.
+  // Each left/right door is split at the first shelf below the top of its bay
+  // to keep panel heights down. Bays 2/3 stop above the drawer bank so the
+  // drawer fronts stay exposed and flush.
   const bays = [
-    { left: bay1L, right: bay1R, name: '第 1 格', yBottom: GAP },
-    { left: bay2L, right: bay2R, name: '第 2 格', yBottom: bay2DrawerZoneTop + GAP },
-    { left: bay3L, right: bay3R, name: '第 3 格', yBottom: bay3DrawerZoneTop + GAP },
-    { left: bay4L, right: bay4R, name: '第 4 格', yBottom: GAP },
+    { left: bay1L, right: bay1R, name: '第 1 格', yBottom: GAP, splitY: leftShelf2C },
+    { left: bay2L, right: bay2R, name: '第 2 格', yBottom: bay2DrawerZoneTop + GAP, splitY: bay2TopShelfC },
+    { left: bay3L, right: bay3R, name: '第 3 格', yBottom: bay3DrawerZoneTop + GAP, splitY: bay3TopShelfC },
+    { left: bay4L, right: bay4R, name: '第 4 格', yBottom: GAP, splitY: bay4ShortShelfC },
   ];
   bays.forEach((bay) => {
     const center = (bay.left + bay.right) / 2;
-    addDoor({
-      xLeft: bay.left + GAP,
-      xRight: center - GAP / 2,
-      yBottom: bay.yBottom,
-      yTop: H - GAP,
-      hinge: 'left',
-      label: `${bay.name}左门`,
-      knobY: 1.1,
-    });
-    doorPanels.push({
-      label: `${bay.name}左门`,
-      x1: bay.left + GAP,
-      x2: center - GAP / 2,
-      y1: bay.yBottom,
-      y2: H - GAP,
-    });
-    addDoor({
-      xLeft: center + GAP / 2,
-      xRight: bay.right - GAP,
-      yBottom: bay.yBottom,
-      yTop: H - GAP,
-      hinge: 'right',
-      label: `${bay.name}右门`,
-      knobY: 1.1,
-    });
-    doorPanels.push({
-      label: `${bay.name}右门`,
-      x1: center + GAP / 2,
-      x2: bay.right - GAP,
-      y1: bay.yBottom,
-      y2: H - GAP,
+    const lowerTop = bay.splitY - GAP / 2;
+    const upperBottom = bay.splitY + GAP / 2;
+    const lowerKnobY = Math.min(1.15, lowerTop - 0.08);
+    const upperKnobY = upperBottom + 0.12;
+    const panels = [
+      {
+        name: '左下', xLeft: bay.left + GAP, xRight: center - GAP / 2,
+        yBottom: bay.yBottom, yTop: lowerTop, hinge: 'left', knobY: lowerKnobY,
+      },
+      {
+        name: '左上', xLeft: bay.left + GAP, xRight: center - GAP / 2,
+        yBottom: upperBottom, yTop: H - GAP, hinge: 'left', knobY: upperKnobY,
+      },
+      {
+        name: '右下', xLeft: center + GAP / 2, xRight: bay.right - GAP,
+        yBottom: bay.yBottom, yTop: lowerTop, hinge: 'right', knobY: lowerKnobY,
+      },
+      {
+        name: '右上', xLeft: center + GAP / 2, xRight: bay.right - GAP,
+        yBottom: upperBottom, yTop: H - GAP, hinge: 'right', knobY: upperKnobY,
+      },
+    ];
+    panels.forEach((panel) => {
+      const label = `${bay.name}${panel.name}门`;
+      addDoor({
+        xLeft: panel.xLeft,
+        xRight: panel.xRight,
+        yBottom: panel.yBottom,
+        yTop: panel.yTop,
+        hinge: panel.hinge,
+        label,
+        knobY: panel.knobY,
+      });
+      doorPanels.push({
+        label,
+        x1: panel.xLeft,
+        x2: panel.xRight,
+        y1: panel.yBottom,
+        y2: panel.yTop,
+      });
     });
   });
 
@@ -786,9 +789,9 @@ function buildCabinet() {
     topGarment.position.set(bay1C + offset, leftTopRodY, interiorZ);
     propsGroup.add(topGarment);
   });
-  pantsZOffsets.forEach((zOffset, index) => {
+  [pantsRodZBack, pantsRodZFront].forEach((z, index) => {
     const pants = createPantsLayer(largeW - 0.08, 3, index + 1, false);
-    pants.position.set(bay1C, pantsRodY, interiorZ + zOffset);
+    pants.position.set(bay1C, pantsRodY, z);
     propsGroup.add(pants);
   });
 
@@ -904,7 +907,11 @@ function buildCabinet() {
     leftShelf2C,
     leftMiddleBottom,
     leftMiddleTop,
+    pantsRodTop,
     pantsRodY,
+    pantsRodZBack,
+    pantsRodZFront,
+    rodR: ROD_R,
     leftBottomRodY,
     leftTopRodY,
     bay2TopShelfC,
@@ -923,7 +930,6 @@ function buildCabinet() {
     bay5TopShelfC,
     bay5LongRodY,
     bay5ShelfC,
-    pantsZOffsets,
     doorPanels,
     bay2Drawers,
     bay3Drawers,
@@ -991,21 +997,18 @@ function buildFocusStops() {
     { x1: L.bay4L, x2: L.bay4R, label: focusNum1(L.largeW) },
     { x1: L.bay5L, x2: L.bay5R, label: focusNum1(L.narrowW) },
   ];
-  const bay2Drawer2 = L.bay2Drawers.find((item) => item.index === 1);
-  const bay3Drawer3 = L.bay3Drawers.find((item) => item.index === 2);
-  const dividerBoxes = [bay2Drawer2, bay3Drawer3].flatMap((drawer) => {
+  const allDrawers = [...L.bay2Drawers, ...L.bay3Drawers];
+  const dividerBoxes = allDrawers.map((drawer) => {
     const centerY = (drawer.yBottom + drawer.yTop) / 2;
     const zCenter = L.drawerTravel + (L.drawerFrontZ - L.doorT / 2 - L.drawerBodyD / 2) + 0.006;
     const z1 = zCenter - L.dividerD / 2;
     const z2 = zCenter + L.dividerD / 2;
-    return [-1, 1].map((sign) => {
-      const x = drawer.xCenter + sign * L.drawerInnerW / 6;
-      return focusBox(
-        x - L.dividerT / 2, x + L.dividerT / 2,
-        centerY - L.dividerH / 2, centerY + L.dividerH / 2,
-        z1, z2,
-      );
-    });
+    const x = drawer.xCenter;
+    return focusBox(
+      x - L.dividerT / 2, x + L.dividerT / 2,
+      centerY - L.dividerH / 2, centerY + L.dividerH / 2,
+      z1, z2,
+    );
   });
   const bay2DoorBottom = L.bay2DrawerZoneTop + GAP;
   const bay3DoorBottom = L.bay3DrawerZoneTop + GAP;
@@ -1017,7 +1020,7 @@ function buildFocusStops() {
       part: '整体外形',
       title: '整体外形',
       value: `${focusMm(L.W)} × ${focusMm(L.H)} × ${focusMm(L.D)}`,
-      desc: `外形固定 ${focusNum(L.W)}×${focusNum(L.H)}×${focusNum(L.D)}；5 个分区、9 扇门，内部尺寸可调。`,
+      desc: `外形固定 ${focusNum(L.W)}×${focusNum(L.H)}×${focusNum(L.D)}；5 个分区、17 扇门，内部尺寸可调。`,
       boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, -L.D / 2, L.D / 2, false)],
       dims: [
         {
@@ -1069,11 +1072,11 @@ function buildFocusStops() {
       margin: 1.3,
     },
     {
-      id: 'bay1-pants',
-      part: '第 1 格 / 双层裤架',
-      title: '第 1 格：上挂 832 / 裤架 664 / 下挂 832',
-      value: `832 / 664 / 832`,
-      desc: '第 1 格分三区；中段为内外双层裤架，前后两根挂杆同高；上层靠顶为活动层板，两侧有支撑钉。',
+      id: 'bay1-overview',
+      part: '第 1 格 / 三区',
+      title: `第 1 格：下挂 ${focusNum(L.leftBottomH)} / 裤架 ${focusNum(L.leftPantsH)} / 上挂 ${focusNum(L.leftTopH)}`,
+      value: `${focusNum(L.leftBottomH)} / ${focusNum(L.leftPantsH)} / ${focusNum(L.leftTopH)}`,
+      desc: `第 1 格分三区；下挂区 ${focusNum(L.leftBottomH)} 固定，双层裤架净高 ${focusNum(L.leftPantsH)}，上挂区 ${focusNum(L.leftTopH)}。中段内外两根裤杆同高；上层靠顶为活动层板，两侧有支撑钉；门板在活动层板处分上下。`,
       boxes: [
         focusBox(L.bay1L, L.bay1R, 0, L.H, -L.D / 2, L.D / 2, false),
         focusBox(L.bay1L, L.bay1R, L.leftMiddleBottom, L.leftMiddleTop,
@@ -1104,13 +1107,6 @@ function buildFocusStops() {
           labelClass: 'focus-ratio-label',
           tick: 0.02,
         },
-        {
-          start: [L.bay1C, L.pantsRodY, L.interiorZ - 0.13],
-          end: [L.bay1C, L.pantsRodY, L.interiorZ + 0.13],
-          offset: [0, 0.1, 0],
-          label: '前后 260',
-          tick: 0.02,
-        },
       ],
       leaders: [
         {
@@ -1120,18 +1116,145 @@ function buildFocusStops() {
         },
       ],
       labels: [],
-      openParts: ['第 1 格左门', '第 1 格右门'],
+      openParts: ['第 1 格左上门', '第 1 格左下门', '第 1 格右上门', '第 1 格右下门'],
       dir: [-0.4, 0.12, 1],
       margin: 1.5,
       minDistance: 1.2,
       targetY: 1.05,
     },
     {
+      id: 'bay1-top-rod',
+      part: '第 1 格最上挂杆',
+      title: '最上挂杆：上沿距顶板下沿 50',
+      value: '50 / 杆径 25',
+      desc: `最上挂杆上边沿距顶板下边沿严格 50；杆径 25，杆轴心距顶板下沿 ${focusNum1(0.050 + L.rodR)}。`,
+      boxes: [
+        focusBox(L.bay1L, L.bay1R, L.H - L.t, L.H,
+          L.interiorZ - L.interiorD / 2, L.interiorZ + L.interiorD / 2, false),
+        focusBox(L.bay1L, L.bay1R, L.leftTopRodY - L.rodR, L.leftTopRodY + L.rodR,
+          L.interiorZ - 0.03, L.interiorZ + 0.03),
+      ],
+      dims: [
+        {
+          start: [L.bay1L, L.H - L.t, door],
+          end: [L.bay1L, L.leftTopRodY + L.rodR, door],
+          offset: [-0.14, 0, 0.02],
+          label: '50',
+          tick: 0.02,
+        },
+      ],
+      leaders: [
+        {
+          point: [L.bay1C, L.leftTopRodY, L.interiorZ + 0.03],
+          labelPoint: [L.bay1C + 0.3, L.leftTopRodY - 0.1, door + 0.08],
+          label: '最上挂杆',
+        },
+      ],
+      labels: [],
+      openParts: ['第 1 格左上门', '第 1 格左下门', '第 1 格右上门', '第 1 格右下门'],
+      dir: [-0.3, 0.12, 1],
+      margin: 1.75,
+      minDistance: 1.1,
+    },
+    {
+      id: 'bay1-pants-rods',
+      part: '第 1 格双层裤架 / 活动层板',
+      title: '双层裤架：同高 / 杆上沿距下层板 650 / 前 130·160',
+      value: '650 / 130 / 160',
+      desc: `两根裤杆同高，杆上边沿距下方层板 650；内侧杆轴心距背板 130，外侧杆轴心距柜门 160；活动层板下沿在杆上沿上方 50。`,
+      boxes: [
+        focusBox(L.bay1L, L.bay1R, L.leftMiddleBottom, L.leftMiddleTop,
+          L.interiorZ - L.interiorD / 2, L.interiorZ + L.interiorD / 2, false),
+        focusBox(L.bay1L, L.bay1R, L.leftShelf2C - L.t / 2, L.leftShelf2C + L.t / 2,
+          L.interiorZ - L.interiorD / 2, L.interiorZ + L.interiorD / 2),
+        focusBox(L.bay1L, L.bay1R, L.pantsRodY - L.rodR, L.pantsRodY + L.rodR,
+          L.pantsRodZBack - 0.02, L.pantsRodZBack + 0.02),
+        focusBox(L.bay1L, L.bay1R, L.pantsRodY - L.rodR, L.pantsRodY + L.rodR,
+          L.pantsRodZFront - 0.02, L.pantsRodZFront + 0.02),
+      ],
+      dims: [
+        {
+          start: [L.bay1R, L.leftMiddleBottom, door],
+          end: [L.bay1R, L.pantsRodY + L.rodR, door],
+          offset: [0.14, 0, 0.02],
+          label: '650',
+          tick: 0.02,
+        },
+        {
+          start: [L.bay1C, L.pantsRodY + 0.06, -L.D / 2 + L.backT],
+          end: [L.bay1C, L.pantsRodY + 0.06, L.pantsRodZBack],
+          offset: [-0.5, 0, 0],
+          label: '130',
+          tick: 0.015,
+        },
+        {
+          start: [L.bay1C, L.pantsRodY - 0.06, L.pantsRodZFront],
+          end: [L.bay1C, L.pantsRodY - 0.06, L.D / 2 - L.doorT],
+          offset: [-0.5, 0, 0],
+          label: '160',
+          tick: 0.015,
+        },
+      ],
+      leaders: [
+        {
+          point: [L.bay1C, L.pantsRodY + L.rodR + 0.025, L.interiorZ + L.interiorD / 2 - 0.06],
+          labelPoint: [L.bay1C + 0.3, L.leftShelf2C + 0.14, door + 0.08],
+          label: '活动层板下沿 +50',
+        },
+        {
+          point: [L.bay1C, L.pantsRodY, L.pantsRodZFront],
+          labelPoint: [L.bay1C - 0.28, L.pantsRodY - 0.16, door + 0.08],
+          label: '内外双杆同高',
+        },
+      ],
+      labels: [],
+      openParts: ['第 1 格左上门', '第 1 格左下门', '第 1 格右上门', '第 1 格右下门'],
+      dir: [-0.4, 0.18, 1],
+      margin: 1.55,
+      minDistance: 1.15,
+      targetY: 1.18,
+    },
+    {
+      id: 'bay1-bottom-rod',
+      part: '第 1 格最下挂杆',
+      title: '最下挂杆：上沿距上方层板 50',
+      value: '50 / 杆径 25',
+      desc: `最下挂杆上边沿距其上方层板下边沿严格 50；杆径 25，杆轴心距层板下沿 ${focusNum1(0.050 + L.rodR)}。`,
+      boxes: [
+        focusBox(L.bay1L, L.bay1R, L.leftShelf1C - L.t / 2, L.leftShelf1C + L.t / 2,
+          L.interiorZ - L.interiorD / 2, L.interiorZ + L.interiorD / 2, false),
+        focusBox(L.bay1L, L.bay1R, L.leftBottomRodY - L.rodR, L.leftBottomRodY + L.rodR,
+          L.interiorZ - 0.03, L.interiorZ + 0.03),
+      ],
+      dims: [
+        {
+          start: [L.bay1L, L.leftShelf1C - L.t / 2, door],
+          end: [L.bay1L, L.leftBottomRodY + L.rodR, door],
+          offset: [-0.14, 0, 0.02],
+          label: '50',
+          tick: 0.02,
+        },
+      ],
+      leaders: [
+        {
+          point: [L.bay1C, L.leftBottomRodY, L.interiorZ + 0.03],
+          labelPoint: [L.bay1C + 0.3, L.leftBottomRodY - 0.1, door + 0.08],
+          label: '最下挂杆',
+        },
+      ],
+      labels: [],
+      openParts: ['第 1 格左上门', '第 1 格左下门', '第 1 格右上门', '第 1 格右下门'],
+      dir: [-0.3, 0.12, 1],
+      margin: 1.75,
+      minDistance: 1.1,
+      targetY: 0.72,
+    },
+    {
       id: 'bay2',
       part: '第 2 格 / 长衣 + 2 抽屉',
       title: '第 2 格：顶排 400 / 长衣 / 2 抽屉',
       value: `400 / ${focusNum(L.longH2)} / 2×200`,
-      desc: `顶排 ${focusNum(L.topRowH)}，长衣区约 ${focusNum(L.longH2)}，底部 2 个 ${focusNum(L.drawerH)} 抽屉；门底停在抽屉上方（约 ${focusNum(bay2DoorBottom)}），抽屉外露。`,
+      desc: `顶排 ${focusNum(L.topRowH)}，长衣区约 ${focusNum(L.longH2)}，底部 2 个 ${focusNum(L.drawerH)} 抽屉；门底停在抽屉上方（约 ${focusNum(bay2DoorBottom)}），抽屉外露；左右门在顶排层板处分上下。`,
       boxes: [
         focusBox(L.bay2L, L.bay2R, 0, L.H, -L.D / 2, L.D / 2, false),
         focusBox(L.bay2L, L.bay2R, L.t, L.t + 2 * L.drawerH + L.t,
@@ -1181,7 +1304,7 @@ function buildFocusStops() {
       labels: [
         focusLabel('抽屉外露 / 与门板齐平', L.bay2C, 0.56, front + 0.05, 'part'),
       ],
-      openParts: ['第 2 格左门', '第 2 格右门'],
+      openParts: ['第 2 格左上门', '第 2 格左下门', '第 2 格右上门', '第 2 格右下门'],
       dir: [0.05, 0.12, 1],
       margin: 1.5,
       targetY: 0.8,
@@ -1191,7 +1314,7 @@ function buildFocusStops() {
       part: '第 3 格 / 长衣 + 3 抽屉',
       title: '第 3 格：顶排 400 / 长衣 / 3 抽屉',
       value: `400 / ${focusNum(L.longH3)} / 3×200`,
-      desc: `顶排 ${focusNum(L.topRowH)}，长衣区约 ${focusNum(L.longH3)}，底部 3 个 ${focusNum(L.drawerH)} 抽屉；门底停在抽屉上方（约 ${focusNum(bay3DoorBottom)}），抽屉外露。`,
+      desc: `顶排 ${focusNum(L.topRowH)}，长衣区约 ${focusNum(L.longH3)}，底部 3 个 ${focusNum(L.drawerH)} 抽屉；门底停在抽屉上方（约 ${focusNum(bay3DoorBottom)}），抽屉外露；左右门在顶排层板处分上下。`,
       boxes: [
         focusBox(L.bay3L, L.bay3R, 0, L.H, -L.D / 2, L.D / 2, false),
         focusBox(L.bay3L, L.bay3R, L.t, L.t + 3 * L.drawerH + 2 * L.t,
@@ -1233,7 +1356,7 @@ function buildFocusStops() {
       labels: [
         focusLabel('3 个抽屉 / 门底 657', L.bay3C, 0.75, front + 0.05, 'part'),
       ],
-      openParts: ['第 3 格左门', '第 3 格右门'],
+      openParts: ['第 3 格左上门', '第 3 格左下门', '第 3 格右上门', '第 3 格右下门'],
       dir: [0.05, 0.12, 1],
       margin: 1.5,
       targetY: 0.8,
@@ -1243,7 +1366,7 @@ function buildFocusStops() {
       part: '第 4 格 / 短衣 + 4 格',
       title: '第 4 格：短衣 1000 + 4 个层板格',
       value: `1000 / ${focusNum1(L.shelfH4)} + 3×${focusNum1(L.shelfH4Upper)}`,
-      desc: `短衣区 ${focusNum(L.shortH)}；下方 1 格约 ${focusNum1(L.shelfH4)}，上方 3 格各约 ${focusNum1(L.shelfH4Upper)}；最上方靠顶层板为活动层板。`,
+      desc: `短衣区 ${focusNum(L.shortH)}；下方 1 格约 ${focusNum1(L.shelfH4)}，上方 3 格各约 ${focusNum1(L.shelfH4Upper)}；最上方靠顶层板为活动层板；左右门在短衣层板处分上下。`,
       boxes: [focusBox(L.bay4L, L.bay4R, 0, L.H, -L.D / 2, L.D / 2, false)],
       dims: [
         {
@@ -1285,7 +1408,7 @@ function buildFocusStops() {
       labels: [
         focusLabel('4 格：下 1 + 上 3', L.bay4C, L.H * 0.45, front + 0.05, 'part'),
       ],
-      openParts: ['第 4 格左门', '第 4 格右门'],
+      openParts: ['第 4 格左上门', '第 4 格左下门', '第 4 格右上门', '第 4 格右下门'],
       dir: [0.05, 0.12, 1],
       margin: 1.5,
       targetY: 0.85,
@@ -1343,29 +1466,35 @@ function buildFocusStops() {
     },
     {
       id: 'drawer-dividers',
-      part: '抽屉活动隔板',
-      title: '第 2 格抽 2 / 第 3 格抽 3：各 2 块',
-      value: `2 块 / 厚 12 / 深 450`,
-      desc: '两格指定抽屉内各 2 块纵向活动隔板，垂直立放、平行于抽拉方向，随抽屉一起拉出；无固定件，靠衣物夹紧。',
+      part: '抽屉隔板',
+      title: '5 个抽屉：每抽 1 块抽屉隔板',
+      value: '5 块 / 厚 12 / 深 450',
+      desc: '第 2 格 2 个、第 3 格 3 个抽屉各放 1 块纵向抽屉隔板；隔板垂直立放、平行于抽拉方向，随抽屉一起拉出；无固定件，靠衣物夹紧。',
       boxes: [
-        focusBox(L.bay2L, L.bay2R, bay2Drawer2.yBottom, bay2Drawer2.yTop, drawerBack, drawerFront, false),
-        focusBox(L.bay2L, L.bay2R, bay2Drawer2.yBottom, bay2Drawer2.yTop, drawerFront - 0.01, drawerFront + 0.01),
-        focusBox(L.bay3L, L.bay3R, bay3Drawer3.yBottom, bay3Drawer3.yTop, drawerBack, drawerFront, false),
-        focusBox(L.bay3L, L.bay3R, bay3Drawer3.yBottom, bay3Drawer3.yTop, drawerFront - 0.01, drawerFront + 0.01),
+        ...allDrawers.flatMap((drawer) => [
+          focusBox(
+            drawer.xCenter - drawer.width / 2, drawer.xCenter + drawer.width / 2,
+            drawer.yBottom, drawer.yTop, drawerBack, drawerFront, false,
+          ),
+          focusBox(
+            drawer.xCenter - drawer.width / 2, drawer.xCenter + drawer.width / 2,
+            drawer.yBottom, drawer.yTop, drawerFront - 0.01, drawerFront + 0.01,
+          ),
+        ]),
         ...dividerBoxes,
       ],
       dims: [
         {
-          start: [L.bay3L, bay3Drawer3.yBottom, drawerFront],
-          end: [L.bay3L, bay3Drawer3.yTop, drawerFront],
+          start: [L.bay3L, allDrawers[4].yBottom, drawerFront],
+          end: [L.bay3L, allDrawers[4].yTop, drawerFront],
           offset: [-0.14, 0, 0.02],
           label: `${focusNum(L.drawerH)}`,
           labelClass: 'focus-ratio-label',
           tick: 0.02,
         },
         {
-          start: [L.bay3L, bay3Drawer3.yTop, drawerFront],
-          end: [L.bay3R, bay3Drawer3.yTop, drawerFront],
+          start: [L.bay3L, allDrawers[4].yTop, drawerFront],
+          end: [L.bay3R, allDrawers[4].yTop, drawerFront],
           offset: [0, 0.1, 0],
           label: focusNum1(L.largeW),
           tick: 0.02,
@@ -1373,25 +1502,25 @@ function buildFocusStops() {
       ],
       leaders: [
         {
-          point: [L.bay3C - L.drawerInnerW / 6, bay3Drawer3.yTop - 0.02, drawerFront - 0.1],
-          labelPoint: [L.bay3C + 0.42, bay3Drawer3.yTop + 0.18, drawerFront + 0.08],
-          label: '2 块 / 厚 12 / 深 450',
+          point: [allDrawers[4].xCenter, allDrawers[4].yTop - 0.02, drawerFront - 0.1],
+          labelPoint: [L.bay3C + 0.42, allDrawers[4].yTop + 0.18, drawerFront + 0.08],
+          label: '每抽 1 块 / 厚 12 / 深 450',
         },
       ],
       labels: [
-        focusLabel('第 2 格抽 2 / 第 3 格抽 3', drawerMid, bay3Drawer3.yTop + 0.28, drawerFront + 0.06, 'part'),
+        focusLabel('第 2 格 2 抽 / 第 3 格 3 抽：各 1 块', drawerMid, allDrawers[4].yTop + 0.28, drawerFront + 0.06, 'part'),
       ],
-      openParts: ['第 2 格抽屉 2', '第 3 格抽屉 3'],
+      openParts: allDrawers.map((drawer) => drawer.label),
       dir: [0.15, 0.08, 1],
       margin: 1.4,
       targetY: 0.55,
     },
     {
-      id: 'nine-doors',
-      part: '9 扇门',
-      title: '9 扇门：4 组对开 + 右上顶格单门',
-      value: `9 扇 / 单扇 ${focusNum1(L.doorW)}`,
-      desc: `4 个大格各 2 扇对开（共 8 扇）+ 最右窄格顶部 1 扇单门；第 2/3 格门底分别停在 ${focusNum(bay2DoorBottom)} / ${focusNum(bay3DoorBottom)}，抽屉外露。`,
+      id: 'split-doors',
+      part: '17 扇门',
+      title: '17 扇门：4 组上下分 + 右上顶格单门',
+      value: `17 扇 / 单扇 ${focusNum1(L.doorW)}`,
+      desc: `4 个大格各 2 扇，左右门均在第一块层板（自上而下）处分上下：第 1 格 ${focusNum(L.leftShelf2C)}、第 2·3 格 ${focusNum(L.bay2TopShelfC)}、第 4 格 ${focusNum(L.bay4ShortShelfC)}，共 16 扇；最右窄格顶部 1 扇单门。第 2/3 格门底分别停在 ${focusNum(bay2DoorBottom)} / ${focusNum(bay3DoorBottom)}，抽屉外露。`,
       boxes: L.doorPanels.map((panel) => focusBox(
         panel.x1, panel.x2, panel.y1, panel.y2, L.doorZ - 0.008, L.doorZ + 0.008, false,
       )),
@@ -1419,7 +1548,7 @@ function buildFocusStops() {
         },
       ],
       labels: [
-        focusLabel('4 组对开 + 右上顶格单门', 0, L.H * 0.75, front + 0.05, 'part'),
+        focusLabel('4 组上下分 + 右上顶格单门', 0, L.H * 0.78, front + 0.05, 'part'),
       ],
       dir: [0.02, 0.12, 1],
       margin: 1.35,
