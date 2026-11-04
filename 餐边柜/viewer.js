@@ -17,7 +17,7 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
-const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000, gapH: 500 });
+const FIXED = Object.freeze({ lowerD: 400, lowerH: 1000, gapH: 500, narrowW: 500, petH: 380 });
 
 const DEFAULTS = {
   W: 2752,
@@ -25,12 +25,12 @@ const DEFAULTS = {
   lowerD: FIXED.lowerD,
   glassSetback: 170,
   upperSetback: 100,
-  narrowW: 352,
-  petH: 400,
+  narrowW: FIXED.narrowW,
+  petH: FIXED.petH,
   t: 18,
   backT: 7,
   counterT: 20,
-  endRadius: 50,
+  endRadius: 20,
   shelfRemoved: false,
 };
 
@@ -209,8 +209,8 @@ function normalizeState() {
   state.glassD = state.lowerD - state.glassSetback;
   state.upperD = state.lowerD - state.upperSetback;
 
-  state.narrowW = clamp(state.narrowW, 250, 450);
-  state.petH = clamp(state.petH, 380, RIGHT_SHELF_TOP);
+  state.narrowW = FIXED.narrowW;
+  state.petH = FIXED.petH;
 
   // Counter top and the open gap are fixed; the upper cabinet height is
   // derived from the overall height and updates with the total-height input.
@@ -218,7 +218,7 @@ function normalizeState() {
   state.gapH = FIXED.gapH;
   state.upperH = state.H - TOP_GAP * 1000 - state.lowerH - state.gapH;
 
-  state.moduleW = (state.W - state.narrowW) / 3;
+  state.moduleW = (state.W - FIXED.narrowW) / 3;
 
   // Lower body: 9 equal parts. Left = 2:3:4; middle/right = top drawer 2,
   // cabinet 7, so the top drawer bottom aligns across all three modules.
@@ -227,7 +227,6 @@ function normalizeState() {
   state.drawerH = DRAWER_CABINET_RATIO[0] * part;
   state.lowerDoorH = DRAWER_CABINET_RATIO[1] * part;
   state.leftDrawerHeights = LEFT_DRAWER_RATIO.map((ratio) => ratio * part);
-  state.petH = Math.min(state.petH, Math.max(380, Math.floor((state.lowerDoorH - 300) / 10) * 10), RIGHT_SHELF_TOP);
   state.upperDoorW = state.moduleW - 6;
   state.pairDoorW = state.moduleW / 2 - 6;
   state.petDoorH = state.lowerDoorH - state.petH;
@@ -332,9 +331,7 @@ function updateReadouts() {
   document.getElementById('decision-upperH').textContent = `${format(state.upperH, 0)} mm`;
   document.getElementById('decision-glassSetback').textContent = `${format(state.glassSetback, 0)} mm`;
   document.getElementById('decision-upperSetback').textContent = `${format(state.upperSetback, 0)} mm`;
-  document.getElementById('decision-narrowW').textContent = `${format(state.narrowW, 1)} mm`;
   document.getElementById('decision-moduleW').textContent = `${format(state.moduleW, 1)} mm`;
-  document.getElementById('decision-petH').textContent = `${format(state.petH, 0)} mm`;
   document.getElementById('decision-t').textContent = `${format(state.t, 0)} mm`;
   document.getElementById('decision-backT').textContent = `${format(state.backT, 0)} mm`;
   document.getElementById('decision-counterT').textContent = `${format(state.counterT, 0)} mm`;
@@ -346,9 +343,6 @@ function updateReadouts() {
   if (state.moduleW < 650) warnings.push(`主格宽 ${format(state.moduleW, 0)} mm < 650`);
   if (state.petDoorH < 300) warnings.push(`右侧猫用品格上门高 ${format(state.petDoorH, 0)} mm < 300`);
   if (state.upperH < 600) warnings.push(`上柜高 ${format(state.upperH, 0)} mm < 600`);
-  if (state.petH < RIGHT_SHELF_TOP - state.t) {
-    warnings.push(`猫格门洞 ${format(state.petH, 0)} mm < 板下净高 ${format(RIGHT_SHELF_TOP - state.t, 0)} mm，370 自动喂食器可能放不进`);
-  }
   if (state.leftDrawerHeights[2] < 150) warnings.push(`左地柜最下抽屉高 ${format(state.leftDrawerHeights[2], 0)} mm < 150`);
 
   const warning = document.getElementById('height-warning');
@@ -731,6 +725,10 @@ function buildCabinet() {
   const upperTop = H - TOP_GAP;
   const upperLayerH = upperH / 3;
   const upperSplitY = upperBottom + upperLayerH;
+  const glassDoorBottom = upperBottom + 0.003;
+  const glassDoorTop = upperSplitY - t / 2 - 0.003;
+  const glassDoorHeight = glassDoorTop - glassDoorBottom;
+  const upperSectionHeight = upperTop - upperSplitY;
   const drawerTop = lowerBodyTop;
   const drawerBottom = drawerTop - drawerH;
 
@@ -1042,12 +1040,11 @@ function buildCabinet() {
 
     // The glass tier sits behind the deeper pair-door tier: stop its top
     // below the step shelf so the lift door can swing without hitting it.
-    const liftTop = upperSplitY - t / 2 - 0.003;
     addLiftDoor({
       xCenter: isRightEnd ? pairCenter : center,
       width: (isRightEnd ? rightInnerX - moduleLeft : moduleW) - 6 * 0.001,
-      height: liftTop - upperBottom - 0.003,
-      top: liftTop,
+      height: glassDoorHeight,
+      top: glassDoorTop,
       label: `上柜下层玻璃上翻门 ${index + 1}`,
     });
 
@@ -1294,6 +1291,12 @@ function buildCabinet() {
     upperInteriorD,
     upperInteriorZ,
     upperSplitY,
+    upperPairShelfY,
+    upperMiddleShelfY,
+    glassDoorBottom,
+    glassDoorTop,
+    glassDoorHeight,
+    upperSectionHeight,
     drawerH,
     drawerTop,
     drawerBottom,
@@ -1453,16 +1456,25 @@ function buildFocusStops() {
       boxes: leftDrawerSpecs.map((item) =>
         focusBox(L.x1, L.x2, item.bottom, item.top, door - 0.002, door + 0.018),
       ),
-      dims: leftDrawerSpecs.map((item) => ({
-        start: [L.x1, item.bottom, door],
-        end: [L.x1, item.top, door],
-        offset: [-0.14, 0, 0.02],
-        label: `${item.ratio} 份 · ${focusNum(item.height)}`,
-        labelClass: 'focus-ratio-label',
-        tick: 0.02,
-      })),
+      dims: [
+        ...leftDrawerSpecs.map((item) => ({
+          start: [L.x1, item.bottom, door],
+          end: [L.x1, item.top, door],
+          offset: [-0.14, 0, 0.02],
+          label: `${item.ratio} 份 · ${focusNum(item.height)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        })),
+        {
+          start: [L.x1, L.lowerBodyTop + 0.06, front],
+          end: [L.x2, L.lowerBodyTop + 0.06, front],
+          offset: [0, 0.14, 0],
+          label: `左地柜 ${focusMm1(L.x2 - L.x1)}`,
+          tick: 0.025,
+        },
+      ],
       labels: [
-        focusLabel('左地柜 3 抽', leftBankCenterX, L.lowerBodyTop + 0.12, front + 0.03, 'part'),
+        focusLabel('左地柜 3 抽', leftBankCenterX, L.lowerBodyTop + 0.04, front + 0.03, 'part'),
       ],
       lines: [],
       dir: [0.18, 0.12, 1],
@@ -1473,7 +1485,7 @@ function buildFocusStops() {
       part: '中/右 顶抽 : 柜体',
       title: '中/右抽屉与柜体',
       value: '2 : 7',
-      desc: '顶部抽屉 2 份、下方柜体 7 份；三格上抽底边对齐，右柜猫用品格以上为可见门板。',
+      desc: `顶部抽屉 2 份、下方柜体 7 份；三格上抽底边对齐。主格名义宽 ${focusMm1(L.x3 - L.x2)}，右格含 R${focusNum(L.endRadius)} 圆弧端板，最右门/抽按同值内缩。`,
       boxes: [
         focusBox(L.x2, L.x3, drawBottom, drawTop, door - 0.002, door + 0.018),
         focusBox(L.x2, L.x3, 0, drawBottom, door - 0.002, door + 0.018),
@@ -1497,9 +1509,23 @@ function buildFocusStops() {
           labelClass: 'focus-ratio-label',
           tick: 0.02,
         },
+        {
+          start: [L.x2, L.lowerBodyTop + 0.06, front],
+          end: [L.x3, L.lowerBodyTop + 0.06, front],
+          offset: [0, 0.14, 0],
+          label: `中地柜 ${focusMm1(L.x3 - L.x2)}`,
+          tick: 0.025,
+        },
+        {
+          start: [L.x3, L.lowerBodyTop + 0.06, front],
+          end: [L.x4, L.lowerBodyTop + 0.06, front],
+          offset: [0, 0.14, 0],
+          label: `右地柜 ${focusMm1(L.x4 - L.x3)}`,
+          tick: 0.025,
+        },
       ],
       labels: [
-        focusLabel('中/右 顶抽 : 柜体', midRightCenterX, drawTop + 0.12, front + 0.04, 'part'),
+        focusLabel('中/右 顶抽 : 柜体', midRightCenterX, drawTop + 0.04, front + 0.04, 'part'),
       ],
       lines: [],
       dir: [0.38, 0.12, 1],
@@ -1545,9 +1571,9 @@ function buildFocusStops() {
       id: 'right-shelf',
       part: '右地柜 / 猫格',
       openParts: ['右地柜门 左', '右地柜门 右'],
-      title: '右活动层板 400 / 猫格无底板',
-      value: `板面 ${focusNum(L.rightShelfTop)} / 净高 ${focusNum(L.rightShelfTop - L.t)}`,
-      desc: `活动层板板面 ${focusNum(L.rightShelfTop)}，与弱电箱底相切；猫用品格取消底板，地面直接放 370 高自动喂食器，板下净高 ${focusNum(L.rightShelfTop - L.t)}。`,
+      title: `右活动层板 400 / 猫格 ${focusNum(L.petH)} 无底板`,
+      value: `${focusNum(L.rightShelfTop)} / ${focusNum(L.petH)} / ${focusNum(L.rightShelfTop - L.t)}`,
+      desc: `活动层板板面 ${focusNum(L.rightShelfTop)}，与弱电箱底相切；猫格门洞固定 ${focusNum(L.petH)}、取消底板，地面直接放 370 高自动喂食器，板下净高 ${focusNum(L.rightShelfTop - L.t)}。`,
       boxes: [
         focusBox(L.x3, L.rightInnerX, L.rightShelfTop - L.t, L.rightShelfTop,
           L.lowerInteriorZ - L.lowerInteriorD / 2, L.lowerInteriorZ + L.lowerInteriorD / 2),
@@ -1572,7 +1598,7 @@ function buildFocusStops() {
         },
       ],
       labels: [
-        focusLabel('无底板 / 自动喂食器 370 落地', rightCenterX, 0.2, front + 0.05, 'part'),
+        focusLabel(`门洞 ${focusNum(L.petH)} / 喂食器 370 落地`, rightCenterX, 0.2, front + 0.05, 'part'),
         focusLabel('活动层板 400', rightCenterX, L.rightShelfTop + 0.12, front + 0.05, 'part'),
       ],
       lines: [],
@@ -1624,7 +1650,7 @@ function buildFocusStops() {
       part: '上柜 / 中间开放',
       title: '上柜分段后缩 / 开放 500',
       value: `${focusNum(L.upperH)} / ${focusNum(L.gapH)} / ${focusNum(L.glassSetback)}·${focusNum(L.upperSetback)}`,
-      desc: `上柜高 ${focusNum(L.upperH)}（总高 ${focusNum(L.H)} − 顶缝 30 − 台面 1000 − 开放 ${focusNum(L.gapH)}）；下层玻璃门后缩 ${focusNum(L.glassSetback)}（深 ${focusNum(L.glassD)}），上层柜后缩 ${focusNum(L.upperSetback)}（深 ${focusNum(L.upperD)}）。`,
+      desc: `上柜总高 ${focusNum(L.upperH)}（总高 ${focusNum(L.H)} − 顶缝 30 − 台面 1000 − 开放 ${focusNum(L.gapH)}）；玻璃门高 ${focusNum(L.glassDoorHeight)}、上方柜 ${focusNum(L.upperSectionHeight)}；下层玻璃门后缩 ${focusNum(L.glassSetback)}（深 ${focusNum(L.glassD)}），上层柜后缩 ${focusNum(L.upperSetback)}（深 ${focusNum(L.upperD)}）。`,
       boxes: [
         focusBox(L.x1, L.rightInnerX, L.upperBottom, L.upperSplitY, glassDoor - 0.002, glassDoor + 0.018),
         focusBox(L.x1, L.rightInnerX, L.upperSplitY, L.upperTop, upperDoor - 0.002, upperDoor + 0.018),
@@ -1639,10 +1665,17 @@ function buildFocusStops() {
           tick: 0.03,
         },
         {
-          start: [L.rightInnerX, L.upperBottom, upperDoor],
+          start: [L.rightInnerX, L.glassDoorBottom, glassDoor],
+          end: [L.rightInnerX, L.glassDoorTop, glassDoor],
+          offset: [0.16, 0, 0],
+          label: `玻璃门 ${focusNum(L.glassDoorHeight)}`,
+          tick: 0.02,
+        },
+        {
+          start: [L.rightInnerX, L.upperSplitY, upperDoor],
           end: [L.rightInnerX, L.upperTop, upperDoor],
           offset: [0.16, 0, 0],
-          label: `上柜 ${focusNum(L.upperH)}`,
+          label: `上方柜 ${focusNum(L.upperSectionHeight)}`,
           tick: 0.03,
         },
       ],
@@ -1666,34 +1699,102 @@ function buildFocusStops() {
       margin: 1.5,
     },
     {
-      id: 'round-end',
-      part: '右端圆弧端板',
-      title: '右端圆角',
-      value: `R${Math.round(L.endRadius * 1000)}`,
-      desc: '上柜/下柜外角圆弧收边；最右门、抽屉、上翻门按同值内缩。',
+      id: 'upper-shelves',
+      part: '三个上柜内部层板',
+      openParts: [
+        '上柜对开门 1 左', '上柜对开门 1 右',
+        '上柜对开门 2 左', '上柜对开门 2 右',
+        '上柜对开门 3 左', '上柜对开门 3 右',
+      ],
+      title: '3 个上柜内部层板',
+      value: `左 ${focusNum(L.upperPairShelfY)} / 中 ${focusNum(L.upperMiddleShelfY)} / 右 ${focusNum(L.upperPairShelfY)}`,
+      desc: `上柜高 ${focusNum(L.upperH)}。左/右上层板距上柜底 ${focusNum(L.upperPairShelfY - L.upperBottom)}（2/3），上下空间 1:1；中层板距底 ${focusNum(L.upperMiddleShelfY - L.upperBottom)}（5/9），上层:下层 = 2:1。`,
       boxes: [
-        focusBox(L.x4 - 0.36, L.x4, L.lowerH - 0.1, L.lowerH + 0.06,
+        focusBox(L.x1, L.x2, L.upperPairShelfY - L.t / 2, L.upperPairShelfY + L.t / 2,
+          L.upperInteriorZ - L.upperInteriorD / 2, L.upperInteriorZ + L.upperInteriorD / 2),
+        focusBox(L.x2, L.x3, L.upperMiddleShelfY - L.t / 2, L.upperMiddleShelfY + L.t / 2,
+          L.upperInteriorZ - L.upperInteriorD / 2, L.upperInteriorZ + L.upperInteriorD / 2),
+        focusBox(L.x3, L.rightInnerX, L.upperPairShelfY - L.t / 2, L.upperPairShelfY + L.t / 2,
+          L.upperInteriorZ - L.upperInteriorD / 2, L.upperInteriorZ + L.upperInteriorD / 2),
+      ],
+      dims: [
+        {
+          start: [L.c1, L.upperBottom, upperDoor],
+          end: [L.c1, L.upperPairShelfY, upperDoor],
+          offset: [-0.06, 0, 0.14],
+          label: `${focusNum(L.upperPairShelfY - L.upperBottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.022,
+        },
+        {
+          start: [L.c2, L.upperBottom, upperDoor],
+          end: [L.c2, L.upperMiddleShelfY, upperDoor],
+          offset: [0, 0, 0.14],
+          label: `${focusNum(L.upperMiddleShelfY - L.upperBottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.022,
+        },
+        {
+          start: [L.c3, L.upperBottom, upperDoor],
+          end: [L.c3, L.upperPairShelfY, upperDoor],
+          offset: [0.06, 0, 0.14],
+          label: `${focusNum(L.upperPairShelfY - L.upperBottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.022,
+        },
+      ],
+      labels: [
+        focusLabel('左 2/3 · 上:下 1:1', L.c1, L.upperPairShelfY + 0.04, upperDoor + 0.05, 'part'),
+        focusLabel('中 5/9 · 上:下 2:1', L.c2, L.upperMiddleShelfY + 0.04, upperDoor + 0.05, 'part'),
+        focusLabel('右 2/3 · 上:下 1:1', L.c3, L.upperPairShelfY + 0.04, upperDoor + 0.05, 'part'),
+      ],
+      lines: [],
+      dir: [0.12, 0.16, 1],
+      margin: 1.5,
+    },
+    {
+      id: 'round-end',
+      part: '上柜 / 下柜右端圆角',
+      title: '右端圆角（上柜 + 下柜）',
+      value: `R${Math.round(L.endRadius * 1000)}`,
+      desc: `下柜台面处与上柜两段端板同为 R${Math.round(L.endRadius * 1000)}；最右门、抽屉、玻璃上翻门按同值内缩 ${focusNum(L.endRadius)}。`,
+      boxes: [
+        focusBox(L.x4 - 0.36, L.x4, L.lowerH - 0.08, L.lowerH + 0.06,
           front - 0.36, front),
+        focusBox(L.x4 - 0.36, L.x4, L.upperBottom, L.upperSplitY,
+          glassFront - 0.36, glassFront),
+        focusBox(L.x4 - 0.36, L.x4, L.upperSplitY, L.upperTop,
+          L.upperFront - 0.36, L.upperFront),
       ],
       leaders: [
         {
           point: [L.x4, L.lowerH, front],
           labelPoint: [L.x4 + 0.25, L.lowerH + 0.2, front + 0.1],
-          label: `R${Math.round(L.endRadius * 1000)}`,
+          label: `下柜 R${Math.round(L.endRadius * 1000)}`,
         },
         {
           point: [L.x4 - L.endRadius, L.lowerH - 0.25, door],
           labelPoint: [L.x4 + 0.18, L.lowerH + 0.02, door + 0.08],
           label: `内缩 ${focusNum(L.endRadius)}`,
         },
+        {
+          point: [L.x4, L.upperBottom + 0.1, glassFront],
+          labelPoint: [L.x4 + 0.3, L.upperBottom + 0.22, glassFront + 0.12],
+          label: `上柜玻璃层 R${Math.round(L.endRadius * 1000)}`,
+        },
+        {
+          point: [L.x4, L.upperTop - 0.08, L.upperFront],
+          labelPoint: [L.x4 + 0.3, L.upperTop - 0.02, L.upperFront + 0.12],
+          label: `上柜上层 R${Math.round(L.endRadius * 1000)}`,
+        },
       ],
       labels: [
-        focusLabel('右端圆弧端板', L.x4 - 0.28, L.lowerH + 0.02, front - 0.08, 'part'),
+        focusLabel('上柜 + 下柜 R 圆角', L.x4 - 0.25, L.lowerH + 0.3, front - 0.05, 'part'),
       ],
       lines: [],
-      dir: [0.7, 0.55, 0.8],
-      margin: 2.2,
-      minDistance: 1.5,
+      dir: [0.75, 0.35, 0.9],
+      margin: 2.6,
+      minDistance: 1.8,
     },
   ];
 }
