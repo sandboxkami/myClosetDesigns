@@ -17,7 +17,7 @@ import {
   damp,
 } from '../assets/js/viewer-core.js';
 
-const FIXED = Object.freeze({ W: 1700, D: 800 });
+const FIXED = Object.freeze({ W: 1700, D: 800, backD: 400 });
 
 const DEFAULTS = {
   W: FIXED.W,
@@ -200,7 +200,7 @@ function normalizeState() {
   state.W = FIXED.W;
   state.H = clamp(state.H, 2100, 2500);
   state.D = FIXED.D;
-  state.backD = clamp(state.backD, 350, 450);
+  state.backD = FIXED.backD;
   state.t = clamp(Math.round(state.t), 16, 25);
   state.frontShelfInset = clamp(Math.round(state.frontShelfInset / 5) * 5, 0, 120);
   state.topGap = 0;
@@ -216,23 +216,15 @@ function normalizeState() {
   state.benchStopD = clamp(Math.min(BENCH_STOP_D, state.D - 12 - state.benchD), 100, 500);
 
   state.frontD = state.D - state.backD;
-  if (state.frontD < 350) {
-    state.frontD = 350;
-    state.backD = state.D - state.frontD;
-  }
-  if (state.frontD > 500) {
-    state.frontD = 500;
-    state.backD = state.D - state.frontD;
-  }
-  state.backD = clamp(state.backD, 350, 450);
-  state.frontD = state.D - state.backD;
 
   state.midW = clamp(state.W - LEFT_W - NARROW_W - 4 * state.t, 700, 900);
   state.W = LEFT_W + state.midW + NARROW_W + 4 * state.t;
   state.backW = state.midW + NARROW_W;
   state.backPull = state.backW;
 
-  state.kneeH = state.H - 3 * state.t - LEFT_BAG_H - LEFT_HANG_H - state.benchH;
+  // The shelf above the bench was removed in v1.12, so only the top panel
+  // and the bag shelf remain in the left-column height chain.
+  state.kneeH = state.H - 2 * state.t - LEFT_BAG_H - LEFT_HANG_H - state.benchH;
 
   const backAvail = state.H - 11 * state.t;
   const backScale = Math.max(0.5, backAvail / BACK_RATIO_SUM);
@@ -260,8 +252,6 @@ function updateReadouts() {
 
   // Decision board, block 2: unfixed key dimensions.
   document.getElementById('decision-H').textContent = `${format(state.H, 0)} mm`;
-  document.getElementById('decision-backD').textContent = `${format(state.backD, 0)} mm`;
-  document.getElementById('decision-frontD').textContent = `${format(state.frontD, 0)} mm`;
   document.getElementById('decision-benchW').textContent = `${format(state.benchW, 0)} mm`;
   document.getElementById('decision-benchD').textContent = `${format(state.benchD, 0)} mm`;
   document.getElementById('decision-benchH').textContent = `${format(state.benchH, 0)} mm`;
@@ -284,7 +274,7 @@ function updateReadouts() {
   document.getElementById('left-zones').textContent =
     `${LEFT_BAG_H} / ${LEFT_HANG_H} / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
   document.getElementById('left-storage-info').textContent =
-    `距开口 ${ROD_FROM_OPENING} / ${LEFT_SHELF_STEP}·深${LEFT_SHELF_DEPTH}`;
+    `距开口 ${ROD_FROM_OPENING} / 3 块·${LEFT_SHELF_STEP}·深${LEFT_SHELF_DEPTH}`;
   document.getElementById('front-bottom').textContent =
     `${FRONT_BOTTOM.join(' / ')} mm`;
   document.getElementById('front-drawer').textContent = `${FRONT_DRAWER} mm × 2（左右）`;
@@ -665,25 +655,27 @@ function buildCabinet() {
   // Left column: bag niche, hanging zone, knee space, bench.
   const benchTop = benchH;
   const kneeTop = benchTop + state.kneeH / 1000;
-  const hangShelfY = kneeTop + t / 2;
-  const hangBottom = kneeTop + t;
+  // v1.12: the shelf above the bench is removed. The hanging zone now runs
+  // straight down to the open space above the bench.
+  const hangBottom = kneeTop;
   const hangTop = hangBottom + LEFT_HANG_H / 1000;
   const bagShelfY = hangTop + t / 2;
   const bagBottom = hangTop + t;
 
   cabinetGroup.add(
-    box(leftW, t, leftInteriorD, materials.wood, { x: leftCenter, y: hangShelfY, z: leftInteriorZ }),
     box(leftW, t, leftInteriorD, materials.wood, { x: leftCenter, y: bagShelfY, z: leftInteriorZ }),
   );
 
   // Short shelves below the bag compartment: every 350 down, 250 deep from the
-  // back panel. They leave the front part of the 800-deep bay free for hanging.
+  // back panel, three levels (350/700/1050). The lowest one sits above the
+  // bench; the front part of the 800-deep bay stays open for sitting.
   const leftBackZ = -D / 2 + BACK_T;
   const leftShelfDepth = LEFT_SHELF_DEPTH / 1000;
   const leftShortShelfYs = [];
-  for (let offset = LEFT_SHELF_STEP / 1000; offset < LEFT_HANG_H / 1000; offset += LEFT_SHELF_STEP / 1000) {
+  for (let offset = LEFT_SHELF_STEP / 1000; offset < (bagBottom - benchTop); offset += LEFT_SHELF_STEP / 1000) {
+    if (leftShortShelfYs.length >= 3) break;
     const shelfTopY = bagBottom - offset;
-    if (shelfTopY - t < hangBottom) break;
+    if (shelfTopY - t < benchTop + 0.05) break;
     const shelfCenterY = shelfTopY - t / 2;
     leftShortShelfYs.push(shelfCenterY);
     cabinetGroup.add(
@@ -1219,7 +1211,6 @@ function buildCabinet() {
     divider2X,
     benchTop,
     kneeTop,
-    hangShelfY,
     hangBottom,
     hangTop,
     bagShelfY,
@@ -1325,7 +1316,6 @@ function buildFocusStops() {
   const benchShift = L.benchPull;
   const benchFrontZ = L.benchZ2 + benchShift;
   const benchStopOn = state.benchStopOn;
-  const lastRight = L.rightCells[L.rightCells.length - 1];
 
   return [
     {
@@ -1374,8 +1364,6 @@ function buildFocusStops() {
       boxes: [
         focusBox(L.leftInner0, L.leftInner1, 0, L.H, -L.D / 2, L.D / 2, false),
         focusBox(L.leftInner0, L.leftInner1, L.bagShelfY - L.t / 2, L.bagShelfY + L.t / 2,
-          L.leftInteriorZ - L.leftInteriorD / 2, L.leftInteriorZ + L.leftInteriorD / 2),
-        focusBox(L.leftInner0, L.leftInner1, L.hangShelfY - L.t / 2, L.hangShelfY + L.t / 2,
           L.leftInteriorZ - L.leftInteriorD / 2, L.leftInteriorZ + L.leftInteriorD / 2),
       ],
       dims: [
@@ -1439,8 +1427,8 @@ function buildFocusStops() {
       id: 'left-storage',
       part: '挂衣杆 / 短横板',
       hideProps: true,
-      title: `挂衣杆距开口 ${focusNum(L.rodFromOpening)} + 短横板 ${focusNum(L.leftShelfStep)} / 深 ${focusNum(L.leftShelfDepth)}`,
-      value: `${focusNum(L.rodFromOpening)} / ${focusNum(L.leftShelfStep)}·${focusNum(L.leftShelfDepth)}`,
+      title: `挂衣杆距开口 ${focusNum(L.rodFromOpening)} + 短横板 3 块 / ${focusNum(L.leftShelfStep)}·深 ${focusNum(L.leftShelfDepth)}`,
+      value: `${focusNum(L.rodFromOpening)} / 3×${focusNum(L.leftShelfStep)}·${focusNum(L.leftShelfDepth)}`,
       desc: `左柜挂衣杆向开口方向偏移，杆中心距柜格开口 ${focusNum(L.rodFromOpening)}，为格内深处留出位置；包柜向下每 ${focusNum(L.leftShelfStep)} 一块短横板，板深 ${focusNum(L.leftShelfDepth)}（从柜背向外），共 ${L.leftShortShelfYs.length} 块。`,
       boxes: [
         focusBox(L.leftInner0, L.leftInner1, L.rodY - 0.02, L.rodY + 0.02,
@@ -1483,7 +1471,7 @@ function buildFocusStops() {
       dir: [-0.22, 0.22, 1],
       margin: 2.2,
       minDistance: 1.7,
-      targetY: 1.3,
+      targetY: 1.0,
     },
     {
       id: 'front-split',
@@ -1669,37 +1657,30 @@ function buildFocusStops() {
           label: `右柜 ${focusNum(L.narrowW)}`,
           tick: 0.03,
         },
-        {
-          start: [L.narrowInner1, L.openBottomTop, front],
-          end: [L.narrowInner1, L.H, front],
+        ...L.rightCells.map((cell) => ({
+          start: [L.narrowInner1, cell.bottom, front],
+          end: [L.narrowInner1, cell.top, front],
           offset: [0.16, 0, 0],
-          label: `9 层区 ${focusNum(L.H - L.openBottomTop)}`,
-          tick: 0.03,
-        },
-        {
-          start: [L.narrowInner0, lastRight.bottom, front],
-          end: [L.narrowInner0, lastRight.top, front],
-          offset: [-0.14, 0, 0.02],
-          label: `顶格 ${focusNum(lastRight.top - lastRight.bottom)}`,
+          label: `${focusNum(cell.top - cell.bottom)}`,
           labelClass: 'focus-ratio-label',
           tick: 0.02,
-        },
+        })),
       ],
       labels: [
         focusLabel('整高门 1 扇', L.narrowCenter, L.H * 0.82, front + 0.05, 'part'),
       ],
       lines: [],
       dir: [0.55, 0.12, 1],
-      margin: 1.5,
-      targetY: 1.08,
+      margin: 1.6,
+      targetY: 1.05,
     },
     {
       id: 'back-rack',
       part: '后柜 / 中间竖板',
       openParts: ['后层抽拉鞋架（向右拉出）'],
-      title: '后柜 1220 × 400 侧抽',
-      value: `${focusNum(L.backW)} × ${focusNum(L.backD)} / 抽 ${focusNum(L.backPull)}`,
-      desc: `后柜 ${focusNum(L.backW)}×${focusNum(L.backD)}，藏在前柜背后，向右侧抽出 ${focusNum(L.backPull)}；中间一块通高竖板，左右各约 ${focusNum(rackHalfNetW)}。`,
+      title: '后柜 1220 × 400 侧抽 + 10 层',
+      value: `10 层 / 抽 ${focusNum(L.backPull)}`,
+      desc: `后柜 ${focusNum(L.backW)}×${focusNum(L.backD)}，藏在前柜背后，向右侧抽出 ${focusNum(L.backPull)}；中间一块通高竖板，左右各约 ${focusNum(rackHalfNetW)}；10 层净高见图标注。`,
       boxes: [
         focusBox(L.rackLeft + rackShift, L.rackRight + rackShift, 0, L.H, -L.backD, 0, false),
         focusBox(rackDividerCenter - L.t / 2, rackDividerCenter + L.t / 2, 0, L.H, -L.backD, 0),
@@ -1726,15 +1707,23 @@ function buildFocusStops() {
           label: `侧抽 ${focusNum(L.backPull)}`,
           tick: 0.045,
         },
+        ...L.rackCells.map((cell) => ({
+          start: [rackDividerCenter + 0.16, cell.bottom, -L.backD / 2],
+          end: [rackDividerCenter + 0.16, cell.top, -L.backD / 2],
+          offset: [0.12, 0, 0],
+          label: `${focusNum(cell.top - cell.bottom)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        })),
       ],
       labels: [
-        focusLabel('中间通高竖板', rackDividerCenter, L.H * 0.56, -L.backD / 2, 'part'),
+        focusLabel('中间通高竖板', rackDividerCenter, L.H * 0.82, -L.backD / 2, 'part'),
       ],
       lines: [],
       dir: [0.55, 0.16, 0.9],
-      margin: 1.45,
+      margin: 1.7,
       minDistance: 2.2,
-      targetY: 0.95,
+      targetY: 0.6,
     },
     {
       id: 'bench',
