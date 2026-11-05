@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>鞋柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.10.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.11.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -14,16 +14,21 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">鞋柜 · 柜子定制</p>
         <h1>鞋柜</h1>
-        <p class="subtitle">1700 宽 × 800 深固定 · 左柜 408×800 通深无门 · 前柜下门 + 右柜整高门 · 170 抽屉分左右 · 双块决策看板 + 手动分步巡游 + 尺寸标注线</p>
+        <p class="subtitle">1700 宽 × 800 深固定 · 左柜 408×800 通深无门 · 包柜 500 + 挂衣杆距开口 275 + 短横板 350/250 · 换鞋凳 350×420×450 + 可取出挡块 · 双块决策看板 + 手动分步巡游 10 处</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.10</span>
+          <span class="chip chip-accent">v1.11</span>
           <span class="chip">1700 × 800 固定</span>
+          <span class="chip">包柜 500 / 挂衣 980</span>
+          <span class="chip">挂衣杆距开口 275</span>
+          <span class="chip">短横板 350 / 深 250</span>
+          <span class="chip">换鞋凳 350×420×450</span>
+          <span class="chip">凳后挡块 100 可取出</span>
           <span class="chip">前柜下门 + 右柜门</span>
           <span class="chip">170 抽屉分左右</span>
           <span class="chip">最下层板前缩 50</span>
           <span class="chip">后柜 1220 侧抽 · 中间竖板</span>
           <span class="chip">双块决策看板</span>
-          <span class="chip">关键约束手动巡游</span>
+          <span class="chip">手动分步巡游 10 处</span>
           <span class="chip">尺寸标注线</span>
         </div>
       </header>
@@ -33,12 +38,15 @@
           <div class="decision-head">
             <span class="decision-dot"></span>
             <h2>已确认固定</h2>
-            <span class="decision-count">8 项</span>
+            <span class="decision-count">11 项</span>
           </div>
           <div class="decision-grid">
             <div class="decision-item"><span class="decision-label">总宽</span><span class="decision-value">1700 mm</span></div>
             <div class="decision-item"><span class="decision-label">总深</span><span class="decision-value">800 mm</span></div>
             <div class="decision-item"><span class="decision-label">左柜</span><span class="decision-value">408 × 800 通深无门</span></div>
+            <div class="decision-item"><span class="decision-label">左柜分区</span><span class="decision-value">包柜 500 / 挂衣 980</span></div>
+            <div class="decision-item"><span class="decision-label">左柜短横板</span><span class="decision-value">每 350 / 深 250</span></div>
+            <div class="decision-item"><span class="decision-label">挂衣杆</span><span class="decision-value">距开口 275</span></div>
             <div class="decision-item"><span class="decision-label">前柜</span><span class="decision-value">1220（中 800 + 右 420）</span></div>
             <div class="decision-item"><span class="decision-label">后柜</span><span class="decision-value">与前柜同宽 · 侧抽同长</span></div>
             <div class="decision-item"><span class="decision-label">底下两排</span><span class="decision-value">200 / 120 贯通开放</span></div>
@@ -52,21 +60,24 @@
           <div class="decision-head">
             <span class="decision-dot"></span>
             <h2>待确认关键</h2>
-            <span class="decision-count">12 项 · 可调 / 联动</span>
+            <span class="decision-count">15 项 · 可调 / 联动</span>
           </div>
           <div class="decision-grid">
             <button class="decision-item" type="button" data-target="number-H"><span class="decision-label">总高</span><span class="decision-value" id="decision-H">2303 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-backD"><span class="decision-label">后柜深</span><span class="decision-value" id="decision-backD">400 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-backD"><span class="decision-label">前柜深</span><span class="decision-value" id="decision-frontD">400 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-benchW"><span class="decision-label">换鞋凳宽</span><span class="decision-value" id="decision-benchW">300 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-benchW"><span class="decision-label">换鞋凳宽</span><span class="decision-value" id="decision-benchW">350 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-benchH"><span class="decision-label">换鞋凳高</span><span class="decision-value" id="decision-benchH">420 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-benchD"><span class="decision-label">换鞋凳深</span><span class="decision-value" id="decision-benchD">450 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-benchPull"><span class="decision-label">换鞋凳前伸</span><span class="decision-value" id="decision-benchPull">500 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-benchStopH"><span class="decision-label">凳后挡块高</span><span class="decision-value" id="decision-benchStopH">100 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-benchD"><span class="decision-label">凳后挡块深</span><span class="decision-value" id="decision-benchStopD">338 mm</span><span class="decision-flag is-linked">联动</span></button>
             <button class="decision-item" type="button" data-target="number-frontShelfInset"><span class="decision-label">最下层板前缩</span><span class="decision-value" id="decision-frontShelfInset">50 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-t"><span class="decision-label">柜体板厚</span><span class="decision-value" id="decision-t">18 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-t"><span class="decision-label">前柜中段净宽</span><span class="decision-value" id="decision-midW">800 mm</span><span class="decision-flag is-linked">联动</span></button>
             <button class="decision-item" type="button" data-target="number-t"><span class="decision-label">中段门宽</span><span class="decision-value" id="decision-midDoorW">395.5 mm</span><span class="decision-flag is-linked">联动</span></button>
             <button class="decision-item" type="button" data-target="number-H"><span class="decision-label">右柜顶格</span><span class="decision-value" id="decision-rightN">380 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-benchH"><span class="decision-label">坐凳上空</span><span class="decision-value" id="decision-kneeH">449 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-benchH"><span class="decision-label">坐凳上空</span><span class="decision-value" id="decision-kneeH">349 mm</span><span class="decision-flag is-linked">联动</span></button>
           </div>
           <p class="decision-hint">点击“可调 / 联动”项，跳到下方对应的调节项；联动项由上游尺寸推导。</p>
         </article>
@@ -105,10 +116,10 @@
           <div class="control-head">
             <label for="range-benchW">换鞋凳宽</label>
             <span class="control-number">
-              <input id="number-benchW" data-number="benchW" type="number" min="260" max="372" step="1" value="300" inputmode="numeric"> mm
+              <input id="number-benchW" data-number="benchW" type="number" min="260" max="372" step="1" value="350" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-benchW" data-range="benchW" type="range" min="260" max="372" step="1" value="300">
+          <input id="range-benchW" data-range="benchW" type="range" min="260" max="372" step="1" value="350">
         </div>
 
         <div class="control-row">
@@ -119,6 +130,16 @@
             </span>
           </div>
           <input id="range-benchH" data-range="benchH" type="range" min="380" max="460" step="1" value="420">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head">
+            <label for="range-benchD">换鞋凳深</label>
+            <span class="control-number">
+              <input id="number-benchD" data-number="benchD" type="number" min="350" max="500" step="10" value="450" inputmode="numeric"> mm
+            </span>
+          </div>
+          <input id="range-benchD" data-range="benchD" type="range" min="350" max="500" step="10" value="450">
         </div>
 
         <div class="control-row">
@@ -145,6 +166,16 @@
 
           <div class="control-row compact">
             <div class="control-head">
+              <label for="range-benchStopH">凳后挡块高</label>
+              <span class="control-number">
+                <input id="number-benchStopH" data-number="benchStopH" type="number" min="50" max="200" step="10" value="100" inputmode="numeric"> mm
+              </span>
+            </div>
+            <input id="range-benchStopH" data-range="benchStopH" type="range" min="50" max="200" step="10" value="100">
+          </div>
+
+          <div class="control-row compact">
+            <div class="control-head">
               <label for="range-t">板厚</label>
               <span class="control-number">
                 <input id="number-t" data-number="t" type="number" min="16" max="25" step="1" value="18" inputmode="numeric"> mm
@@ -152,7 +183,7 @@
             </div>
             <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
           </div>
-          <p class="micro-hint">总宽 1700 / 总深 800 已固定。左柜 408×800 通深、无门；前柜 1220×400（中 800 + 右 420）；后柜 1220×400，抽拉 1220。中段底下两层 200/120 开放，其上三排 130/130/170 加一对下门；170 抽屉在门上方、分左右两个；再往上 370 台面和上 5 层。右柜底下两层开放，往上 9 层加一扇整高门。最下层板前缩可在 0–120 调整。</p>
+          <p class="micro-hint">总宽 1700 / 总深 800 已固定。左柜 408×800 通深、无门；包柜 500、挂衣区 980，挂衣杆距开口 275，包柜下每 350 一块深 250 的短横板；换鞋凳 350×420×450，正面与左柜开口齐平，凳后挡块 100 高、深约 350、可取出。前柜 1220×400（中 800 + 右 420）；后柜 1220×400，抽拉 1220。中段底下两层 200/120 开放，其上三排 130/130/170 加一对下门；170 抽屉在门上方、分左右两个；再往上 370 台面和上 5 层。右柜底下两层开放，往上 9 层加一扇整高门。最下层板前缩可在 0–120 调整。</p>
         </details>
 
         <div class="computed">
@@ -163,7 +194,8 @@
           <div><span>后柜鞋架</span><strong id="back-rack">1220 × 2303 / 抽拉 1220 / 中竖板</strong></div>
           <div><span>左柜净宽</span><strong id="left-width">408 mm</strong></div>
           <div><span>前柜中段 / 右段</span><strong id="mid-width">800 / 420 mm</strong></div>
-          <div><span>左柜分区</span><strong id="left-zones">400 / 980 / 449 / 420</strong></div>
+          <div><span>左柜分区（包柜 / 挂衣 / 坐凳上空 / 凳高）</span><strong id="left-zones">500 / 980 / 349 / 420</strong></div>
+          <div><span>左柜挂衣杆 / 短横板</span><strong id="left-storage-info">距开口 275 / 350·深250</strong></div>
           <div class="computed-wide"><span>中段下部 5 层</span><strong id="front-bottom">200 / 120 / 130 / 130 / 170 mm</strong></div>
           <div><span>中段抽屉</span><strong id="front-drawer">170 mm × 2（左右）</strong></div>
           <div><span>最下层板前缩</span><strong id="front-inset">50 mm</strong></div>
@@ -171,7 +203,8 @@
           <div class="computed-wide"><span>中段台面以上 5 层</span><strong id="front-upper">100 / 120 / 168 / 180 / 230 mm</strong></div>
           <div class="computed-wide"><span>右柜 9 层（下→上，底两层另计）</span><strong id="right-heights">130 / 130 / 175 / 230 / 160 / 160 / 160 / 260 / 380 mm</strong></div>
           <div><span>中段门宽</span><strong id="mid-door-width">395.5 mm</strong></div>
-          <div><span>换鞋凳</span><strong id="bench-size">300 × 420 / 500</strong></div>
+          <div><span>换鞋凳（宽×高×深 / 前伸）</span><strong id="bench-size">350 × 420 × 450 / 前伸 500</strong></div>
+          <div><span>凳后挡块（宽×高×深）</span><strong id="bench-stop-info">408 × 100 × 338 / 可取出</strong></div>
           <div class="computed-wide"><span>后柜 10 层净高</span><strong id="back-heights">339 / 339 / 219 / 219 / 219 / 219 / 150 / 150 / 150 / 100 mm</strong></div>
         </div>
         <div id="height-warning" class="warning" hidden></div>
@@ -184,6 +217,7 @@
           <button id="reset-view" class="button" type="button">重置视角</button>
           <button id="reset-dimensions" class="button button-ghost" type="button">恢复默认尺寸</button>
         </div>
+        <button id="toggle-bench-stop" class="button button-ghost shelf-button" type="button">取出挡块</button>
         <div class="toggles">
           <label><input id="show-dims" type="checkbox" checked> 显示尺寸</label>
           <label><input id="show-props" type="checkbox" checked> 显示示例物品</label>
@@ -197,7 +231,9 @@
         </div>
         <ul>
           <li><strong>总体</strong> 1700 × 2303 × 800；<strong>总宽 1700 / 总深 800 固定</strong>，总高仍可调；左柜 408×800，前柜 1220×400（中 800 + 右 420），后柜 1220×400；左+后=1628，含 4 块 18mm 竖板。</li>
-          <li><strong>左柜</strong> 408×800 通深，不做门板；包袋格 400 + 挂衣区 980 + 坐凳上空约 449 + 抽拉换鞋凳 420；挂衣区 800 深贯通。</li>
+          <li><strong>左柜</strong> 408×800 通深，不做门板；包柜 500 + 挂衣区 980 + 坐凳上空约 349 + 抽拉换鞋凳 350×420×450；挂衣区 800 深贯通。</li>
+          <li><strong>左柜收纳</strong> 挂衣杆向开口方向偏移，杆中心距柜格开口 275，为格内深处留出位置；包柜向下每 350 一块短横板，板深 250（从柜背向外），共 2 块。</li>
+          <li><strong>换鞋凳</strong> 350 宽 × 420 高 × 450 深，居中放在左柜；正面与左柜开口齐平，向前拉出 500。凳后加一块 408 宽 × 100 高 × 约 338 深的可取出挡块，避免凳子被推入过深。</li>
           <li><strong>前柜中段 800</strong> 从地面往上共 5 层：200 / 120 / 130 / 130 / 170；<strong>最下两层横向贯通中段与右柜并保持开放</strong>；其上三排 130 / 130 / 170 加一对下门；门上方的 170 抽屉分左右两个。</li>
           <li><strong>最下层板前缩</strong> 200 层上方那块通长层板前缩 50（0–120 可调），方便抽取最底层的鞋子；板前缩后，120 层上的示例鞋随层板后移。</li>
           <li><strong>中段玄关台面</strong> 抽屉上方 370 高开放台面，放钥匙、包包；台面以上中段共 5 层：100 / 120 / 168 / 180 / 230。</li>
@@ -206,7 +242,7 @@
           <li><strong>后柜</strong> 1220×400×通高 2303 白色侧抽鞋架；10 层按 340/340/220×4/150×3/100 缩放；<strong>中间加一块通高竖向分隔板</strong>，左右各约 583，横板分两段；右侧金属拉手；抽拉 1220；藏在前柜背后。</li>
           <li><strong>靠墙</strong> 整柜 800 深靠平墙，不做凹龛/曲面；后柜只在右侧前柜背后。手稿右侧 800 双列鞋架不在本柜范围。</li>
         </ul>
-        <p class="hint">v1.10 把“关键约束聚焦”改为手动分步浏览：9 处关键尺寸/比例/结构逐点拉近，用“上一步 / 下一步 / 结束浏览”自己控制节奏，不再自动计时、不再锁定面板；尺寸改用标注线（延伸线 + 尺寸线 + 斜刻度）画出，尺寸标签直接落在标注线上。v1.9 的双块决策看板与 v1.8 的固定尺寸、前柜下门、右柜整高门、170 抽屉分左右、最下层板前缩 50 均保留。可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
+        <p class="hint">v1.11 调整左柜与换鞋凳：包柜改为 500 高；挂衣杆外移到距开口 275；包柜下每 350 加一块深 250 的短横板；换鞋凳改为 350×420×450 并居中、正面与左柜开口齐平；凳后加 100 高可取出挡块。巡游扩为 10 处（新增“挂衣杆 / 短横板”），仍用“上一步 / 下一步 / 结束浏览”自己控制节奏，不自动计时、不锁定面板。v1.10 的手动分步与尺寸标注线、v1.9 的双块决策看板、v1.8 的固定尺寸均保留。可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
       </section>
 
       <footer class="panel-footer">
@@ -218,14 +254,14 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">鞋柜 v1.10 · 三维预览</span>
+        <span class="stage-title">鞋柜 v1.11 · 三维预览</span>
         <span class="stage-meta" id="size-readout">1700 × 2303 × 800 mm</span>
       </div>
       <button id="start-tour" class="tour-start" type="button">
         <span class="tour-start-icon">◎</span>
         <span class="tour-start-copy">
           <strong>关键约束聚焦</strong>
-          <small>9 处 · 手动浏览 · 可随时结束</small>
+          <small>10 处 · 手动浏览 · 可随时结束</small>
         </span>
       </button>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门/抽屉/换鞋凳/后柜鞋架开合</div>
@@ -234,7 +270,7 @@
       <div id="focus-tour" class="focus-tour" hidden aria-live="polite">
         <div class="focus-tour-head">
           <span class="focus-tour-kicker">关键设计约束聚焦</span>
-          <span class="focus-tour-progress" id="tour-progress">1 / 9</span>
+          <span class="focus-tour-progress" id="tour-progress">1 / 10</span>
         </div>
         <div class="focus-tour-body">
           <div class="focus-tour-copy">
@@ -264,6 +300,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.10.0"></script>
+  <script type="module" src="./viewer.js?v=1.11.0"></script>
 </body>
 </html>

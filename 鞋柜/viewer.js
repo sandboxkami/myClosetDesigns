@@ -24,9 +24,12 @@ const DEFAULTS = {
   H: 2303,
   D: FIXED.D,
   backD: 400,
-  benchW: 300,
+  benchW: 350,
+  benchD: 450,
   benchH: 420,
   benchPull: 500,
+  benchStopH: 100,
+  benchStopOn: true,
   t: 18,
   frontShelfInset: 50,
   topGap: 0,
@@ -38,6 +41,12 @@ const GAP = 0.003;
 const BACK_T = 0.012;
 const CUSHION_T = 0.03;
 const WHEEL_R = 0.015;
+const LEFT_BAG_H = 500;
+const LEFT_HANG_H = 980;
+const LEFT_SHELF_STEP = 350;
+const LEFT_SHELF_DEPTH = 250;
+const ROD_FROM_OPENING = 275;
+const BENCH_STOP_D = 350;
 const NARROW_RATIOS = [460, 460, 160, 160, 230, 175, 130, 130, 130];
 const NARROW_RATIO_SUM = NARROW_RATIOS.reduce((sum, value) => sum + value, 0);
 const MID_UPPER_RATIOS = [180, 160, 120, 100, 370];
@@ -67,6 +76,7 @@ const state = {
   rightN: 0,
   midDoorW: 0,
   benchMaxW: 0,
+  benchStopD: 0,
 };
 
 const SCENE = {
@@ -122,6 +132,7 @@ const MAT = {
 let interactiveParts = [];
 let propsGroup = null;
 let rackPropsGroup = null;
+let benchStopGroup = null;
 let doorsGroup = null;
 let dimensionGroup = null;
 let firstBuild = true;
@@ -194,9 +205,15 @@ function normalizeState() {
   state.frontShelfInset = clamp(Math.round(state.frontShelfInset / 5) * 5, 0, 120);
   state.topGap = 0;
   state.benchH = clamp(state.benchH, 380, 460);
+  state.benchD = clamp(Math.round(state.benchD / 10) * 10, 350, 500);
   state.benchPull = clamp(state.benchPull, 300, 600);
+  state.benchStopH = clamp(Math.round(state.benchStopH / 10) * 10, 50, 200);
   state.benchMaxW = LEFT_W - 2 * state.t;
   state.benchW = clamp(state.benchW, 260, state.benchMaxW);
+  // The stop block fills the gap between the back panel and the bench.
+  // With an 800 deep cabinet, 12 back panel and 450 bench, this is 338 mm
+  // (about the requested 350); it is clamped if the bench depth changes.
+  state.benchStopD = clamp(Math.min(BENCH_STOP_D, state.D - 12 - state.benchD), 100, 500);
 
   state.frontD = state.D - state.backD;
   if (state.frontD < 350) {
@@ -215,7 +232,7 @@ function normalizeState() {
   state.backW = state.midW + NARROW_W;
   state.backPull = state.backW;
 
-  state.kneeH = state.H - 3 * state.t - 400 - 980 - state.benchH;
+  state.kneeH = state.H - 3 * state.t - LEFT_BAG_H - LEFT_HANG_H - state.benchH;
 
   const backAvail = state.H - 11 * state.t;
   const backScale = Math.max(0.5, backAvail / BACK_RATIO_SUM);
@@ -246,8 +263,11 @@ function updateReadouts() {
   document.getElementById('decision-backD').textContent = `${format(state.backD, 0)} mm`;
   document.getElementById('decision-frontD').textContent = `${format(state.frontD, 0)} mm`;
   document.getElementById('decision-benchW').textContent = `${format(state.benchW, 0)} mm`;
+  document.getElementById('decision-benchD').textContent = `${format(state.benchD, 0)} mm`;
   document.getElementById('decision-benchH').textContent = `${format(state.benchH, 0)} mm`;
   document.getElementById('decision-benchPull').textContent = `${format(state.benchPull, 0)} mm`;
+  document.getElementById('decision-benchStopH').textContent = `${format(state.benchStopH, 0)} mm`;
+  document.getElementById('decision-benchStopD').textContent = `${format(state.benchStopD, 0)} mm`;
   document.getElementById('decision-frontShelfInset').textContent = `${format(state.frontShelfInset, 0)} mm`;
   document.getElementById('decision-t').textContent = `${format(state.t, 0)} mm`;
   document.getElementById('decision-midW').textContent = `${format(state.midW, 0)} mm`;
@@ -262,7 +282,9 @@ function updateReadouts() {
     `${LEFT_W} / ${format(state.midW + NARROW_W, 0)} / ${format(state.backW, 0)}`;
   document.getElementById('left-back-width').textContent = `${format(LEFT_W + state.backW, 0)} mm`;
   document.getElementById('left-zones').textContent =
-    `400 / 980 / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
+    `${LEFT_BAG_H} / ${LEFT_HANG_H} / ${format(state.kneeH, 0)} / ${format(state.benchH, 0)}`;
+  document.getElementById('left-storage-info').textContent =
+    `距开口 ${ROD_FROM_OPENING} / ${LEFT_SHELF_STEP}·深${LEFT_SHELF_DEPTH}`;
   document.getElementById('front-bottom').textContent =
     `${FRONT_BOTTOM.join(' / ')} mm`;
   document.getElementById('front-drawer').textContent = `${FRONT_DRAWER} mm × 2（左右）`;
@@ -273,7 +295,9 @@ function updateReadouts() {
     `${RIGHT_FIXED.join(' / ')} / ${format(state.rightN, 0)} mm`;
   document.getElementById('mid-door-width').textContent = `${format(state.midDoorW, 1)} mm`;
   document.getElementById('bench-size').textContent =
-    `${format(state.benchW, 0)} × ${format(state.benchH, 0)} / ${format(state.benchPull, 0)}`;
+    `${format(state.benchW, 0)} × ${format(state.benchH, 0)} × ${format(state.benchD, 0)} / 前伸 ${format(state.benchPull, 0)}`;
+  document.getElementById('bench-stop-info').textContent =
+    `${LEFT_W} × ${format(state.benchStopH, 0)} × ${format(state.benchStopD, 0)} / ${state.benchStopOn ? '可取出' : '已取出'}`;
   document.getElementById('front-depth').textContent =
     `${format(state.frontD, 0)} / ${format(state.backD, 0)} mm`;
   document.getElementById('back-rack').textContent =
@@ -296,6 +320,8 @@ function updateReadouts() {
 function renderUI() {
   syncInputs();
   updateReadouts();
+  const stopButton = document.getElementById('toggle-bench-stop');
+  if (stopButton) stopButton.textContent = state.benchStopOn ? '取出挡块' : '放回挡块';
 }
 
 let rebuildPending = false;
@@ -555,8 +581,11 @@ function buildCabinet() {
   const midW = state.midW / 1000;
   const narrowW = NARROW_W / 1000;
   const benchW = state.benchW / 1000;
+  const benchD = state.benchD / 1000;
   const benchH = state.benchH / 1000;
   const benchPull = state.benchPull / 1000;
+  const benchStopH = state.benchStopH / 1000;
+  const benchStopD = state.benchStopD / 1000;
 
   const doorT = t;
   const frontCenterZ = backD / 2;
@@ -638,7 +667,7 @@ function buildCabinet() {
   const kneeTop = benchTop + state.kneeH / 1000;
   const hangShelfY = kneeTop + t / 2;
   const hangBottom = kneeTop + t;
-  const hangTop = hangBottom + 0.98;
+  const hangTop = hangBottom + LEFT_HANG_H / 1000;
   const bagShelfY = hangTop + t / 2;
   const bagBottom = hangTop + t;
 
@@ -647,11 +676,31 @@ function buildCabinet() {
     box(leftW, t, leftInteriorD, materials.wood, { x: leftCenter, y: bagShelfY, z: leftInteriorZ }),
   );
 
+  // Short shelves below the bag compartment: every 350 down, 250 deep from the
+  // back panel. They leave the front part of the 800-deep bay free for hanging.
+  const leftBackZ = -D / 2 + BACK_T;
+  const leftShelfDepth = LEFT_SHELF_DEPTH / 1000;
+  const leftShortShelfYs = [];
+  for (let offset = LEFT_SHELF_STEP / 1000; offset < LEFT_HANG_H / 1000; offset += LEFT_SHELF_STEP / 1000) {
+    const shelfTopY = bagBottom - offset;
+    if (shelfTopY - t < hangBottom) break;
+    const shelfCenterY = shelfTopY - t / 2;
+    leftShortShelfYs.push(shelfCenterY);
+    cabinetGroup.add(
+      box(leftW, t, leftShelfDepth, materials.wood, {
+        x: leftCenter,
+        y: shelfCenterY,
+        z: leftBackZ + leftShelfDepth / 2,
+      }),
+    );
+  }
+
+  const rodZ = D / 2 - ROD_FROM_OPENING / 1000;
   const rodY = hangTop - 0.06;
   const rod = cylinder(0.0125, leftW - 0.02, materials.woodDark, {
     x: leftCenter,
     y: rodY,
-    z: leftInteriorZ,
+    z: rodZ,
   });
   rod.rotation.z = Math.PI / 2;
   cabinetGroup.add(rod);
@@ -805,8 +854,13 @@ function buildCabinet() {
     x: divider2X, y: (openBottomTop + H) / 2, z: carcassZ,
   }));
 
-  // Pull-out bench: 300 wide, right-aligned against the middle divider.
-  const benchCenterX = leftInner1 - benchW / 2;
+  // Pull-out bench: centered in the left bay, front face flush with the
+  // left cabinet opening plane. Depth 450 includes the 18 mm front panel.
+  const benchCenterX = leftCenter;
+  const benchFrontZ = D / 2;
+  const benchBackZ = benchFrontZ - benchD;
+  const benchBodyD = benchD - doorT;
+  const benchBodyCenterZ = benchBackZ + benchBodyD / 2;
   const benchGroup = new THREE.Group();
   benchGroup.name = 'shoe-bench';
   benchGroup.position.set(benchCenterX, 0, 0);
@@ -815,32 +869,31 @@ function buildCabinet() {
   const bodyBottom = WHEEL_R * 2;
   const bodyHeight = benchH - CUSHION_T - bodyBottom;
   const bodyCenterY = bodyBottom + bodyHeight / 2;
-  const bodyDepth = interiorD - 0.02;
 
   benchGroup.add(
-    box(benchW, bodyHeight, bodyDepth, materials.whiteCarcass, {
+    box(benchW, bodyHeight, benchBodyD, materials.whiteCarcass, {
       y: bodyCenterY,
-      z: interiorZ,
+      z: benchBodyCenterZ,
     }),
     box(benchW, bodyHeight, doorT, materials.whiteDoor, {
       y: bodyCenterY,
-      z: bodyFront - doorT / 2,
+      z: benchFrontZ - doorT / 2,
     }),
-    box(benchW - 0.02, CUSHION_T, bodyDepth - 0.02, MAT.cushion, {
+    box(benchW - 0.02, CUSHION_T, benchBodyD - 0.02, MAT.cushion, {
       y: benchH - CUSHION_T / 2,
-      z: interiorZ,
+      z: benchBodyCenterZ,
     }),
     box(0.12, 0.006, 0.004, MAT.pull, {
       y: benchH - CUSHION_T - 0.028,
-      z: bodyFront + 0.002,
+      z: benchFrontZ + 0.002,
     }),
   );
 
   const wheelPositions = [
-    [-benchW / 2 + 0.045, interiorZ - bodyDepth / 2 + 0.07],
-    [benchW / 2 - 0.045, interiorZ - bodyDepth / 2 + 0.07],
-    [-benchW / 2 + 0.045, interiorZ + bodyDepth / 2 - 0.07],
-    [benchW / 2 - 0.045, interiorZ + bodyDepth / 2 - 0.07],
+    [-benchW / 2 + 0.045, benchBodyCenterZ - benchBodyD / 2 + 0.07],
+    [benchW / 2 - 0.045, benchBodyCenterZ - benchBodyD / 2 + 0.07],
+    [-benchW / 2 + 0.045, benchBodyCenterZ + benchBodyD / 2 - 0.07],
+    [benchW / 2 - 0.045, benchBodyCenterZ + benchBodyD / 2 - 0.07],
   ];
   wheelPositions.forEach(([x, z]) => {
     const wheel = cylinder(WHEEL_R, 0.018, materials.metal, {
@@ -870,6 +923,26 @@ function buildCabinet() {
   });
   interactiveParts.push(benchPart);
 
+  // Removable stop block behind the bench: fills the gap between the bench
+  // back and the back panel, so the bench cannot be pushed too deep.
+  const stopBackZ = -D / 2 + BACK_T;
+  const stopFrontZ = stopBackZ + benchStopD;
+  benchStopGroup = new THREE.Group();
+  benchStopGroup.name = 'bench-stop';
+  benchStopGroup.add(
+    box(leftW, benchStopH, benchStopD, materials.woodLight, {
+      x: leftCenter,
+      y: benchStopH / 2,
+      z: stopBackZ + benchStopD / 2,
+    }),
+    box(0.12, 0.012, 0.02, materials.woodDark, {
+      x: leftCenter,
+      y: benchStopH - 0.018,
+      z: stopFrontZ - 0.012,
+    }),
+  );
+  cabinetGroup.add(benchStopGroup);
+
   // Props.
   propsGroup = new THREE.Group();
   propsGroup.name = 'props';
@@ -881,9 +954,17 @@ function buildCabinet() {
 
   for (let i = 0; i < 2; i += 1) {
     const garment = createHangingGarment(materials, i + 1, 0.86, 0.3);
-    garment.position.set(leftCenter + (i === 0 ? -0.085 : 0.085), rodY, leftInteriorZ);
+    garment.position.set(leftCenter + (i === 0 ? -0.085 : 0.085), rodY, rodZ);
     propsGroup.add(garment);
   }
+
+  // Shoe boxes on the short back shelves.
+  leftShortShelfYs.forEach((shelfCenterY, index) => {
+    const boxProp = createShoeBox(0.22, 0.075, 0.17);
+    boxProp.position.set(leftCenter, shelfCenterY + t / 2, leftBackZ + 0.13);
+    boxProp.rotation.y = (index - 0.5) * 0.08;
+    propsGroup.add(boxProp);
+  });
 
   // Middle 800 bottom five: bottom two run through the full 1220; upper three are middle only. Right 420 has its own tower props.
   frontBottomCells.forEach((cell, index) => {
@@ -1090,8 +1171,24 @@ function buildCabinet() {
     midW,
     narrowW,
     benchW,
+    benchD,
     benchH,
     benchPull,
+    benchStopH,
+    benchStopD,
+    benchStopOn: state.benchStopOn,
+    benchFrontZ,
+    benchBackZ,
+    benchBodyD,
+    benchBodyCenterZ,
+    stopBackZ,
+    stopFrontZ,
+    leftShortShelfYs,
+    leftShelfDepth,
+    leftBackZ,
+    rodZ,
+    rodFromOpening: ROD_FROM_OPENING / 1000,
+    leftShelfStep: LEFT_SHELF_STEP / 1000,
     frontShelfInset: state.frontShelfInset / 1000,
     rightN: state.rightN / 1000,
     kneeH: state.kneeH / 1000,
@@ -1145,8 +1242,8 @@ function buildCabinet() {
     upperCells: frontUpperCells.map((cell) => ({ bottom: cell.bottom, top: cell.top })),
     rightCells: rightTowerCells.map((cell) => ({ bottom: cell.bottom, top: cell.top })),
     benchCenterX,
-    benchZ1: interiorZ - (interiorD - 0.02) / 2,
-    benchZ2: interiorZ + (interiorD - 0.02) / 2,
+    benchZ1: benchBackZ,
+    benchZ2: benchFrontZ,
     rackLeft,
     rackRight,
     rackCenterX,
@@ -1169,6 +1266,7 @@ function applyVisibility() {
   if (rackPropsGroup) rackPropsGroup.visible = state.showProps;
   if (dimensionGroup) dimensionGroup.visible = state.showDims;
   if (doorsGroup) doorsGroup.visible = state.showDoors;
+  if (benchStopGroup) benchStopGroup.visible = state.benchStopOn;
 }
 
 function fitCabinet(direction) {
@@ -1226,6 +1324,7 @@ function buildFocusStops() {
   const rackHalfNetW = (L.backW - 3 * L.t) / 2;
   const benchShift = L.benchPull;
   const benchFrontZ = L.benchZ2 + benchShift;
+  const benchStopOn = state.benchStopOn;
   const lastRight = L.rightCells[L.rightCells.length - 1];
 
   return [
@@ -1271,7 +1370,7 @@ function buildFocusStops() {
       part: '左柜 408 通深',
       title: '左柜 408 × 800 通深',
       value: `${focusNum(L.leftW)} × ${focusNum(L.D)}`,
-      desc: `左柜 408 宽、800 深贯通，不做门板；上为包袋格约 ${focusNum(bagHeight)}，中为挂衣区 980，下为坐凳上空约 ${focusNum(kneeH)} + 抽拉换鞋凳。`,
+      desc: `左柜 408 宽、800 深贯通，不做门板；上为包袋格 ${focusNum(bagHeight)}，中为挂衣区 ${LEFT_HANG_H}，下为坐凳上空约 ${focusNum(kneeH)} + 抽拉换鞋凳 ${L.benchW * 1000}×${L.benchH * 1000}×${L.benchD * 1000}。`,
       boxes: [
         focusBox(L.leftInner0, L.leftInner1, 0, L.H, -L.D / 2, L.D / 2, false),
         focusBox(L.leftInner0, L.leftInner1, L.bagShelfY - L.t / 2, L.bagShelfY + L.t / 2,
@@ -1335,6 +1434,56 @@ function buildFocusStops() {
       margin: 1.55,
       minDistance: 1.2,
       targetY: 0.95,
+    },
+    {
+      id: 'left-storage',
+      part: '挂衣杆 / 短横板',
+      hideProps: true,
+      title: `挂衣杆距开口 ${focusNum(L.rodFromOpening)} + 短横板 ${focusNum(L.leftShelfStep)} / 深 ${focusNum(L.leftShelfDepth)}`,
+      value: `${focusNum(L.rodFromOpening)} / ${focusNum(L.leftShelfStep)}·${focusNum(L.leftShelfDepth)}`,
+      desc: `左柜挂衣杆向开口方向偏移，杆中心距柜格开口 ${focusNum(L.rodFromOpening)}，为格内深处留出位置；包柜向下每 ${focusNum(L.leftShelfStep)} 一块短横板，板深 ${focusNum(L.leftShelfDepth)}（从柜背向外），共 ${L.leftShortShelfYs.length} 块。`,
+      boxes: [
+        focusBox(L.leftInner0, L.leftInner1, L.rodY - 0.02, L.rodY + 0.02,
+          L.rodZ - 0.02, L.rodZ + 0.02, true),
+        ...L.leftShortShelfYs.map((shelfY) => focusBox(
+          L.leftInner0, L.leftInner1,
+          shelfY - L.t / 2, shelfY + L.t / 2,
+          L.leftBackZ, L.leftBackZ + L.leftShelfDepth,
+          true,
+        )),
+      ],
+      dims: [
+        {
+          start: [L.leftInner1, L.rodY, front],
+          end: [L.leftInner1, L.rodY, L.rodZ],
+          offset: [0.14, 0, 0],
+          label: `距开口 ${focusNum(L.rodFromOpening)}`,
+          tick: 0.02,
+        },
+        {
+          start: [L.leftInner0, L.bagBottom, front],
+          end: [L.leftInner0, L.bagBottom - L.leftShelfStep, front],
+          offset: [-0.14, 0, 0.02],
+          label: `每 ${focusNum(L.leftShelfStep)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        },
+        {
+          start: [L.leftInner0, L.leftShortShelfYs[0], L.leftBackZ],
+          end: [L.leftInner0, L.leftShortShelfYs[0], L.leftBackZ + L.leftShelfDepth],
+          offset: [-0.14, 0, 0],
+          label: `深 ${focusNum(L.leftShelfDepth)}`,
+          tick: 0.02,
+        },
+      ],
+      labels: [
+        focusLabel('挂衣杆 / 短横板', L.leftCenter, L.rodY - 0.12, front + 0.05, 'part'),
+      ],
+      lines: [],
+      dir: [-0.22, 0.22, 1],
+      margin: 2.2,
+      minDistance: 1.7,
+      targetY: 1.3,
     },
     {
       id: 'front-split',
@@ -1591,14 +1740,19 @@ function buildFocusStops() {
       id: 'bench',
       part: '抽拉换鞋凳',
       openParts: ['抽拉换鞋凳 420'],
-      title: '抽拉换鞋凳 420',
-      value: `${focusNum(L.benchW)} × ${focusNum(L.benchH)} / 前伸 ${focusNum(L.benchPull)}`,
-      desc: `左柜坐凳上空约 ${focusNum(kneeH)}；换鞋凳 ${focusNum(L.benchW)} 宽、${focusNum(L.benchH)} 高，向前拉出 ${focusNum(L.benchPull)}，无底带轮。`,
+      title: `抽拉换鞋凳 ${focusNum(L.benchW)} × ${focusNum(L.benchH)} × ${focusNum(L.benchD)}`,
+      value: `${focusNum(L.benchW)} × ${focusNum(L.benchH)} × ${focusNum(L.benchD)} / 前伸 ${focusNum(L.benchPull)}`,
+      desc: `左柜坐凳上空约 ${focusNum(kneeH)}；换鞋凳 ${focusNum(L.benchW)} 宽、${focusNum(L.benchH)} 高、${focusNum(L.benchD)} 深，正面与左柜开口齐平；向前拉出 ${focusNum(L.benchPull)}，无底带轮。${benchStopOn ? `凳后挡块 ${focusNum(L.benchStopH)} 高，防止推入过深，可取出。` : '当前已取出凳后挡块，凳子可继续向里推。'}`,
       boxes: [
         focusBox(L.benchCenterX - L.benchW / 2, L.benchCenterX + L.benchW / 2, 0, L.benchH,
           L.benchZ1 + benchShift, benchFrontZ, false),
         focusBox(L.benchCenterX - L.benchW / 2, L.benchCenterX + L.benchW / 2,
           L.benchH - CUSHION_T, L.benchH, L.benchZ1 + benchShift, benchFrontZ),
+        ...(benchStopOn ? [
+          focusBox(L.leftInner0, L.leftInner1, 0, L.benchStopH, L.stopBackZ, L.stopFrontZ, false),
+          focusBox(L.leftInner0, L.leftInner1, L.benchStopH - 0.012, L.benchStopH,
+            L.stopBackZ, L.stopFrontZ, true),
+        ] : []),
       ],
       dims: [
         {
@@ -1622,13 +1776,30 @@ function buildFocusStops() {
           label: `前伸 ${focusNum(L.benchPull)}`,
           tick: 0.03,
         },
+        {
+          start: [L.benchCenterX - L.benchW / 2, L.benchH * 0.5, L.benchZ1 + benchShift],
+          end: [L.benchCenterX - L.benchW / 2, L.benchH * 0.5, L.benchZ2 + benchShift],
+          offset: [-0.14, 0, 0],
+          label: `深 ${focusNum(L.benchD)}`,
+          tick: 0.025,
+        },
+        ...(benchStopOn ? [{
+          start: [L.leftInner1, 0, L.stopFrontZ],
+          end: [L.leftInner1, L.benchStopH, L.stopFrontZ],
+          offset: [0.14, 0, 0],
+          label: `挡块 ${focusNum(L.benchStopH)}`,
+          labelClass: 'focus-ratio-label',
+          tick: 0.02,
+        }] : []),
       ],
-      labels: [],
+      labels: benchStopOn
+        ? [focusLabel('凳后挡块 / 可取出', L.leftCenter, L.benchStopH + 0.12, L.stopFrontZ - 0.04, 'part')]
+        : [],
       lines: [],
-      dir: [-0.6, 0.14, 1],
-      margin: 2.4,
-      minDistance: 1.5,
-      targetY: 0.18,
+      dir: [-0.4, 0.55, 1],
+      margin: 3.2,
+      minDistance: 2.4,
+      targetY: 0.08,
     },
   ];
 }
@@ -1797,6 +1968,7 @@ function showFocusStop(index) {
   tour.elapsed = 0;
   renderFocusStop(stop);
   setTourParts(stop.openParts || []);
+  if (propsGroup) propsGroup.visible = state.showProps && !stop.hideProps;
   updateTourOverlay(stop, index);
   const pose = focusCameraPose(stop);
   tour.fromPos.copy(viewer.camera.position);
@@ -1859,6 +2031,7 @@ function endTour() {
   tour.openLabels = [];
   if (tourOverlay) tourOverlay.hidden = true;
   setPartTargets(false);
+  if (propsGroup) propsGroup.visible = state.showProps;
   viewer.controls.enabled = false;
 }
 
@@ -2085,6 +2258,13 @@ document.getElementById('reset-dimensions').addEventListener('click', () => {
   normalizeState();
   renderUI();
   scheduleRebuild();
+});
+
+document.getElementById('toggle-bench-stop').addEventListener('click', () => {
+  state.benchStopOn = !state.benchStopOn;
+  renderUI();
+  applyVisibility();
+  if (tour.active) showFocusStop(tour.index);
 });
 
 document.getElementById('open-all').addEventListener('click', () => setPartTargets(true));
