@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>次卧衣柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.4.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.5.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -14,16 +14,19 @@
         <a class="back-link" href="../index.html">← 返回总入口</a>
         <p class="eyebrow">次卧 · 柜子定制</p>
         <h1>次卧衣柜</h1>
-        <p class="subtitle">2200 宽 × 2400 高 × 600 深固定 · 白色平板门 · 短衣区底抽与中间抽屉同高 · 拉手距地 1000 · 双块决策看板 + 手动分步巡游</p>
+        <p class="subtitle">2200 宽 × 2400 高 × 600 深固定 · 三区净宽 422 / 853 / 853 · 顶柜 400 / 底抽 400 · 白色平板门 · 短衣区底抽与中间抽屉同高 · 拉手距地 1000 · 双块决策看板 + 手动分步巡游 10 处</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.4</span>
+          <span class="chip chip-accent">v1.5</span>
+          <span class="chip">三区净宽 422 / 853 / 853</span>
+          <span class="chip">顶柜 400 / 底抽 400</span>
+          <span class="chip">抽屉隔板 4×1</span>
           <span class="chip">长衣双门对开</span>
           <span class="chip">树屋梯形门</span>
           <span class="chip">活动挂衣架</span>
           <span class="chip">宽高深固定</span>
           <span class="chip">短衣底抽同中抽 / 拉手 1000</span>
           <span class="chip">双块决策看板</span>
-          <span class="chip">手动分步巡游</span>
+          <span class="chip">手动分步巡游 10 处</span>
           <span class="chip">尺寸标注线</span>
         </div>
       </header>
@@ -33,19 +36,20 @@
           <div class="decision-head">
             <span class="decision-dot"></span>
             <h2>已确认固定</h2>
-            <span class="decision-count">8 项</span>
+            <span class="decision-count">9 项</span>
           </div>
           <div class="decision-grid">
             <div class="decision-item"><span class="decision-label">总宽</span><span class="decision-value">2200 mm</span></div>
             <div class="decision-item"><span class="decision-label">总高</span><span class="decision-value">2400 mm</span></div>
             <div class="decision-item"><span class="decision-label">总深</span><span class="decision-value">600 mm</span></div>
-            <div class="decision-item"><span class="decision-label">三区</span><span class="decision-value">左 400 / 中 950 / 右 778</span></div>
+            <div class="decision-item"><span class="decision-label">三区净宽（板厚 18）</span><span class="decision-value">左 422 / 中 853 / 右 853</span></div>
             <div class="decision-item"><span class="decision-label">外门</span><span class="decision-value">10 扇（顶柜 5 + 下部 5）</span></div>
             <div class="decision-item"><span class="decision-label">中区长衣</span><span class="decision-value">固定上杆 + 活动下杆</span></div>
             <div class="decision-item"><span class="decision-label">右侧树屋</span><span class="decision-value">梯形双门 + 全宽开口</span></div>
             <div class="decision-item"><span class="decision-label">拉手</span><span class="decision-value">展示/长衣/短衣 1000</span></div>
+            <div class="decision-item"><span class="decision-label">抽屉隔板</span><span class="decision-value">4 个抽屉各 1 块</span></div>
           </div>
-          <p class="decision-hint">外形 2200 × 2400 × 600 固定；左/中宽、顶柜高、底抽高、活动杆高可调。</p>
+          <p class="decision-hint">外形 2200 × 2400 × 600 固定；三区净宽按 18mm 板厚为 422 / 853 / 853（另加 4 块竖板 72，合计 2200）；左/中宽、顶柜高、底抽高、活动杆高可调，改板厚时右区联动、总宽保持 2200。</p>
         </article>
 
         <article class="decision-card is-open">
@@ -55,18 +59,18 @@
             <span class="decision-count">13 项 · 可调 / 联动</span>
           </div>
           <div class="decision-grid">
-            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">顶柜高</span><span class="decision-value" id="decision-topH">450 mm</span><span class="decision-flag">可调</span></button>
-            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">底抽高</span><span class="decision-value" id="decision-bottomH">450 mm</span><span class="decision-flag">可调</span></button>
-            <button class="decision-item" type="button" data-target="number-leftW"><span class="decision-label">左侧展示格宽</span><span class="decision-value" id="decision-leftW">400 mm</span><span class="decision-flag">可调</span></button>
-            <button class="decision-item" type="button" data-target="number-centerW"><span class="decision-label">中区长衣区宽</span><span class="decision-value" id="decision-centerW">950 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">顶柜高</span><span class="decision-value" id="decision-topH">400 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">底抽高</span><span class="decision-value" id="decision-bottomH">400 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-leftW"><span class="decision-label">左侧展示格宽</span><span class="decision-value" id="decision-leftW">422 mm</span><span class="decision-flag">可调</span></button>
+            <button class="decision-item" type="button" data-target="number-centerW"><span class="decision-label">中区长衣区宽</span><span class="decision-value" id="decision-centerW">853 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-rod2H"><span class="decision-label">活动挂衣架高</span><span class="decision-value" id="decision-rod2H">1200 mm</span><span class="decision-flag">可调</span></button>
             <button class="decision-item" type="button" data-target="number-t"><span class="decision-label">柜体板厚</span><span class="decision-value" id="decision-t">18 mm</span><span class="decision-flag">可调</span></button>
-            <button class="decision-item" type="button" data-target="number-centerW"><span class="decision-label">右侧短衣区宽</span><span class="decision-value" id="decision-rightW">778 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">主柜净高</span><span class="decision-value" id="decision-mainH">1500 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">长衣净高</span><span class="decision-value" id="decision-longClear">1420 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣底抽高</span><span class="decision-value" id="decision-centerDrawerH">202.5 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">右底搁板高</span><span class="decision-value" id="decision-rightBottomShelfY">244.5 mm</span><span class="decision-flag is-linked">联动</span></button>
-            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣门底</span><span class="decision-value" id="decision-shortDoorBottom">644.5 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-centerW"><span class="decision-label">右侧短衣区宽</span><span class="decision-value" id="decision-rightW">853 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">主柜净高</span><span class="decision-value" id="decision-mainH">1600 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-topH"><span class="decision-label">长衣净高</span><span class="decision-value" id="decision-longClear">1520 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣底抽高</span><span class="decision-value" id="decision-centerDrawerH">177.5 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">右底搁板高</span><span class="decision-value" id="decision-rightBottomShelfY">219.5 mm</span><span class="decision-flag is-linked">联动</span></button>
+            <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣门底</span><span class="decision-value" id="decision-shortDoorBottom">619.5 mm</span><span class="decision-flag is-linked">联动</span></button>
             <button class="decision-item" type="button" data-target="number-bottomH"><span class="decision-label">短衣拉手</span><span class="decision-value" id="decision-shortHandleY">1000 mm</span><span class="decision-flag is-linked">联动</span></button>
           </div>
           <p class="decision-hint">点击“可调 / 联动”项，跳到下方对应的调节项；联动项由上游尺寸推导。</p>
@@ -84,40 +88,40 @@
           <div class="control-head">
             <label for="range-topH">顶柜高</label>
             <span class="control-number">
-              <input id="number-topH" data-number="topH" type="number" min="300" max="650" step="10" value="450" inputmode="numeric"> mm
+              <input id="number-topH" data-number="topH" type="number" min="300" max="650" step="10" value="400" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-topH" data-range="topH" type="range" min="300" max="650" step="10" value="450">
+          <input id="range-topH" data-range="topH" type="range" min="300" max="650" step="10" value="400">
         </div>
 
         <div class="control-row">
           <div class="control-head">
             <label for="range-bottomH">底抽高</label>
             <span class="control-number">
-              <input id="number-bottomH" data-number="bottomH" type="number" min="300" max="650" step="10" value="450" inputmode="numeric"> mm
+              <input id="number-bottomH" data-number="bottomH" type="number" min="300" max="650" step="10" value="400" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-bottomH" data-range="bottomH" type="range" min="300" max="650" step="10" value="450">
+          <input id="range-bottomH" data-range="bottomH" type="range" min="300" max="650" step="10" value="400">
         </div>
 
         <div class="control-row">
           <div class="control-head">
             <label for="range-leftW">左侧展示格宽</label>
             <span class="control-number">
-              <input id="number-leftW" data-number="leftW" type="number" min="250" max="650" step="10" value="400" inputmode="numeric"> mm
+              <input id="number-leftW" data-number="leftW" type="number" min="250" max="650" step="1" value="422" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-leftW" data-range="leftW" type="range" min="250" max="650" step="10" value="400">
+          <input id="range-leftW" data-range="leftW" type="range" min="250" max="650" step="1" value="422">
         </div>
 
         <div class="control-row">
           <div class="control-head">
             <label for="range-centerW">中区长衣区宽</label>
             <span class="control-number">
-              <input id="number-centerW" data-number="centerW" type="number" min="500" max="1400" step="10" value="950" inputmode="numeric"> mm
+              <input id="number-centerW" data-number="centerW" type="number" min="500" max="1400" step="1" value="853" inputmode="numeric"> mm
             </span>
           </div>
-          <input id="range-centerW" data-range="centerW" type="range" min="500" max="1400" step="10" value="950">
+          <input id="range-centerW" data-range="centerW" type="range" min="500" max="1400" step="1" value="853">
         </div>
 
         <details class="more-settings">
@@ -140,17 +144,17 @@
             </div>
             <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
           </div>
-          <p class="micro-hint">背板默认 9 mm；门板与柜体板同厚。总宽 2200、总高 2400、总深 600 已固定；短衣区底抽与中间单抽同高，树屋开口下移、短衣门相应延长。</p>
+          <p class="micro-hint">背板默认 9 mm；门板与柜体板同厚。总宽 2200、总高 2400、总深 600 已固定；三区净宽按 18mm 板厚为 422 / 853 / 853，加 4 块竖板 72 正好 2200。改板厚时右区宽度联动，总宽保持 2200；短衣区底抽与中间单抽同高。</p>
         </details>
 
         <div class="computed">
-          <div><span>右侧短衣区宽</span><strong id="right-width">778 mm</strong></div>
-          <div><span>长衣净高</span><strong id="long-clear">1420 mm</strong></div>
-          <div class="computed-wide"><span>分区宽度</span><strong id="partition-info">左 400 / 中 950 / 右 778 mm</strong></div>
+          <div><span>右侧短衣区宽</span><strong id="right-width">853 mm</strong></div>
+          <div><span>长衣净高</span><strong id="long-clear">1520 mm</strong></div>
+          <div class="computed-wide"><span>分区宽度</span><strong id="partition-info">左 422 / 中 853 / 右 853 mm</strong></div>
           <div><span>活动挂衣架高</span><strong id="rod2-height">1200 mm</strong></div>
           <div><span>门拉手高度（展示/长衣 / 短衣）</span><strong id="handle-height">1000 / 1000 mm</strong></div>
-          <div><span>短衣区底抽高</span><strong id="short-drawer-height">202.5 mm</strong></div>
-          <div><span>短衣门底 / 拉手</span><strong id="short-door-info">645 / 1000 mm</strong></div>
+          <div><span>短衣区底抽高</span><strong id="short-drawer-height">177.5 mm</strong></div>
+          <div><span>短衣门底 / 拉手</span><strong id="short-door-info">620 / 1000 mm</strong></div>
         </div>
         <div id="height-warning" class="warning" hidden></div>
       </section>
@@ -163,6 +167,7 @@
           <button id="reset-dimensions" class="button button-ghost" type="button">恢复默认尺寸</button>
         </div>
         <button id="toggle-rod2" class="button button-ghost shelf-button" type="button">改为收纳盒</button>
+        <button id="toggle-drawer-dividers" class="button button-ghost shelf-button" type="button">隐藏抽屉隔板</button>
         <div class="toggles">
           <label><input id="show-dims" type="checkbox" checked> 显示尺寸</label>
           <label><input id="show-props" type="checkbox" checked> 显示示例物品</label>
@@ -175,14 +180,15 @@
         </div>
         <ul>
           <li><strong>外观</strong> 白色平板门 + 木色内胆 + 小圆木拉手。</li>
-          <li><strong>左侧</strong> 乐高 / 模型 / 故事书展示格；一扇通高白色平板门，取消玻璃门和拱形开口。</li>
-          <li><strong>中区</strong> 长衣挂区两扇门从中间对开；固定上杆 + 高度可调的活动下杆（侧板滑槽），也可改为收纳盒；下方 2 个叠放抽屉。</li>
-          <li><strong>右区</strong> 短衣挂区 + 水平层板 + 树屋开口；短衣区底抽改为与中间单抽同高（约 202.5），树屋开口随之下移，两扇梯形门向下延长，门拉手回到正常高度。</li>
+          <li><strong>左侧</strong> 乐高 / 模型 / 故事书展示格；一扇通高白色平板门，取消玻璃门和拱形开口；展示格宽 422，底抽高 358。</li>
+          <li><strong>中区</strong> 长衣挂区宽 853，两扇门从中间对开；固定上杆 + 高度可调的活动下杆（侧板滑槽），也可改为收纳盒；下方 2 个叠放抽屉，单抽约 177.5。</li>
+          <li><strong>右区</strong> 短衣挂区宽 853 + 水平层板 + 树屋开口；短衣区底抽改为与中间单抽同高（约 177.5），底搁板约 219.5，两扇梯形门向下延长，门拉手回到正常高度。</li>
           <li><strong>顶柜</strong> 5 门：1 扇与展示格同宽；2/3、4/5 分别从中间向两边开。</li>
           <li><strong>拉手</strong> 展示柜、长衣区、短衣区门拉手距地 <strong>1000</strong>；短衣区梯形门拉手与其他门一致，距门缝约 60。</li>
+          <li><strong>抽屉隔板</strong> 左侧底抽、中区上下 2 抽、右侧孩子物品抽屉各 1 块纵向抽屉隔板；隔板垂直立放、平行抽拉方向，随抽屉一起拉出，把每个抽屉分成左右 2 格。可点“隐藏抽屉隔板/显示抽屉隔板”切换。</li>
           <li><strong>交互修复</strong> 切换“活动挂衣架/收纳盒”或调整活动杆高度时会重建柜体；现在重建前保存已开门/抽屉状态，重建后恢复，不再自动复位。</li>
         </ul>
-        <p class="hint">v1.4 新增双块决策看板与“关键约束聚焦”手动分步巡游：9 处关键尺寸/比例/结构逐点拉近，用“上一步 / 下一步 / 结束浏览”自己控制节奏，不再自动计时、不锁定面板；尺寸用延伸线 + 尺寸线 + 斜刻度标注，标签落在标注线上。v1.3 的 2200×2400×600 固定、短衣底抽同中抽、树屋开口下移、拉手 1000 均保留。</p>
+        <p class="hint">v1.5 将三区净宽改为 422 / 853 / 853（加 4 块 18mm 竖板 72 正好 2200），顶柜改为 400、底抽改为 400；4 个抽屉各加 1 块抽屉隔板。双块决策看板与“关键约束聚焦”手动分步巡游保留，巡游扩为 10 处（新增抽屉隔板），用“上一步 / 下一步 / 结束浏览”自己控制节奏，不自动计时、不锁定面板；尺寸用延伸线 + 尺寸线 + 斜刻度标注。v1.4 的 2200×2400×600 固定、短衣底抽同中抽、树屋开口下移、拉手 1000 均保留。</p>
       </section>
 
       <footer class="panel-footer">
@@ -194,14 +200,14 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">次卧衣柜 v1.4 · 三维预览</span>
+        <span class="stage-title">次卧衣柜 v1.5 · 三维预览</span>
         <span class="stage-meta" id="size-readout">2200 × 2400 × 600 mm</span>
       </div>
       <button id="start-tour" class="tour-start" type="button">
         <span class="tour-start-icon">◎</span>
         <span class="tour-start-copy">
           <strong>关键约束聚焦</strong>
-          <small>9 处 · 手动浏览 · 可随时结束</small>
+          <small>10 处 · 手动浏览 · 可随时结束</small>
         </span>
       </button>
       <div class="stage-hint">拖动旋转 · 滚轮缩放 · 点击门 / 抽屉开合</div>
@@ -210,7 +216,7 @@
       <div id="focus-tour" class="focus-tour" hidden aria-live="polite">
         <div class="focus-tour-head">
           <span class="focus-tour-kicker">关键设计约束聚焦</span>
-          <span class="focus-tour-progress" id="tour-progress">1 / 9</span>
+          <span class="focus-tour-progress" id="tour-progress">1 / 10</span>
         </div>
         <div class="focus-tour-body">
           <div class="focus-tour-copy">
@@ -240,6 +246,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.4.0"></script>
+  <script type="module" src="./viewer.js?v=1.5.0"></script>
 </body>
 </html>

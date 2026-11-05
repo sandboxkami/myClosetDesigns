@@ -23,13 +23,14 @@ const DEFAULTS = {
   W: 2200,
   H: 2400,
   D: 600,
-  topH: 450,
-  bottomH: 450,
-  leftW: 400,
-  centerW: 950,
+  topH: 400,
+  bottomH: 400,
+  leftW: 422,
+  centerW: 853,
   t: 18,
   rod2H: 1200,
   rod2On: true,
+  drawerDividersOn: true,
 };
 
 const state = {
@@ -75,6 +76,8 @@ cabinetGroup.name = 'wardrobe';
 viewer.scene.add(cabinetGroup);
 
 let interactiveParts = [];
+let drawerDividerGroups = [];
+let drawerPropGroups = [];
 let propsGroup = null;
 let dimensionGroup = null;
 let firstBuild = true;
@@ -143,8 +146,8 @@ function normalizeState() {
   state.D = clamp(round10(state.D), 500, 700);
   state.topH = clamp(round10(state.topH), 300, 650);
   state.bottomH = clamp(round10(state.bottomH), 300, 650);
-  state.leftW = clamp(round10(state.leftW), 250, 650);
-  state.centerW = clamp(round10(state.centerW), 500, 1400);
+  state.leftW = clamp(Math.round(state.leftW), 250, 650);
+  state.centerW = clamp(Math.round(state.centerW), 500, 1400);
   state.t = clamp(Math.round(state.t), 16, 25);
 
   const minRight = 550;
@@ -264,6 +267,10 @@ function renderUI() {
   updateReadouts();
   const rod2Button = document.getElementById('toggle-rod2');
   if (rod2Button) rod2Button.textContent = state.rod2On ? '改为收纳盒' : '改为活动挂衣架';
+  const dividerButton = document.getElementById('toggle-drawer-dividers');
+  if (dividerButton) {
+    dividerButton.textContent = state.drawerDividersOn ? '隐藏抽屉隔板' : '显示抽屉隔板';
+  }
 }
 
 let rebuildPending = false;
@@ -370,7 +377,7 @@ function createTrapezoidDoorShape(width, height, rise, side) {
   return shape;
 }
 
-function addDrawer({ xCenter, width, yBottom, yTop, label }) {
+function addDrawer({ xCenter, width, yBottom, yTop, label, dividers = 0 }) {
   const height = yTop - yBottom;
   const centerY = (yBottom + yTop) / 2;
   const group = new THREE.Group();
@@ -413,6 +420,40 @@ function addDrawer({ xCenter, width, yBottom, yTop, label }) {
   });
   group.add(bottom, leftSide, rightSide, back);
 
+  // 每个抽屉 1 块纵向隔板：垂直立放、平行抽拉方向，随抽屉一起拉出。
+  // 两块折叠衣物放在隔板两侧，用来示意左右 2 格。
+  if (dividers > 0) {
+    const innerW = boxW - 0.024;
+    const dividerT = 0.012;
+    const dividerH = Math.max(0.04, boxH - 0.022);
+    const dividerD = boxD - 0.05;
+    const dividerY = boxCenterY + 0.001;
+    const dividerZ = boxCenterZ + 0.006;
+    const floorY = boxCenterY - boxH / 2 + 0.012;
+    const layers = boxH > 0.25 ? 6 : 4;
+    const compartmentW = innerW / (dividers + 1);
+    const stackW = Math.max(0.08, Math.min(0.16, compartmentW - 0.02));
+
+    for (let i = 0; i < dividers; i += 1) {
+      const x = -innerW / 2 + ((i + 1) * innerW) / (dividers + 1);
+      const divider = box(dividerT, dividerH, dividerD, materials.woodLight, {
+        x,
+        y: dividerY,
+        z: dividerZ,
+      });
+      group.add(divider);
+      drawerDividerGroups.push(divider);
+    }
+
+    for (let i = 0; i < dividers + 1; i += 1) {
+      const compartmentX = -innerW / 2 + ((i + 0.5) * innerW) / (dividers + 1);
+      const stack = createFoldedStack(stackW, Math.min(0.34, boxD - 0.1), layers, i * 2);
+      stack.position.set(compartmentX, floorY, dividerZ);
+      group.add(stack);
+      drawerPropGroups.push(stack);
+    }
+  }
+
   const part = {
     type: 'drawer',
     group,
@@ -427,6 +468,22 @@ function addDrawer({ xCenter, width, yBottom, yTop, label }) {
   });
   interactiveParts.push(part);
   cabinetGroup.add(group);
+  return group;
+}
+
+function createFoldedStack(width = 0.16, depth = 0.34, layers = 4, offset = 0) {
+  const group = new THREE.Group();
+  for (let i = 0; i < layers; i += 1) {
+    const h = 0.03 + (i % 2) * 0.004;
+    const w = width * (0.9 + (i % 3) * 0.025);
+    const d = depth * (0.9 + (i % 2) * 0.04);
+    const layer = box(w, h, d, materials.clothesColors[(i + offset) % materials.clothesColors.length], {
+      y: i * 0.032 + 0.015,
+      z: 0,
+    });
+    layer.rotation.y = ((i % 3) - 1) * 0.025;
+    group.add(layer);
+  }
   return group;
 }
 
@@ -488,6 +545,8 @@ function createModelFigure() {
 
 function buildCabinet() {
   interactiveParts = [];
+  drawerDividerGroups = [];
+  drawerPropGroups = [];
 
   const W = state.W / 1000;
   const H = state.H / 1000;
@@ -511,6 +570,8 @@ function buildCabinet() {
   SCENE.frontZ = frontZ;
   SCENE.depth = D;
 
+  const drawerBodyD = Math.min(D - doorT - 0.06, 0.5);
+  const drawerBodyCenterZ = (frontZ - doorT / 2) - drawerBodyD / 2;
   const topShelfY = H - state.topH / 1000;
   const bottomShelfY = state.bottomH / 1000;
   const rightBottomShelfY = state.rightBottomShelfY / 1000;
@@ -742,6 +803,7 @@ function buildCabinet() {
     yBottom: t + gap,
     yTop: bottomShelfY - t - gap,
     label: '左侧底抽',
+    dividers: 1,
   });
   drawerSpecs.push({
     xCenter: leftColumnCenterX,
@@ -760,6 +822,7 @@ function buildCabinet() {
     yBottom: centerBottom1,
     yTop: centerBottom1 + centerDrawerH,
     label: '中区下抽屉',
+    dividers: 1,
   });
   addDrawer({
     xCenter: centerCenterX,
@@ -767,6 +830,7 @@ function buildCabinet() {
     yBottom: centerBottom2,
     yTop: centerBottom2 + centerDrawerH,
     label: '中区上抽屉',
+    dividers: 1,
   });
   drawerSpecs.push(
     { xCenter: centerCenterX, width: state.centerW / 1000 - 2 * gap, yBottom: centerBottom1, yTop: centerBottom1 + centerDrawerH, label: '中区下抽屉' },
@@ -780,6 +844,7 @@ function buildCabinet() {
     yBottom: t + gap,
     yTop: rightBottomShelfY - t - gap,
     label: '孩子物品抽屉',
+    dividers: 1,
   });
   drawerSpecs.push({
     xCenter: rightCenterX,
@@ -984,10 +1049,15 @@ function buildCabinet() {
     trackBottom,
     trackTop,
     drawerTravel,
+    drawerBodyD,
+    drawerBodyCenterZ,
+    drawerDividerT: 0.012,
+    drawerDividerD: drawerBodyD - 0.05,
     drawerSpecs,
     handleInset: TRAPEZOID_HANDLE_INSET,
   };
 
+  applyVisibility();
   updateRoom(room, { width: W, height: H, depth: D });
 }
 
@@ -1026,6 +1096,8 @@ function buildFocusStops() {
   const centerLower = L.drawerSpecs.find((item) => item.label === '中区下抽屉');
   const centerUpper = L.drawerSpecs.find((item) => item.label === '中区上抽屉');
   const rightDrawer = L.drawerSpecs.find((item) => item.label === '孩子物品抽屉');
+  const allDrawers = [leftDrawer, centerLower, centerUpper, rightDrawer];
+  const dividerZ = L.drawerBodyCenterZ + 0.006 + L.drawerTravel;
   const trapezoidHandleX = L.rightCenterX - GAP / 2 - L.handleInset;
   const trapezoidHandle = [trapezoidHandleX, L.shortHandleY, door];
 
@@ -1069,9 +1141,9 @@ function buildFocusStops() {
     {
       id: 'three-zones',
       part: '三区 / 竖板',
-      title: '三区宽度：左 400 / 中 950 / 右 778',
+      title: `三区净宽：左 ${focusNum(L.leftW)} / 中 ${focusNum(L.centerW)} / 右 ${focusNum(L.rightW)}`,
       value: `${focusNum(L.leftW)} / ${focusNum(L.centerW)} / ${focusNum(L.rightW)}`,
-      desc: `总宽 ${focusNum(L.W)}；左侧展示格 ${focusNum(L.leftW)}、中区长衣区 ${focusNum(L.centerW)}、右侧短衣/树屋区 ${focusNum(L.rightW)}；4 块 ${focusNum(L.t)}mm 竖板。`,
+      desc: `左侧 ${focusNum(L.leftW)}、中区 ${focusNum(L.centerW)}、右侧 ${focusNum(L.rightW)} 均为净宽；另加 4 块 ${focusNum(L.t)}mm 竖板 ${4 * focusNum(L.t)}，合计 ${focusNum(L.W)}，总宽不变。`,
       boxes: [focusBox(-L.W / 2, L.W / 2, 0, L.H, front - 0.01, front + 0.01, false)],
       dims: [
         {
@@ -1105,7 +1177,7 @@ function buildFocusStops() {
     {
       id: 'top-cabinet',
       part: '顶柜 / 5 门',
-      title: '顶柜高 450 + 5 扇门',
+      title: `顶柜高 ${focusNum(L.topH)} + 5 扇门`,
       value: `${focusNum(L.topH)} / 5 门`,
       desc: `顶柜高 ${focusNum(L.topH)}；5 扇门：展示格 1 扇，长衣区 2/3 对开，短衣区 4/5 对开。`,
       boxes: [
@@ -1130,8 +1202,8 @@ function buildFocusStops() {
     {
       id: 'left-display',
       part: '左侧展示格',
-      title: '左侧展示格 400 + 3 层 + 底抽',
-      value: `400 / 3 层 / 底抽 408`,
+      title: `左侧展示格 ${focusNum(L.leftW)} + 3 层 + 底抽`,
+      value: `${focusNum(L.leftW)} / 3 层 / 底抽 ${focusNum(leftDrawer.yTop - leftDrawer.yBottom)}`,
       desc: `左侧展示格宽 ${focusNum(L.leftW)}，3 层展示格约 ${leftCells.map((value) => focusNum(value)).join(' / ')}，下方 1 个约 ${focusNum(leftDrawer.yTop - leftDrawer.yBottom)} 底抽；一扇通高平板门。`,
       boxes: [
         focusBox(L.leftInnerX, L.leftInnerX + L.leftW, L.bottomShelfY, L.topShelfY, -L.D / 2, L.D / 2, false),
@@ -1177,8 +1249,8 @@ function buildFocusStops() {
     {
       id: 'center-long',
       part: '中区长衣 / 活动杆',
-      title: '中区长衣 950 + 活动挂衣架 1200',
-      value: `950 / 净高 ${focusNum(L.longClear)} / 杆 ${focusNum(L.rod2H)}`,
+      title: `中区长衣 ${focusNum(L.centerW)} + 活动挂衣架 ${focusNum(L.rod2H)}`,
+      value: `${focusNum(L.centerW)} / 净高 ${focusNum(L.longClear)} / 杆 ${focusNum(L.rod2H)}`,
       desc: `中区长衣区宽 ${focusNum(L.centerW)}，长衣净高约 ${focusNum(L.longClear)}；固定上杆 + 距地 ${focusNum(L.rod2H)} 的活动下杆；下方 2 个 ${focusNum(L.centerDrawerH)} 抽屉。`,
       boxes: [
         focusBox(L.centerStartX, L.centerEndX, L.bottomShelfY, L.topShelfY, -L.D / 2, L.D / 2, false),
@@ -1228,8 +1300,8 @@ function buildFocusStops() {
     {
       id: 'right-treehouse',
       part: '右侧短衣 / 树屋',
-      title: '右侧 778：短衣 + 树屋梯形门',
-      value: `778 / 尖顶 844.5 / 外沿 644.5`,
+      title: `右侧 ${focusNum(L.rightW)}：短衣 + 树屋梯形门`,
+      value: `${focusNum(L.rightW)} / 尖顶 ${focusNum1(L.nicheTopY)} / 外沿 ${focusNum1(L.rightEaveY)}`,
       desc: `右侧短衣区宽 ${focusNum(L.rightW)}；两扇梯形门斜下沿形成全宽树屋开口，尖顶约 ${focusNum(L.nicheTopY)}、外沿约 ${focusNum(L.rightEaveY)}；门拉手 ${focusNum(L.shortHandleY)}，距门缝约 ${focusNum(L.handleInset)}。`,
       boxes: [
         focusBox(L.rightStartX, L.rightEndX, L.rightBottomShelfY, L.topShelfY, -L.D / 2, L.D / 2, false),
@@ -1284,8 +1356,8 @@ function buildFocusStops() {
     {
       id: 'bottom-drawer',
       part: '短衣底抽 / 中区下抽',
-      title: '右侧底抽 = 中区下抽 202.5',
-      value: `202.5 / 244.5`,
+      title: `右侧底抽 = 中区下抽 ${focusNum1(L.centerDrawerH)}`,
+      value: `${focusNum1(L.centerDrawerH)} / ${focusNum1(L.rightBottomShelfY)}`,
       desc: `右侧孩子物品抽屉与中区下抽屉同高 ${focusNum(L.centerDrawerH)}；右侧底搁板顶面约 ${focusNum(L.rightBottomShelfY)}，树屋开口随之下移。`,
       boxes: [
         focusBox(L.centerStartX, L.centerEndX, centerLower.yBottom, centerLower.yTop,
@@ -1323,10 +1395,45 @@ function buildFocusStops() {
       targetY: 0.45,
     },
     {
+      id: 'drawer-dividers',
+      part: '抽屉隔板',
+      title: '4 个抽屉：每抽 1 块抽屉隔板',
+      value: '4 抽 × 1 块 / 厚 12',
+      desc: `左侧底抽、中区上下 2 抽、右侧孩子物品抽屉各 1 块纵向抽屉隔板；隔板垂直立放、平行抽拉方向，随抽屉一起拉出，把每个抽屉分成左右 2 格。`,
+      boxes: allDrawers.flatMap((drawer) => [
+        focusBox(
+          drawer.xCenter - drawer.width / 2, drawer.xCenter + drawer.width / 2,
+          drawer.yBottom, drawer.yTop,
+          front + L.drawerTravel - 0.01, front + L.drawerTravel + 0.01, false,
+        ),
+        focusBox(
+          drawer.xCenter - L.drawerDividerT / 2 - 0.006,
+          drawer.xCenter + L.drawerDividerT / 2 + 0.006,
+          drawer.yBottom + 0.015, drawer.yTop - 0.015,
+          dividerZ - L.drawerDividerD / 2, dividerZ + L.drawerDividerD / 2,
+          true,
+        ),
+      ]),
+      leaders: [
+        {
+          point: [leftDrawer.xCenter, leftDrawer.yTop - 0.03, dividerZ],
+          labelPoint: [leftDrawer.xCenter - 0.26, 0.64, front + L.drawerTravel + 0.08],
+          label: `隔板厚 ${focusNum(L.drawerDividerT)} / 4 抽 × 1`,
+        },
+      ],
+      labels: [
+        focusLabel('4 个抽屉各 1 块抽屉隔板', 0, 0.58, front + 0.05, 'part'),
+      ],
+      openParts: ['左侧底抽', '中区下抽屉', '中区上抽屉', '孩子物品抽屉'],
+      dir: [0.02, 0.55, 1],
+      margin: 1.35,
+      targetY: 0.45,
+    },
+    {
       id: 'adjustable-rod',
       part: '活动挂衣架',
-      title: '活动挂衣架 1200 / 可调 950–1650',
-      value: `1200 / 950–1650`,
+      title: `活动挂衣架 ${focusNum(L.rod2H)} / 可调 ${focusNum(L.rod2MinY)}–${focusNum(L.rod2MaxY)}`,
+      value: `${focusNum(L.rod2H)} / ${focusNum(L.rod2MinY)}–${focusNum(L.rod2MaxY)}`,
       desc: `中区活动下杆默认距地 ${focusNum(L.rod2H)}，可在约 ${focusNum(L.rod2MinY)}–${focusNum(L.rod2MaxY)} 间按 50 步进调整；取下活动杆后可改放约 620×300×400 收纳盒。`,
       boxes: [
         focusBox(L.centerStartX, L.centerEndX, L.rod2H - 0.03, L.rod2H + 0.03,
@@ -1663,6 +1770,12 @@ function updateTour(delta) {
 function applyVisibility() {
   if (propsGroup) propsGroup.visible = state.showProps;
   if (dimensionGroup) dimensionGroup.visible = state.showDims;
+  drawerDividerGroups.forEach((group) => {
+    group.visible = state.drawerDividersOn;
+  });
+  drawerPropGroups.forEach((group) => {
+    group.visible = state.showProps;
+  });
 }
 
 function applyPartTransform(part) {
@@ -1851,6 +1964,12 @@ document.getElementById('toggle-rod2').addEventListener('click', () => {
   state.rod2On = !state.rod2On;
   renderUI();
   scheduleRebuild();
+});
+
+document.getElementById('toggle-drawer-dividers').addEventListener('click', () => {
+  state.drawerDividersOn = !state.drawerDividersOn;
+  renderUI();
+  applyVisibility();
 });
 
 document.getElementById('open-all').addEventListener('click', () => setPartTargets(true));
