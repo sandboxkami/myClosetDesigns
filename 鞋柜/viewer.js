@@ -1491,9 +1491,9 @@ function buildFocusStops() {
     {
       id: 'front-split',
       part: '前柜平面分配',
-      title: '前柜 1220 = 中 800 + 右 420',
+      title: `前柜净宽 ${focusNum(L.midW + L.narrowW)} = 中 ${focusNum(L.midW)} + 右 ${focusNum(L.narrowW)}`,
       value: `${focusNum(L.midW)} + ${focusNum(L.narrowW)}`,
-      desc: `前柜总宽 ${focusNum(L.midW + L.narrowW)}，中段 ${focusNum(L.midW)}、右段 ${focusNum(L.narrowW)}；后柜与前柜同宽，前柜背板挡住后柜。`,
+      desc: `前柜净宽 ${focusNum(L.midW + L.narrowW)}（中段 ${focusNum(L.midW)} + 右段 ${focusNum(L.narrowW)}，不含竖板厚度）；后柜与前柜同宽，前柜背板挡住后柜。`,
       boxes: [
         focusBox(L.midInner0, L.midInner1, 0, L.H, 0, front, false),
         focusBox(L.narrowInner0, L.narrowInner1, 0, L.H, 0, front, false),
@@ -1513,17 +1513,8 @@ function buildFocusStops() {
           label: `右段 ${focusNum(L.narrowW)}`,
           tick: 0.03,
         },
-        {
-          start: [L.midInner0, L.H, front],
-          end: [L.narrowInner1, L.H, front],
-          offset: [0, 0.32, 0],
-          label: `前柜 ${focusNum(L.midW + L.narrowW)}`,
-          tick: 0.045,
-        },
       ],
-      labels: [
-        focusLabel(`4 块 ${focusNum(L.t)}mm 竖板`, (L.midInner0 + L.narrowInner1) / 2, L.H * 0.42, front + 0.06, 'part'),
-      ],
+      labels: [],
       lines: [],
       dir: [0.15, 0.12, 1],
       margin: 1.5,

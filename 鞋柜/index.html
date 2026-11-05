@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>鞋柜 · 三维预览 | 柜子定制</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../assets/css/base.css?v=1.13.0">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1.14.0">
 </head>
 <body class="viewer-page">
   <div class="app">
@@ -16,7 +16,7 @@
         <h1>鞋柜</h1>
         <p class="subtitle">1700 宽 × 800 深固定 · 左柜 408×800 通深 · 包袋格加 1 扇平板门 · 包柜 500 + 挂衣杆距开口 275 + 短横板 3 块（350·深250）· 换鞋凳上方层板取消 · 换鞋凳 350×420×450 + 可取出挡块 · 后柜深 400 固定 · 双块决策看板 + 手动分步巡游 10 处</p>
         <div class="chips">
-          <span class="chip chip-accent">v1.13</span>
+          <span class="chip chip-accent">v1.14</span>
           <span class="chip">1700 × 800 固定</span>
           <span class="chip">包袋格门 1 扇</span>
           <span class="chip">包柜 500 / 挂衣 980</span>
@@ -51,7 +51,7 @@
             <div class="decision-item"><span class="decision-label">左柜分区</span><span class="decision-value">包柜 500 / 挂衣 980</span></div>
             <div class="decision-item"><span class="decision-label">左柜短横板</span><span class="decision-value">3 块 / 每 350 / 深 250</span></div>
             <div class="decision-item"><span class="decision-label">挂衣杆</span><span class="decision-value">距开口 275</span></div>
-            <div class="decision-item"><span class="decision-label">前柜</span><span class="decision-value">1220（中 800 + 右 420）</span></div>
+            <div class="decision-item"><span class="decision-label">前柜</span><span class="decision-value">净宽 1220（中 800 + 右 420）</span></div>
             <div class="decision-item"><span class="decision-label">后柜</span><span class="decision-value">与前柜同宽 · 侧抽同长</span></div>
             <div class="decision-item"><span class="decision-label">底下两排</span><span class="decision-value">200 / 120 贯通开放</span></div>
             <div class="decision-item"><span class="decision-label">170 抽屉</span><span class="decision-value">分左右 2 个</span></div>
@@ -175,11 +175,11 @@
             </div>
             <input id="range-t" data-range="t" type="range" min="16" max="25" step="1" value="18">
           </div>
-          <p class="micro-hint">总宽 1700 / 总深 800 / 后柜深 400 已固定。左柜 408×800 通深，包袋格加 1 扇右铰平板门、其余开放；包柜 500、挂衣区 980，挂衣杆距开口 275，包柜下每 350 一块深 250 的短横板，共 3 块；换鞋凳上方原层板取消，坐凳上空约 367；换鞋凳 350×420×450，正面与左柜开口齐平，凳后挡块 100 高、深约 350、可取出。前柜 1220×400（中 800 + 右 420）；后柜 1220×400，抽拉 1220。中段底下两层 200/120 开放，其上三排 130/130/170 加一对下门；170 抽屉在门上方、分左右两个；再往上 370 台面和上 5 层。右柜底下两层开放，往上 9 层加一扇整高门。最下层板前缩可在 0–120 调整。</p>
+          <p class="micro-hint">总宽 1700 / 总深 800 / 后柜深 400 已固定。左柜 408×800 通深，包袋格加 1 扇右铰平板门、其余开放；包柜 500、挂衣区 980，挂衣杆距开口 275，包柜下每 350 一块深 250 的短横板，共 3 块；换鞋凳上方原层板取消，坐凳上空约 367；换鞋凳 350×420×450，正面与左柜开口齐平，凳后挡块 100 高、深约 350、可取出。前柜净宽 1220×400（中 800 + 右 420，不含竖板）；后柜 1220×400，抽拉 1220。中段底下两层 200/120 开放，其上三排 130/130/170 加一对下门；170 抽屉在门上方、分左右两个；再往上 370 台面和上 5 层。右柜底下两层开放，往上 9 层加一扇整高门。最下层板前缩可在 0–120 调整。</p>
         </details>
 
         <div class="computed">
-          <div><span>左 / 前柜 / 后柜宽</span><strong id="width-layout">408 / 1220 / 1220</strong></div>
+          <div><span>左 / 前柜 / 后柜宽（净宽）</span><strong id="width-layout">408 / 1220 / 1220</strong></div>
           <div><span>左 + 后柜宽</span><strong id="left-back-width">1628 mm</strong></div>
           <div><span>左柜深 / 挂衣深</span><strong id="hanging-depth">800 / 800（贯通）</strong></div>
           <div><span>前柜 / 后柜深（固定）</span><strong id="front-depth">400 / 400 mm</strong></div>
@@ -222,7 +222,7 @@
           <h2 id="notes-title">设计要点</h2>
         </div>
         <ul>
-          <li><strong>总体</strong> 1700 × 2303 × 800；<strong>总宽 1700 / 总深 800 固定</strong>，总高仍可调；左柜 408×800，前柜 1220×400（中 800 + 右 420），后柜 1220×400；左+后=1628，含 4 块 18mm 竖板。</li>
+          <li><strong>总体</strong> 1700 × 2303 × 800；<strong>总宽 1700 / 总深 800 固定</strong>，总高仍可调；左柜 408×800，前柜净宽 1220×400（中 800 + 右 420，不含竖板），后柜 1220×400；左+后=1628。整柜 4 块 18mm 竖板共 72：左外侧板、左/中分隔板、中/右分隔板、右侧板；408 + 800 + 420 + 72 = 1700。</li>
           <li><strong>左柜</strong> 408×800 通深，包袋格加 1 扇右铰平板门（拉手在左、距包袋格底约 140），其余开放；包柜 500 + 挂衣区 980 + 坐凳上空约 367 + 抽拉换鞋凳 350×420×450；换鞋凳上方原层板已取消，坐凳上空与挂衣区连通。</li>
           <li><strong>左柜收纳</strong> 挂衣杆向开口方向偏移，杆中心距柜格开口 275，为格内深处留出位置；包柜向下每 350 一块短横板，板深 250（从柜背向外），共 3 块（350 / 700 / 1050）。</li>
           <li><strong>换鞋凳</strong> 350 宽 × 420 高 × 450 深，居中放在左柜；正面与左柜开口齐平，向前拉出 500。凳后加一块 408 宽 × 100 高 × 约 338 深的可取出挡块，避免凳子被推入过深。</li>
@@ -234,7 +234,7 @@
           <li><strong>后柜</strong> 1220×400×通高 2303 白色侧抽鞋架；10 层按 340/340/220×4/150×3/100 缩放；<strong>中间加一块通高竖向分隔板</strong>，左右各约 583，横板分两段；右侧金属拉手；抽拉 1220；藏在前柜背后。</li>
           <li><strong>靠墙</strong> 整柜 800 深靠平墙，不做凹龛/曲面；后柜只在右侧前柜背后。手稿右侧 800 双列鞋架不在本柜范围。</li>
         </ul>
-        <p class="hint">v1.13 给左上包袋格加了一扇白色平板门（右铰、拉手在左），左柜其余部分保持开放；门板总数由 5 扇变为 6 扇。v1.12 的换鞋凳上方层板取消、短横板 3 块、后柜深 400 固定、右柜 9 层/后柜 10 层逐层标注均保留；巡游仍为 10 处，用“上一步 / 下一步 / 结束浏览”自己控制节奏。可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
+        <p class="hint">v1.14 澄清巡游第 4/10 处：前柜“1220”是中段 800 + 右段 420 的净宽，不含中/右分隔板 18；原来悬浮的“4 块 18mm 竖板”标签没有对应部件，已删除，4 块竖板（左外侧板、左/中分隔板、中/右分隔板、右侧板，共 72）的定义保留在尺寸说明里。v1.13 的包袋格门（右铰、拉手在左，门板总数 6 扇）保留；巡游仍为 10 处，用“上一步 / 下一步 / 结束浏览”自己控制节奏。可在 <a href="../assets/md-viewer.html?file=../鞋柜/设计说明.md">设计说明.md</a> 中继续确认。</p>
       </section>
 
       <footer class="panel-footer">
@@ -246,7 +246,7 @@
     <main class="stage" id="stage">
       <div id="canvas-container" class="canvas-container"></div>
       <div class="stage-topbar">
-        <span class="stage-title">鞋柜 v1.13 · 三维预览</span>
+        <span class="stage-title">鞋柜 v1.14 · 三维预览</span>
         <span class="stage-meta" id="size-readout">1700 × 2303 × 800 mm</span>
       </div>
       <button id="start-tour" class="tour-start" type="button">
@@ -292,6 +292,6 @@
       }
     }
   </script>
-  <script type="module" src="./viewer.js?v=1.13.0"></script>
+  <script type="module" src="./viewer.js?v=1.14.0"></script>
 </body>
 </html>
