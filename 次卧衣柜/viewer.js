@@ -803,7 +803,6 @@ function buildCabinet() {
     yBottom: t + gap,
     yTop: bottomShelfY - t - gap,
     label: '左侧底抽',
-    dividers: 1,
   });
   drawerSpecs.push({
     xCenter: leftColumnCenterX,
@@ -1096,10 +1095,8 @@ function buildFocusStops() {
   const centerLower = L.drawerSpecs.find((item) => item.label === '中区下抽屉');
   const centerUpper = L.drawerSpecs.find((item) => item.label === '中区上抽屉');
   const rightDrawer = L.drawerSpecs.find((item) => item.label === '孩子物品抽屉');
-  const allDrawers = [leftDrawer, centerLower, centerUpper, rightDrawer];
+  const dividerDrawers = [centerLower, centerUpper, rightDrawer];
   const dividerZ = L.drawerBodyCenterZ + 0.006 + L.drawerTravel;
-  const trapezoidHandleX = L.rightCenterX - GAP / 2 - L.handleInset;
-  const trapezoidHandle = [trapezoidHandleX, L.shortHandleY, door];
 
   return [
     {
@@ -1302,7 +1299,7 @@ function buildFocusStops() {
       part: '右侧短衣 / 树屋',
       title: `右侧 ${focusNum(L.rightW)}：短衣 + 树屋梯形门`,
       value: `${focusNum(L.rightW)} / 尖顶 ${focusNum1(L.nicheTopY)} / 外沿 ${focusNum1(L.rightEaveY)}`,
-      desc: `右侧短衣区宽 ${focusNum(L.rightW)}；两扇梯形门斜下沿形成全宽树屋开口，尖顶约 ${focusNum(L.nicheTopY)}、外沿约 ${focusNum(L.rightEaveY)}；门拉手 ${focusNum(L.shortHandleY)}，距门缝约 ${focusNum(L.handleInset)}。`,
+      desc: `右侧短衣区宽 ${focusNum(L.rightW)}；两扇梯形门斜下沿形成全宽树屋开口，尖顶约 ${focusNum(L.nicheTopY)}、外沿约 ${focusNum(L.rightEaveY)}。`,
       boxes: [
         focusBox(L.rightStartX, L.rightEndX, L.rightBottomShelfY, L.topShelfY, -L.D / 2, L.D / 2, false),
         focusBox(L.rightStartX, L.rightEndX, L.rightBottomShelfY, L.rightEaveY,
@@ -1337,13 +1334,6 @@ function buildFocusStops() {
           label: `${focusNum(L.roofRise)}`,
           labelClass: 'focus-ratio-label',
           tick: 0.02,
-        },
-      ],
-      leaders: [
-        {
-          point: trapezoidHandle,
-          labelPoint: [L.rightEndX + 0.2, L.shortHandleY + 0.15, door + 0.08],
-          label: `拉手 ${focusNum(L.shortHandleY)} / 距缝 ${focusNum(L.handleInset)}`,
         },
       ],
       labels: [
@@ -1397,10 +1387,10 @@ function buildFocusStops() {
     {
       id: 'drawer-dividers',
       part: '抽屉隔板',
-      title: '4 个抽屉：每抽 1 块抽屉隔板',
-      value: '4 抽 × 1 块 / 厚 12',
-      desc: `左侧底抽、中区上下 2 抽、右侧孩子物品抽屉各 1 块纵向抽屉隔板；隔板垂直立放、平行抽拉方向，随抽屉一起拉出，把每个抽屉分成左右 2 格。`,
-      boxes: allDrawers.flatMap((drawer) => [
+      title: '3 个抽屉：每抽 1 块抽屉隔板',
+      value: '3 抽 × 1 块 / 厚 12',
+      desc: `中区上下 2 抽、右侧孩子物品抽屉各 1 块纵向抽屉隔板；左侧底抽不设隔板。隔板垂直立放、平行抽拉方向，随抽屉一起拉出，把每个抽屉分成左右 2 格。`,
+      boxes: dividerDrawers.flatMap((drawer) => [
         focusBox(
           drawer.xCenter - drawer.width / 2, drawer.xCenter + drawer.width / 2,
           drawer.yBottom, drawer.yTop,
@@ -1418,13 +1408,13 @@ function buildFocusStops() {
         {
           point: [leftDrawer.xCenter, leftDrawer.yTop - 0.03, dividerZ],
           labelPoint: [leftDrawer.xCenter - 0.26, 0.64, front + L.drawerTravel + 0.08],
-          label: `隔板厚 ${focusNum(L.drawerDividerT)} / 4 抽 × 1`,
+          label: `隔板厚 ${focusNum(L.drawerDividerT)} / 3 抽 × 1`,
         },
       ],
       labels: [
-        focusLabel('4 个抽屉各 1 块抽屉隔板', 0, 0.58, front + 0.05, 'part'),
+        focusLabel('3 个抽屉各 1 块抽屉隔板', 0, 0.58, front + 0.05, 'part'),
       ],
-      openParts: ['左侧底抽', '中区下抽屉', '中区上抽屉', '孩子物品抽屉'],
+      openParts: ['中区下抽屉', '中区上抽屉', '孩子物品抽屉'],
       dir: [0.02, 0.55, 1],
       margin: 1.35,
       targetY: 0.45,
@@ -1468,33 +1458,19 @@ function buildFocusStops() {
     },
     {
       id: 'doors-handles',
-      part: '10 扇门 / 拉手',
-      title: '10 扇门 + 拉手 1000',
-      value: `10 扇 / 拉手 1000`,
-      desc: `顶柜 5 扇 + 下部 5 扇（展示格 1、长衣区 2、短衣区 2）；展示/长衣/短衣门拉手距地 ${focusNum(DOOR_HANDLE_Y)}，梯形门拉手距门缝约 ${focusNum(L.handleInset)}。`,
+      part: '10 扇门',
+      title: '10 扇门',
+      value: `10 扇`,
+      desc: `顶柜 5 扇 + 下部 5 扇（展示格 1、长衣区 2、短衣区 2）；展示柜门、长衣区双门、短衣区梯形双门。`,
       boxes: [
         focusBox(-L.W / 2 + L.t, L.W / 2 - L.t, L.bottomShelfY, L.H,
           door - 0.008, door + 0.008, false),
-      ],
-      dims: [
-        {
-          start: [L.leftInnerX, 0, door],
-          end: [L.leftInnerX, DOOR_HANDLE_Y, door],
-          offset: [-0.14, 0, 0.02],
-          label: `拉手 ${focusNum(DOOR_HANDLE_Y)}`,
-          tick: 0.025,
-        },
       ],
       leaders: [
         {
           point: [L.topGroup1End - GAP / 2, L.topDoorYBottom, door],
           labelPoint: [L.topGroup1End + 0.2, L.topDoorYBottom + 0.12, door + 0.08],
           label: `顶柜门底 ${focusNum(L.topDoorYBottom)}`,
-        },
-        {
-          point: trapezoidHandle,
-          labelPoint: [L.rightEndX + 0.2, L.shortHandleY + 0.15, door + 0.08],
-          label: `梯形拉手 ${focusNum(L.shortHandleY)} / 内缩 ${focusNum(L.handleInset)}`,
         },
       ],
       labels: [
