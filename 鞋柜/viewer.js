@@ -324,7 +324,7 @@ function scheduleRebuild() {
   });
 }
 
-function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label }) {
+function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label, pullY = null }) {
   const doorW = xRight - xLeft;
   const doorH = yTop - yBottom;
   const group = new THREE.Group();
@@ -343,7 +343,7 @@ function addDoor({ xLeft, xRight, yBottom, yTop, hinge, label }) {
   const pullX = hinge === 'left' ? doorW - 0.012 : -(doorW - 0.012);
   const pull = box(0.007, Math.min(0.1, doorH * 0.2), 0.004, MAT.pull, {
     x: pullX,
-    y: panelCenterY,
+    y: pullY ?? panelCenterY,
     z: SCENE.doorT / 2 + 0.001,
   });
   group.add(pull);
@@ -663,8 +663,23 @@ function buildCabinet() {
   const bagBottom = hangTop + t;
 
   cabinetGroup.add(
-    box(leftW, t, leftInteriorD, materials.wood, { x: leftCenter, y: bagShelfY, z: leftInteriorZ }),
+    box(leftW, t, leftInteriorD - doorT, materials.wood, {
+      x: leftCenter,
+      y: bagShelfY,
+      z: leftInteriorZ - doorT / 2,
+    }),
   );
+
+  // Upper-left bag compartment: one right-hinged flat door.
+  addDoor({
+    xLeft: leftInner0 + GAP,
+    xRight: leftInner1 - GAP,
+    yBottom: bagBottom + GAP / 2,
+    yTop: topPanelBottom - GAP / 2,
+    hinge: 'right',
+    label: '包袋格柜门',
+    pullY: bagBottom + 0.14,
+  });
 
   // Short shelves below the bag compartment: every 350 down, 250 deep from the
   // back panel, three levels (350/700/1050). The lowest one sits above the
@@ -697,7 +712,6 @@ function buildCabinet() {
   rod.rotation.z = Math.PI / 2;
   cabinetGroup.add(rod);
 
-  // Left cabinet is intentionally open: no doors on the 408-wide full-depth bay.
 
   // Front middle 800: bottom 5 (through 200/120), 170 drawer, 370 counter,
   // upper 5. Right 420 keeps its 9-layer tower; only the bottom 2 are through.
@@ -1360,11 +1374,12 @@ function buildFocusStops() {
       part: '左柜 408 通深',
       title: '左柜 408 × 800 通深',
       value: `${focusNum(L.leftW)} × ${focusNum(L.D)}`,
-      desc: `左柜 408 宽、800 深贯通，不做门板；上为包袋格 ${focusNum(bagHeight)}，中为挂衣区 ${LEFT_HANG_H}，下为坐凳上空约 ${focusNum(kneeH)} + 抽拉换鞋凳 ${L.benchW * 1000}×${L.benchH * 1000}×${L.benchD * 1000}。`,
+      desc: `左柜 408 宽、800 深贯通，包袋格加 1 扇右铰平板门，其余开放；上为包袋格 ${focusNum(bagHeight)}，中为挂衣区 ${LEFT_HANG_H}，下为坐凳上空约 ${focusNum(kneeH)} + 抽拉换鞋凳 ${L.benchW * 1000}×${L.benchH * 1000}×${L.benchD * 1000}。`,
+      openParts: ['包袋格柜门'],
       boxes: [
         focusBox(L.leftInner0, L.leftInner1, 0, L.H, -L.D / 2, L.D / 2, false),
         focusBox(L.leftInner0, L.leftInner1, L.bagShelfY - L.t / 2, L.bagShelfY + L.t / 2,
-          L.leftInteriorZ - L.leftInteriorD / 2, L.leftInteriorZ + L.leftInteriorD / 2),
+          L.leftInteriorZ - L.leftInteriorD / 2, L.leftInteriorZ + L.leftInteriorD / 2 - L.doorT),
       ],
       dims: [
         {
@@ -1415,7 +1430,7 @@ function buildFocusStops() {
         },
       ],
       labels: [
-        focusLabel('无门板', L.leftCenter, L.H * 0.64, front + 0.05, 'part'),
+        focusLabel('包袋格门 / 其余开放', L.leftCenter, L.H * 0.64, front + 0.05, 'part'),
       ],
       lines: [],
       dir: [-0.5, 0.12, 1],
